@@ -1175,7 +1175,7 @@ function storageKey(channelName) {
 function postMessage(channelState, messageJson) {
   return new Promise(function (res, rej) {
     (0, _util.sleep)().then( /*#__PURE__*/(0, _asyncToGenerator2["default"])( /*#__PURE__*/_regenerator["default"].mark(function _callee() {
-      var key, channelEncPrivKey, encData;
+      var key, channelEncPrivKey, encData, body;
       return _regenerator["default"].wrap(function _callee$(_context) {
         while (1) {
           switch (_context.prev = _context.next) {
@@ -1192,33 +1192,28 @@ function postMessage(channelState, messageJson) {
 
             case 4:
               encData = _context.sent;
-              _context.t0 = fetch;
-              _context.t1 = channelState.serverUrl + '/channel/set';
-              _context.t2 = JSON;
-              _context.t3 = (0, _eccrypto.getPublic)(channelEncPrivKey).toString('hex');
-              _context.t4 = encData;
-              _context.next = 12;
+              _context.t0 = (0, _eccrypto.getPublic)(channelEncPrivKey).toString('hex');
+              _context.t1 = encData;
+              _context.next = 9;
               return (0, _eccrypto.sign)(channelEncPrivKey, keccak256(encData));
 
-            case 12:
-              _context.t5 = _context.sent.toString('hex');
-              _context.t6 = {
-                key: _context.t3,
-                data: _context.t4,
-                signature: _context.t5
+            case 9:
+              _context.t2 = _context.sent.toString('hex');
+              body = {
+                key: _context.t0,
+                data: _context.t1,
+                signature: _context.t2
               };
-              _context.t7 = _context.t2.stringify.call(_context.t2, _context.t6);
-              _context.t8 = {
-                'Content-Type': 'application/json; charset=utf-8'
-              };
-              _context.t9 = {
+              if (channelState.timeout) body.timeout = channelState.timeout;
+              return _context.abrupt("return", fetch(channelState.serverUrl + '/channel/set', {
                 method: 'POST',
-                body: _context.t7,
-                headers: _context.t8
-              };
-              return _context.abrupt("return", (0, _context.t0)(_context.t1, _context.t9).then(res)["catch"](rej));
+                body: JSON.stringify(body),
+                headers: {
+                  'Content-Type': 'application/json; charset=utf-8'
+                }
+              }).then(res)["catch"](rej));
 
-            case 18:
+            case 13:
             case "end":
               return _context.stop();
           }
@@ -1400,6 +1395,7 @@ function create(channelName, options) {
     // emittedMessagesIds
     serverUrl: options.server.url
   };
+  if (options.server.timeout) state.timeout = options.server.timeout;
   setupSocketConnection(options.server.url, channelName, function (msgObj) {
     if (!state.messagesCallback) return; // no listener
 
