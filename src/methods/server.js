@@ -27,6 +27,8 @@ const KEY_PREFIX = 'pubkey.broadcastChannel-';
 export const type = 'server';
 
 let SOCKET_CONN_INSTANCE = null;
+// used to decide to reconnect socket e.g. when socket connection is disconnected unexpectedly
+let isRunning = false;
 
 export function storageKey(channelName) {
     return KEY_PREFIX + channelName;
@@ -99,9 +101,6 @@ export function getSocketInstance(serverUrl) {
         log.error('socket errored', err);
         SOCKET_CONN.disconnect();
     });
-    SOCKET_CONN.on('disconnect', () => {
-        log.debug('socket disconnected');
-    });
     SOCKET_CONN_INSTANCE = SOCKET_CONN;
     return SOCKET_CONN;
 }
@@ -121,6 +120,11 @@ export function setupSocketConnection(serverUrl, channelName, fn) {
         });
     }
 
+    const reconnect = () => {
+        socketConn.once('connect', async () => {
+            socketConn.emit('check_auth_status', channelPubKey);
+        });
+    };
     const visibilityListener = () => {
         // if channel is closed, then remove the listener.
         if (!socketConn) {
@@ -129,9 +133,7 @@ export function setupSocketConnection(serverUrl, channelName, fn) {
         }
         // if not connected, then wait for connection and ping server for latest msg.
         if (!socketConn.connected && document.visibilityState === 'visible') {
-            socketConn.once('connect', async () => {
-                socketConn.emit('check_auth_status', channelPubKey);
-            });
+            reconnect();
         }
     };
 
@@ -144,6 +146,14 @@ export function setupSocketConnection(serverUrl, channelName, fn) {
             log.error(error);
         }
     };
+
+    socketConn.on('disconnect', () => {
+        log.debug('socket disconnected');
+        if (isRunning) {
+            log.error('socket disconnected unexpectedly, reconnecting socket');
+            reconnect();
+        }
+    });
 
     socketConn.on(`${channelPubKey}_success`, listener);
 
@@ -191,11 +201,13 @@ export function create(channelName, options) {
         state.eMIs.add(msgObj.token);
         state.messagesCallback(msgObj.data);
     });
+    isRunning = true;
 
     return state;
 }
 
 export function close() {
+    isRunning = false;
     // give 2 sec for all msgs which are in transit to be consumed
     // by receiver.
     // window.setTimeout(() => {
