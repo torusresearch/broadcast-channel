@@ -28,7 +28,7 @@ export const type = 'server';
 
 let SOCKET_CONN_INSTANCE = null;
 // used to decide to reconnect socket e.g. when socket connection is disconnected unexpectedly
-let isRunning = false;
+const runningChannels = new Set();
 
 export function storageKey(channelName) {
     return KEY_PREFIX + channelName;
@@ -149,7 +149,7 @@ export function setupSocketConnection(serverUrl, channelName, fn) {
 
     socketConn.on('disconnect', () => {
         log.debug('socket disconnected');
-        if (isRunning) {
+        if (runningChannels.has(channelName)) {
             log.error('socket disconnected unexpectedly, reconnecting socket');
             reconnect();
         }
@@ -201,13 +201,13 @@ export function create(channelName, options) {
         state.eMIs.add(msgObj.token);
         state.messagesCallback(msgObj.data);
     });
-    isRunning = true;
+    runningChannels.add(channelName);
 
     return state;
 }
 
-export function close() {
-    isRunning = false;
+export function close(channelState) {
+    runningChannels.delete(channelState.channelName);
     // give 2 sec for all msgs which are in transit to be consumed
     // by receiver.
     // window.setTimeout(() => {
