@@ -21,4 +21,5 @@ Object.defineProperty(exports, "enforceOptions", {
     return _broadcastChannel.enforceOptions;
   }
 });
+
 var _broadcastChannel = require("./broadcast-channel");

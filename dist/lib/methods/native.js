@@ -11,16 +11,20 @@ exports.microSeconds = exports["default"] = void 0;
 exports.onMessage = onMessage;
 exports.postMessage = postMessage;
 exports.type = void 0;
+
 var _util = require("../util");
+
 var microSeconds = _util.microSeconds;
 exports.microSeconds = microSeconds;
 var type = 'native';
 exports.type = type;
+
 function create(channelName) {
   var state = {
     messagesCallback: null,
     bc: new BroadcastChannel(channelName),
     subFns: [] // subscriberFunctions
+
   };
 
   state.bc.onmessage = function (msg) {
@@ -28,12 +32,15 @@ function create(channelName) {
       state.messagesCallback(msg.data);
     }
   };
+
   return state;
 }
+
 function close(channelState) {
   channelState.bc.close();
   channelState.subFns = [];
 }
+
 function postMessage(channelState, messageJson) {
   try {
     channelState.bc.postMessage(messageJson, false);
@@ -42,9 +49,11 @@ function postMessage(channelState, messageJson) {
     return Promise.reject(err);
   }
 }
+
 function onMessage(channelState, fn) {
   channelState.messagesCallback = fn;
 }
+
 function canBeUsed(options) {
   /**
    * in the electron-renderer, isNode will be true even if we are in browser-context
@@ -52,16 +61,20 @@ function canBeUsed(options) {
    */
   if (typeof window === 'undefined') return false;
   if (!options.support3PC) return false;
+
   if (typeof BroadcastChannel === 'function') {
     if (BroadcastChannel._pubkey) {
       throw new Error('BroadcastChannel: Do not overwrite window.BroadcastChannel with this module, this is not a polyfill');
     }
+
     return true;
   } else return false;
 }
+
 function averageResponseTime() {
   return 150;
 }
+
 var _default = {
   create: create,
   close: close,
