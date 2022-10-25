@@ -6,13 +6,9 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.OPEN_BROADCAST_CHANNELS = exports.BroadcastChannel = void 0;
 exports.enforceOptions = enforceOptions;
-
 var _util = require("./util.js");
-
 var _methodChooser = require("./method-chooser.js");
-
 var _options = require("./options.js");
-
 /**
  * Contains all open channels,
  * used in tests to ensure everything is closed.
@@ -20,80 +16,76 @@ var _options = require("./options.js");
 var OPEN_BROADCAST_CHANNELS = new Set();
 exports.OPEN_BROADCAST_CHANNELS = OPEN_BROADCAST_CHANNELS;
 var lastId = 0;
-
 var BroadcastChannel = function BroadcastChannel(name, options) {
   // identifier of the channel to debug stuff
   this.id = lastId++;
   OPEN_BROADCAST_CHANNELS.add(this);
   this.name = name;
-
   if (ENFORCED_OPTIONS) {
     options = ENFORCED_OPTIONS;
   }
-
   this.options = (0, _options.fillOptionsWithDefaults)(options);
-  this.method = (0, _methodChooser.chooseMethod)(this.options); // isListening
+  this.method = (0, _methodChooser.chooseMethod)(this.options);
 
+  // isListening
   this._iL = false;
+
   /**
    * _onMessageListener
    * setting onmessage twice,
    * will overwrite the first listener
    */
-
   this._onML = null;
+
   /**
    * _addEventListeners
    */
-
   this._addEL = {
     message: [],
     internal: []
   };
+
   /**
    * Unsend message promises
    * where the sending is still in progress
    * @type {Set<Promise>}
    */
-
   this._uMP = new Set();
+
   /**
    * _beforeClose
    * array of promises that will be awaited
    * before the channel is closed
    */
-
   this._befC = [];
+
   /**
    * _preparePromise
    */
-
   this._prepP = null;
-
   _prepareChannel(this);
-}; // STATICS
+};
+
+// STATICS
 
 /**
  * used to identify if someone overwrites
  * window.BroadcastChannel with this
  * See methods/native.js
  */
-
-
 exports.BroadcastChannel = BroadcastChannel;
 BroadcastChannel._pubkey = true;
+
 /**
  * if set, this method is enforced,
  * no mather what the options are
  */
-
 var ENFORCED_OPTIONS;
-
 function enforceOptions(options) {
   ENFORCED_OPTIONS = options;
-} // PROTOTYPE
+}
 
-
+// PROTOTYPE
 BroadcastChannel.prototype = {
   postMessage: function postMessage(msg) {
     if (this.closed) {
@@ -105,87 +97,77 @@ BroadcastChannel.prototype = {
        */
       JSON.stringify(msg));
     }
-
     return _post(this, 'message', msg);
   },
   postInternal: function postInternal(msg) {
     return _post(this, 'internal', msg);
   },
-
   set onmessage(fn) {
     var time = this.method.microSeconds();
     var listenObj = {
       time: time,
       fn: fn
     };
-
     _removeListenerObject(this, 'message', this._onML);
-
     if (fn && typeof fn === 'function') {
       this._onML = listenObj;
-
       _addListenerObject(this, 'message', listenObj);
     } else {
       this._onML = null;
     }
   },
-
   addEventListener: function addEventListener(type, fn) {
     var time = this.method.microSeconds();
     var listenObj = {
       time: time,
       fn: fn
     };
-
     _addListenerObject(this, type, listenObj);
   },
   removeEventListener: function removeEventListener(type, fn) {
     var obj = this._addEL[type].find(function (obj) {
       return obj.fn === fn;
     });
-
     _removeListenerObject(this, type, obj);
   },
   close: function close() {
     var _this = this;
-
     if (this.closed) {
       return;
     }
-
     OPEN_BROADCAST_CHANNELS["delete"](this);
     this.closed = true;
     var awaitPrepare = this._prepP ? this._prepP : _util.PROMISE_RESOLVED_VOID;
     this._onML = null;
     this._addEL.message = [];
-    return awaitPrepare // wait until all current sending are processed
+    return awaitPrepare
+    // wait until all current sending are processed
     .then(function () {
       return Promise.all(Array.from(_this._uMP));
-    }) // run before-close hooks
+    })
+    // run before-close hooks
     .then(function () {
       return Promise.all(_this._befC.map(function (fn) {
         return fn();
       }));
-    }) // close the channel
+    })
+    // close the channel
     .then(function () {
       return _this.method.close(_this._state);
     });
   },
-
   get type() {
     return this.method.type;
   },
-
   get isClosed() {
     return this.closed;
   }
-
 };
+
 /**
  * Post a message over the channel
  * @returns {Promise} that resolved when the message sending is done
  */
-
 function _post(broadcastChannel, type, msg) {
   var time = broadcastChannel.method.microSeconds();
   var msgObj = {
@@ -195,25 +177,22 @@ function _post(broadcastChannel, type, msg) {
   };
   var awaitPrepare = broadcastChannel._prepP ? broadcastChannel._prepP : _util.PROMISE_RESOLVED_VOID;
   return awaitPrepare.then(function () {
-    var sendPromise = broadcastChannel.method.postMessage(broadcastChannel._state, msgObj); // add/remove to unsend messages list
+    var sendPromise = broadcastChannel.method.postMessage(broadcastChannel._state, msgObj);
 
+    // add/remove to unsend messages list
     broadcastChannel._uMP.add(sendPromise);
-
     sendPromise["catch"]().then(function () {
       return broadcastChannel._uMP["delete"](sendPromise);
     });
     return sendPromise;
   });
 }
-
 function _prepareChannel(channel) {
   var maybePromise = channel.method.create(channel.name, channel.options);
-
   if ((0, _util.isPromise)(maybePromise)) {
     channel._prepP = maybePromise;
     maybePromise.then(function (s) {
       // used in tests to simulate slow runtime
-
       /*if (channel.options.prepareDelay) {
            await new Promise(res => setTimeout(res, this.options.prepareDelay));
       }*/
@@ -223,30 +202,25 @@ function _prepareChannel(channel) {
     channel._state = maybePromise;
   }
 }
-
 function _hasMessageListeners(channel) {
   if (channel._addEL.message.length > 0) return true;
   if (channel._addEL.internal.length > 0) return true;
   return false;
 }
-
 function _addListenerObject(channel, type, obj) {
   channel._addEL[type].push(obj);
-
   _startListening(channel);
 }
-
 function _removeListenerObject(channel, type, obj) {
   channel._addEL[type] = channel._addEL[type].filter(function (o) {
     return o !== obj;
   });
-
   _stopListening(channel);
 }
-
 function _startListening(channel) {
   if (!channel._iL && _hasMessageListeners(channel)) {
     // someone is listening, start subscribing
+
     var listenerFn = function listenerFn(msgObj) {
       channel._addEL[msgObj.type].forEach(function (listenerObject) {
         /**
@@ -260,7 +234,6 @@ function _startListening(channel) {
          */
         var hundredMsInMicro = 100 * 1000;
         var minMessageTime = listenerObject.time - hundredMsInMicro;
-
         if (msgObj.time >= minMessageTime) {
           listenerObject.fn(msgObj.data);
         } else if (channel.method.type === 'server') {
@@ -269,9 +242,7 @@ function _startListening(channel) {
         }
       });
     };
-
     var time = channel.method.microSeconds();
-
     if (channel._prepP) {
       channel._prepP.then(function () {
         channel._iL = true;
@@ -283,7 +254,6 @@ function _startListening(channel) {
     }
   }
 }
-
 function _stopListening(channel) {
   if (channel._iL && !_hasMessageListeners(channel)) {
     // noone is listening, stop subscribing
@@ -296,7 +266,6 @@ function _stopListening(channel) {
 "use strict";
 
 var _index = require("./index.js");
-
 /**
  * because babel can only export on default-attribute,
  * we use this for the non-module-build
@@ -305,6 +274,7 @@ var _index = require("./index.js");
  * but
  * var BroadcastChannel = require('broadcast-channel');
  */
+
 module.exports = {
   BroadcastChannel: _index.BroadcastChannel,
   enforceOptions: _index.enforceOptions
@@ -333,58 +303,48 @@ Object.defineProperty(exports, "enforceOptions", {
     return _broadcastChannel.enforceOptions;
   }
 });
-
 var _broadcastChannel = require("./broadcast-channel");
 },{"./broadcast-channel":1}],4:[function(require,module,exports){
 "use strict";
 
 var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
-
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.chooseMethod = chooseMethod;
-
 var _native = _interopRequireDefault(require("./methods/native.js"));
-
 var _indexedDb = _interopRequireDefault(require("./methods/indexed-db.js"));
-
 var _localstorage = _interopRequireDefault(require("./methods/localstorage.js"));
-
 var _server = _interopRequireDefault(require("./methods/server.js"));
-
 var _simulate = _interopRequireDefault(require("./methods/simulate.js"));
-
 // order is important
-var METHODS = [_native["default"], // fastest
+var METHODS = [_native["default"],
+// fastest
 _indexedDb["default"], _localstorage["default"], _server["default"]];
-
 function chooseMethod(options) {
-  var chooseMethods = [].concat(options.methods, METHODS).filter(Boolean); // directly chosen
+  var chooseMethods = [].concat(options.methods, METHODS).filter(Boolean);
 
+  // directly chosen
   if (options.type) {
     if (options.type === 'simulate') {
       // only use simulate-method if directly chosen
       return _simulate["default"];
     }
-
     var ret = chooseMethods.find(function (m) {
       return m.type === options.type;
     });
     if (!ret) throw new Error('method-type ' + options.type + ' not found');else return ret;
   }
+
   /**
    * if no webworker support is needed,
    * remove idb from the list so that localstorage is been chosen
    */
-
-
   if (!options.webWorkerSupport) {
     chooseMethods = chooseMethods.filter(function (m) {
       return m.type !== 'idb';
     });
   }
-
   var useMethod = chooseMethods.find(function (method) {
     return method.canBeUsed(options);
   });
@@ -417,13 +377,9 @@ exports.postMessage = postMessage;
 exports.removeMessagesById = removeMessagesById;
 exports.type = void 0;
 exports.writeMessage = writeMessage;
-
 var _util = require("../util.js");
-
 var _obliviousSet = require("oblivious-set");
-
 var _options = require("../options");
-
 /**
  * this method uses indexeddb to store the messages
  * There is currently no observerAPI for idb
@@ -432,58 +388,54 @@ var _options = require("../options");
  * When working on this, ensure to use these performance optimizations:
  * @link https://rxdb.info/slow-indexeddb.html
  */
+
 var microSeconds = _util.microSeconds;
 exports.microSeconds = microSeconds;
 var DB_PREFIX = 'pubkey.broadcast-channel-0-';
 var OBJECT_STORE_ID = 'messages';
+
 /**
  * Use relaxed durability for faster performance on all transactions.
  * @link https://nolanlawson.com/2021/08/22/speeding-up-indexeddb-reads-and-writes/
  */
-
 var TRANSACTION_SETTINGS = {
   durability: 'relaxed'
 };
 exports.TRANSACTION_SETTINGS = TRANSACTION_SETTINGS;
 var type = 'idb';
 exports.type = type;
-
 function getIdb() {
   if (typeof indexedDB !== 'undefined') return indexedDB;
-
   if (typeof window !== 'undefined') {
     if (typeof window.mozIndexedDB !== 'undefined') return window.mozIndexedDB;
     if (typeof window.webkitIndexedDB !== 'undefined') return window.webkitIndexedDB;
     if (typeof window.msIndexedDB !== 'undefined') return window.msIndexedDB;
   }
-
   return false;
 }
+
 /**
  * If possible, we should explicitly commit IndexedDB transactions
  * for better performance.
  * @link https://nolanlawson.com/2021/08/22/speeding-up-indexeddb-reads-and-writes/
  */
-
-
 function commitIndexedDBTransaction(tx) {
   if (tx.commit) {
     tx.commit();
   }
 }
-
 function createDatabase(channelName) {
-  var IndexedDB = getIdb(); // create table
+  var IndexedDB = getIdb();
 
+  // create table
   var dbName = DB_PREFIX + channelName;
+
   /**
    * All IndexedDB databases are opened without version
    * because it is a bit faster, especially on firefox
    * @link http://nparashuram.com/IndexedDB/perf/#Open%20Database%20with%20version
    */
-
   var openRequest = IndexedDB.open(dbName);
-
   openRequest.onupgradeneeded = function (ev) {
     var db = ev.target.result;
     db.createObjectStore(OBJECT_STORE_ID, {
@@ -491,24 +443,21 @@ function createDatabase(channelName) {
       autoIncrement: true
     });
   };
-
   var dbPromise = new Promise(function (res, rej) {
     openRequest.onerror = function (ev) {
       return rej(ev);
     };
-
     openRequest.onsuccess = function () {
       res(openRequest.result);
     };
   });
   return dbPromise;
 }
+
 /**
  * writes the new message to the database
  * so other readers can find it
  */
-
-
 function writeMessage(db, readerUuid, messageJson) {
   var time = new Date().getTime();
   var writeObject = {
@@ -521,17 +470,14 @@ function writeMessage(db, readerUuid, messageJson) {
     tx.oncomplete = function () {
       return res();
     };
-
     tx.onerror = function (ev) {
       return rej(ev);
     };
-
     var objectStore = tx.objectStore(OBJECT_STORE_ID);
     objectStore.add(writeObject);
     commitIndexedDBTransaction(tx);
   });
 }
-
 function getAllMessages(db) {
   var tx = db.transaction(OBJECT_STORE_ID, 'readonly', TRANSACTION_SETTINGS);
   var objectStore = tx.objectStore(OBJECT_STORE_ID);
@@ -539,10 +485,9 @@ function getAllMessages(db) {
   return new Promise(function (res) {
     objectStore.openCursor().onsuccess = function (ev) {
       var cursor = ev.target.result;
-
       if (cursor) {
-        ret.push(cursor.value); //alert("Name for SSN " + cursor.key + " is " + cursor.value.name);
-
+        ret.push(cursor.value);
+        //alert("Name for SSN " + cursor.key + " is " + cursor.value.name);
         cursor["continue"]();
       } else {
         commitIndexedDBTransaction(tx);
@@ -551,31 +496,28 @@ function getAllMessages(db) {
     };
   });
 }
-
 function getMessagesHigherThan(db, lastCursorId) {
   var tx = db.transaction(OBJECT_STORE_ID, 'readonly', TRANSACTION_SETTINGS);
   var objectStore = tx.objectStore(OBJECT_STORE_ID);
   var ret = [];
   var keyRangeValue = IDBKeyRange.bound(lastCursorId + 1, Infinity);
+
   /**
    * Optimization shortcut,
    * if getAll() can be used, do not use a cursor.
    * @link https://rxdb.info/slow-indexeddb.html
    */
-
   if (objectStore.getAll) {
     var getAllRequest = objectStore.getAll(keyRangeValue);
     return new Promise(function (res, rej) {
       getAllRequest.onerror = function (err) {
         return rej(err);
       };
-
       getAllRequest.onsuccess = function (e) {
         res(e.target.result);
       };
     });
   }
-
   function openCursor() {
     // Occasionally Safari will fail on IDBKeyRange.bound, this
     // catches that error, having it open the cursor to the first
@@ -587,17 +529,13 @@ function getMessagesHigherThan(db, lastCursorId) {
       return objectStore.openCursor();
     }
   }
-
   return new Promise(function (res, rej) {
     var openCursorRequest = openCursor();
-
     openCursorRequest.onerror = function (err) {
       return rej(err);
     };
-
     openCursorRequest.onsuccess = function (ev) {
       var cursor = ev.target.result;
-
       if (cursor) {
         if (cursor.value.id < lastCursorId + 1) {
           cursor["continue"](lastCursorId + 1);
@@ -612,7 +550,6 @@ function getMessagesHigherThan(db, lastCursorId) {
     };
   });
 }
-
 function removeMessagesById(db, ids) {
   var tx = db.transaction([OBJECT_STORE_ID], 'readwrite', TRANSACTION_SETTINGS);
   var objectStore = tx.objectStore(OBJECT_STORE_ID);
@@ -625,7 +562,6 @@ function removeMessagesById(db, ids) {
     });
   }));
 }
-
 function getOldMessages(db, ttl) {
   var olderThen = new Date().getTime() - ttl;
   var tx = db.transaction(OBJECT_STORE_ID, 'readonly', TRANSACTION_SETTINGS);
@@ -634,13 +570,11 @@ function getOldMessages(db, ttl) {
   return new Promise(function (res) {
     objectStore.openCursor().onsuccess = function (ev) {
       var cursor = ev.target.result;
-
       if (cursor) {
         var msgObk = cursor.value;
-
         if (msgObk.time < olderThen) {
-          ret.push(msgObk); //alert("Name for SSN " + cursor.key + " is " + cursor.value.name);
-
+          ret.push(msgObk);
+          //alert("Name for SSN " + cursor.key + " is " + cursor.value.name);
           cursor["continue"]();
         } else {
           // no more old messages,
@@ -654,7 +588,6 @@ function getOldMessages(db, ttl) {
     };
   });
 }
-
 function cleanOldMessages(db, ttl) {
   return getOldMessages(db, ttl).then(function (tooOld) {
     return removeMessagesById(db, tooOld.map(function (msg) {
@@ -662,7 +595,6 @@ function cleanOldMessages(db, ttl) {
     }));
   });
 }
-
 function create(channelName, options) {
   options = (0, _options.fillOptionsWithDefaults)(options);
   return createDatabase(channelName).then(function (db) {
@@ -672,7 +604,6 @@ function create(channelName, options) {
       channelName: channelName,
       options: options,
       uuid: (0, _util.randomToken)(),
-
       /**
        * emittedMessagesIds
        * contains all messages that have been emitted before
@@ -685,30 +616,27 @@ function create(channelName, options) {
       readQueuePromises: [],
       db: db
     };
+
     /**
      * Handle abrupt closes that do not originate from db.close().
      * This could happen, for example, if the underlying storage is
      * removed or if the user clears the database in the browser's
      * history preferences.
      */
-
     db.onclose = function () {
       state.closed = true;
       if (options.idb.onclose) options.idb.onclose();
     };
+
     /**
      * if service-workers are used,
      * we have no 'storage'-event if they post a message,
      * therefore we also have to set an interval
      */
-
-
     _readLoop(state);
-
     return state;
   });
 }
-
 function _readLoop(state) {
   if (state.closed) return;
   readNewMessages(state).then(function () {
@@ -717,25 +645,21 @@ function _readLoop(state) {
     return _readLoop(state);
   });
 }
-
 function _filterMessage(msgObj, state) {
   if (msgObj.uuid === state.uuid) return false; // send by own
-
   if (state.eMIs.has(msgObj.id)) return false; // already emitted
-
   if (msgObj.data.time < state.messagesCallbackTime) return false; // older then onMessageCallback
-
   return true;
 }
+
 /**
  * reads all new messages from the database and emits them
  */
-
-
 function readNewMessages(state) {
   // channel already closed
-  if (state.closed) return _util.PROMISE_RESOLVED_VOID; // if no one is listening, we do not need to scan for new messages
+  if (state.closed) return _util.PROMISE_RESOLVED_VOID;
 
+  // if no one is listening, we do not need to scan for new messages
   if (!state.messagesCallback) return _util.PROMISE_RESOLVED_VOID;
   return getMessagesHigherThan(state.db, state.lastCursorId).then(function (newerMessages) {
     var useMessages = newerMessages
@@ -743,21 +667,18 @@ function readNewMessages(state) {
      * there is a bug in iOS where the msgObj can be undefined some times
      * so we filter them out
      * @link https://github.com/pubkey/broadcast-channel/issues/19
-     */
-    .filter(function (msgObj) {
+     */.filter(function (msgObj) {
       return !!msgObj;
     }).map(function (msgObj) {
       if (msgObj.id > state.lastCursorId) {
         state.lastCursorId = msgObj.id;
       }
-
       return msgObj;
     }).filter(function (msgObj) {
       return _filterMessage(msgObj, state);
     }).sort(function (msgObjA, msgObjB) {
       return msgObjA.time - msgObjB.time;
     }); // sort by time
-
     useMessages.forEach(function (msgObj) {
       if (state.messagesCallback) {
         state.eMIs.add(msgObj.id);
@@ -767,12 +688,10 @@ function readNewMessages(state) {
     return _util.PROMISE_RESOLVED_VOID;
   });
 }
-
 function close(channelState) {
   channelState.closed = true;
   channelState.db.close();
 }
-
 function postMessage(channelState, messageJson) {
   channelState.writeBlockPromise = channelState.writeBlockPromise.then(function () {
     return writeMessage(channelState.db, channelState.uuid, messageJson);
@@ -784,24 +703,20 @@ function postMessage(channelState, messageJson) {
   });
   return channelState.writeBlockPromise;
 }
-
 function onMessage(channelState, fn, time) {
   channelState.messagesCallbackTime = time;
   channelState.messagesCallback = fn;
   readNewMessages(channelState);
 }
-
 function canBeUsed(options) {
   if (!options.support3PC) return false;
   var idb = getIdb();
   if (!idb) return false;
   return true;
 }
-
 function averageResponseTime(options) {
   return options.idb.fallbackInterval * 2;
 }
-
 var _default = {
   create: create,
   close: close,
@@ -832,13 +747,9 @@ exports.postMessage = postMessage;
 exports.removeStorageEventListener = removeStorageEventListener;
 exports.storageKey = storageKey;
 exports.type = void 0;
-
 var _obliviousSet = require("oblivious-set");
-
 var _options = require("../options");
-
 var _util = require("../util");
-
 /**
  * A localStorage-only method which uses localstorage and its 'storage'-event
  * This does not work inside of webworkers because they have no access to locastorage
@@ -846,41 +757,38 @@ var _util = require("../util");
  * @link https://caniuse.com/#feat=namevalue-storage
  * @link https://caniuse.com/#feat=indexeddb
  */
+
 var microSeconds = _util.microSeconds;
 exports.microSeconds = microSeconds;
 var KEY_PREFIX = 'pubkey.broadcastChannel-';
 var type = 'localstorage';
+
 /**
  * copied from crosstab
  * @link https://github.com/tejacques/crosstab/blob/master/src/crosstab.js#L32
  */
-
 exports.type = type;
-
 function getLocalStorage() {
   var localStorage;
   if (typeof window === 'undefined') return null;
-
   try {
     localStorage = window.localStorage;
     localStorage = window['ie8-eventlistener/storage'] || window.localStorage;
-  } catch (e) {// New versions of Firefox throw a Security exception
+  } catch (e) {
+    // New versions of Firefox throw a Security exception
     // if cookies are disabled. See
     // https://bugzilla.mozilla.org/show_bug.cgi?id=1028153
   }
-
   return localStorage;
 }
-
 function storageKey(channelName) {
   return KEY_PREFIX + channelName;
 }
+
 /**
  * writes the new message to the storage
  * and fires the storage-event so other readers can find it
  */
-
-
 function postMessage(channelState, messageJson) {
   return new Promise(function (res) {
     (0, _util.sleep)().then(function () {
@@ -893,12 +801,12 @@ function postMessage(channelState, messageJson) {
       };
       var value = JSON.stringify(writeObj);
       getLocalStorage().setItem(key, value);
+
       /**
        * StorageEvent does not fire the 'storage' event
        * in the window that changes the state of the local storage.
        * So we fire it manually
        */
-
       var ev = document.createEvent('Event');
       ev.initEvent('storage', true, true);
       ev.key = key;
@@ -908,52 +816,42 @@ function postMessage(channelState, messageJson) {
     });
   });
 }
-
 function addStorageEventListener(channelName, fn) {
   var key = storageKey(channelName);
-
   var listener = function listener(ev) {
     if (ev.key === key) {
       fn(JSON.parse(ev.newValue));
     }
   };
-
   window.addEventListener('storage', listener);
   return listener;
 }
-
 function removeStorageEventListener(listener) {
   window.removeEventListener('storage', listener);
 }
-
 function create(channelName, options) {
   options = (0, _options.fillOptionsWithDefaults)(options);
-
   if (!canBeUsed(options)) {
     throw new Error('BroadcastChannel: localstorage cannot be used');
   }
-
   var uuid = (0, _util.randomToken)();
+
   /**
    * eMIs
    * contains all messages that have been emitted before
    * @type {ObliviousSet}
    */
-
   var eMIs = new _obliviousSet.ObliviousSet(options.localstorage.removeTimeout);
   var state = {
     channelName: channelName,
     uuid: uuid,
     eMIs: eMIs // emittedMessagesIds
-
   };
+
   state.listener = addStorageEventListener(channelName, function (msgObj) {
     if (!state.messagesCallback) return; // no listener
-
     if (msgObj.uuid === uuid) return; // own message
-
     if (!msgObj.token || eMIs.has(msgObj.token)) return; // already emitted
-
     if (msgObj.data.time && msgObj.data.time < state.messagesCallbackTime) return; // too old
 
     eMIs.add(msgObj.token);
@@ -961,21 +859,17 @@ function create(channelName, options) {
   });
   return state;
 }
-
 function close(channelState) {
   removeStorageEventListener(channelState.listener);
 }
-
 function onMessage(channelState, fn, time) {
   channelState.messagesCallbackTime = time;
   channelState.messagesCallback = fn;
 }
-
 function canBeUsed(options) {
   if (!options.support3PC) return false;
   var ls = getLocalStorage();
   if (!ls) return false;
-
   try {
     var key = '__broadcastchannel_check';
     ls.setItem(key, 'works');
@@ -986,22 +880,17 @@ function canBeUsed(options) {
     // https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API#Private_Browsing_Incognito_modes
     return false;
   }
-
   return true;
 }
-
 function averageResponseTime() {
   var defaultTime = 120;
   var userAgent = navigator.userAgent.toLowerCase();
-
   if (userAgent.includes('safari') && !userAgent.includes('chrome')) {
     // safari is much slower so this time is higher
     return defaultTime * 2;
   }
-
   return defaultTime;
 }
-
 var _default = {
   create: create,
   close: close,
@@ -1027,20 +916,16 @@ exports.microSeconds = exports["default"] = void 0;
 exports.onMessage = onMessage;
 exports.postMessage = postMessage;
 exports.type = void 0;
-
 var _util = require("../util");
-
 var microSeconds = _util.microSeconds;
 exports.microSeconds = microSeconds;
 var type = 'native';
 exports.type = type;
-
 function create(channelName) {
   var state = {
     messagesCallback: null,
     bc: new BroadcastChannel(channelName),
     subFns: [] // subscriberFunctions
-
   };
 
   state.bc.onmessage = function (msg) {
@@ -1048,15 +933,12 @@ function create(channelName) {
       state.messagesCallback(msg.data);
     }
   };
-
   return state;
 }
-
 function close(channelState) {
   channelState.bc.close();
   channelState.subFns = [];
 }
-
 function postMessage(channelState, messageJson) {
   try {
     channelState.bc.postMessage(messageJson, false);
@@ -1065,11 +947,9 @@ function postMessage(channelState, messageJson) {
     return Promise.reject(err);
   }
 }
-
 function onMessage(channelState, fn) {
   channelState.messagesCallback = fn;
 }
-
 function canBeUsed(options) {
   /**
    * in the electron-renderer, isNode will be true even if we are in browser-context
@@ -1077,20 +957,16 @@ function canBeUsed(options) {
    */
   if (typeof window === 'undefined') return false;
   if (!options.support3PC) return false;
-
   if (typeof BroadcastChannel === 'function') {
     if (BroadcastChannel._pubkey) {
       throw new Error('BroadcastChannel: Do not overwrite window.BroadcastChannel with this module, this is not a polyfill');
     }
-
     return true;
   } else return false;
 }
-
 function averageResponseTime() {
   return 150;
 }
-
 var _default = {
   create: create,
   close: close,
@@ -1106,7 +982,7 @@ exports["default"] = _default;
 "use strict";
 
 var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
-
+var _typeof = require("@babel/runtime/helpers/typeof");
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
@@ -1124,59 +1000,41 @@ exports.removeStorageEventListener = removeStorageEventListener;
 exports.setupSocketConnection = setupSocketConnection;
 exports.storageKey = storageKey;
 exports.type = void 0;
-
-var _regenerator = _interopRequireDefault(require("@babel/runtime/regenerator"));
-
 var _asyncToGenerator2 = _interopRequireDefault(require("@babel/runtime/helpers/asyncToGenerator"));
-
 var _obliviousSet = require("oblivious-set");
-
 var _socket = require("socket.io-client");
-
 var _eccrypto = require("@toruslabs/eccrypto");
-
 var _metadataHelpers = require("@toruslabs/metadata-helpers");
-
 var _keccak = _interopRequireDefault(require("keccak"));
-
 var _util = require("../util");
-
 var _options = require("../options");
+function _regeneratorRuntime() { "use strict"; /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/facebook/regenerator/blob/main/LICENSE */ _regeneratorRuntime = function _regeneratorRuntime() { return exports; }; var exports = {}, Op = Object.prototype, hasOwn = Op.hasOwnProperty, $Symbol = "function" == typeof Symbol ? Symbol : {}, iteratorSymbol = $Symbol.iterator || "@@iterator", asyncIteratorSymbol = $Symbol.asyncIterator || "@@asyncIterator", toStringTagSymbol = $Symbol.toStringTag || "@@toStringTag"; function define(obj, key, value) { return Object.defineProperty(obj, key, { value: value, enumerable: !0, configurable: !0, writable: !0 }), obj[key]; } try { define({}, ""); } catch (err) { define = function define(obj, key, value) { return obj[key] = value; }; } function wrap(innerFn, outerFn, self, tryLocsList) { var protoGenerator = outerFn && outerFn.prototype instanceof Generator ? outerFn : Generator, generator = Object.create(protoGenerator.prototype), context = new Context(tryLocsList || []); return generator._invoke = function (innerFn, self, context) { var state = "suspendedStart"; return function (method, arg) { if ("executing" === state) throw new Error("Generator is already running"); if ("completed" === state) { if ("throw" === method) throw arg; return doneResult(); } for (context.method = method, context.arg = arg;;) { var delegate = context.delegate; if (delegate) { var delegateResult = maybeInvokeDelegate(delegate, context); if (delegateResult) { if (delegateResult === ContinueSentinel) continue; return delegateResult; } } if ("next" === context.method) context.sent = context._sent = context.arg;else if ("throw" === context.method) { if ("suspendedStart" === state) throw state = "completed", context.arg; context.dispatchException(context.arg); } else "return" === context.method && context.abrupt("return", context.arg); state = "executing"; var record = tryCatch(innerFn, self, context); if ("normal" === record.type) { if (state = context.done ? "completed" : "suspendedYield", record.arg === ContinueSentinel) continue; return { value: record.arg, done: context.done }; } "throw" === record.type && (state = "completed", context.method = "throw", context.arg = record.arg); } }; }(innerFn, self, context), generator; } function tryCatch(fn, obj, arg) { try { return { type: "normal", arg: fn.call(obj, arg) }; } catch (err) { return { type: "throw", arg: err }; } } exports.wrap = wrap; var ContinueSentinel = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} var IteratorPrototype = {}; define(IteratorPrototype, iteratorSymbol, function () { return this; }); var getProto = Object.getPrototypeOf, NativeIteratorPrototype = getProto && getProto(getProto(values([]))); NativeIteratorPrototype && NativeIteratorPrototype !== Op && hasOwn.call(NativeIteratorPrototype, iteratorSymbol) && (IteratorPrototype = NativeIteratorPrototype); var Gp = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(IteratorPrototype); function defineIteratorMethods(prototype) { ["next", "throw", "return"].forEach(function (method) { define(prototype, method, function (arg) { return this._invoke(method, arg); }); }); } function AsyncIterator(generator, PromiseImpl) { function invoke(method, arg, resolve, reject) { var record = tryCatch(generator[method], generator, arg); if ("throw" !== record.type) { var result = record.arg, value = result.value; return value && "object" == _typeof(value) && hasOwn.call(value, "__await") ? PromiseImpl.resolve(value.__await).then(function (value) { invoke("next", value, resolve, reject); }, function (err) { invoke("throw", err, resolve, reject); }) : PromiseImpl.resolve(value).then(function (unwrapped) { result.value = unwrapped, resolve(result); }, function (error) { return invoke("throw", error, resolve, reject); }); } reject(record.arg); } var previousPromise; this._invoke = function (method, arg) { function callInvokeWithMethodAndArg() { return new PromiseImpl(function (resolve, reject) { invoke(method, arg, resolve, reject); }); } return previousPromise = previousPromise ? previousPromise.then(callInvokeWithMethodAndArg, callInvokeWithMethodAndArg) : callInvokeWithMethodAndArg(); }; } function maybeInvokeDelegate(delegate, context) { var method = delegate.iterator[context.method]; if (undefined === method) { if (context.delegate = null, "throw" === context.method) { if (delegate.iterator["return"] && (context.method = "return", context.arg = undefined, maybeInvokeDelegate(delegate, context), "throw" === context.method)) return ContinueSentinel; context.method = "throw", context.arg = new TypeError("The iterator does not provide a 'throw' method"); } return ContinueSentinel; } var record = tryCatch(method, delegate.iterator, context.arg); if ("throw" === record.type) return context.method = "throw", context.arg = record.arg, context.delegate = null, ContinueSentinel; var info = record.arg; return info ? info.done ? (context[delegate.resultName] = info.value, context.next = delegate.nextLoc, "return" !== context.method && (context.method = "next", context.arg = undefined), context.delegate = null, ContinueSentinel) : info : (context.method = "throw", context.arg = new TypeError("iterator result is not an object"), context.delegate = null, ContinueSentinel); } function pushTryEntry(locs) { var entry = { tryLoc: locs[0] }; 1 in locs && (entry.catchLoc = locs[1]), 2 in locs && (entry.finallyLoc = locs[2], entry.afterLoc = locs[3]), this.tryEntries.push(entry); } function resetTryEntry(entry) { var record = entry.completion || {}; record.type = "normal", delete record.arg, entry.completion = record; } function Context(tryLocsList) { this.tryEntries = [{ tryLoc: "root" }], tryLocsList.forEach(pushTryEntry, this), this.reset(!0); } function values(iterable) { if (iterable) { var iteratorMethod = iterable[iteratorSymbol]; if (iteratorMethod) return iteratorMethod.call(iterable); if ("function" == typeof iterable.next) return iterable; if (!isNaN(iterable.length)) { var i = -1, next = function next() { for (; ++i < iterable.length;) { if (hasOwn.call(iterable, i)) return next.value = iterable[i], next.done = !1, next; } return next.value = undefined, next.done = !0, next; }; return next.next = next; } } return { next: doneResult }; } function doneResult() { return { value: undefined, done: !0 }; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, define(Gp, "constructor", GeneratorFunctionPrototype), define(GeneratorFunctionPrototype, "constructor", GeneratorFunction), GeneratorFunction.displayName = define(GeneratorFunctionPrototype, toStringTagSymbol, "GeneratorFunction"), exports.isGeneratorFunction = function (genFun) { var ctor = "function" == typeof genFun && genFun.constructor; return !!ctor && (ctor === GeneratorFunction || "GeneratorFunction" === (ctor.displayName || ctor.name)); }, exports.mark = function (genFun) { return Object.setPrototypeOf ? Object.setPrototypeOf(genFun, GeneratorFunctionPrototype) : (genFun.__proto__ = GeneratorFunctionPrototype, define(genFun, toStringTagSymbol, "GeneratorFunction")), genFun.prototype = Object.create(Gp), genFun; }, exports.awrap = function (arg) { return { __await: arg }; }, defineIteratorMethods(AsyncIterator.prototype), define(AsyncIterator.prototype, asyncIteratorSymbol, function () { return this; }), exports.AsyncIterator = AsyncIterator, exports.async = function (innerFn, outerFn, self, tryLocsList, PromiseImpl) { void 0 === PromiseImpl && (PromiseImpl = Promise); var iter = new AsyncIterator(wrap(innerFn, outerFn, self, tryLocsList), PromiseImpl); return exports.isGeneratorFunction(outerFn) ? iter : iter.next().then(function (result) { return result.done ? result.value : iter.next(); }); }, defineIteratorMethods(Gp), define(Gp, toStringTagSymbol, "Generator"), define(Gp, iteratorSymbol, function () { return this; }), define(Gp, "toString", function () { return "[object Generator]"; }), exports.keys = function (object) { var keys = []; for (var key in object) { keys.push(key); } return keys.reverse(), function next() { for (; keys.length;) { var key = keys.pop(); if (key in object) return next.value = key, next.done = !1, next; } return next.done = !0, next; }; }, exports.values = values, Context.prototype = { constructor: Context, reset: function reset(skipTempReset) { if (this.prev = 0, this.next = 0, this.sent = this._sent = undefined, this.done = !1, this.delegate = null, this.method = "next", this.arg = undefined, this.tryEntries.forEach(resetTryEntry), !skipTempReset) for (var name in this) { "t" === name.charAt(0) && hasOwn.call(this, name) && !isNaN(+name.slice(1)) && (this[name] = undefined); } }, stop: function stop() { this.done = !0; var rootRecord = this.tryEntries[0].completion; if ("throw" === rootRecord.type) throw rootRecord.arg; return this.rval; }, dispatchException: function dispatchException(exception) { if (this.done) throw exception; var context = this; function handle(loc, caught) { return record.type = "throw", record.arg = exception, context.next = loc, caught && (context.method = "next", context.arg = undefined), !!caught; } for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i], record = entry.completion; if ("root" === entry.tryLoc) return handle("end"); if (entry.tryLoc <= this.prev) { var hasCatch = hasOwn.call(entry, "catchLoc"), hasFinally = hasOwn.call(entry, "finallyLoc"); if (hasCatch && hasFinally) { if (this.prev < entry.catchLoc) return handle(entry.catchLoc, !0); if (this.prev < entry.finallyLoc) return handle(entry.finallyLoc); } else if (hasCatch) { if (this.prev < entry.catchLoc) return handle(entry.catchLoc, !0); } else { if (!hasFinally) throw new Error("try statement without catch or finally"); if (this.prev < entry.finallyLoc) return handle(entry.finallyLoc); } } } }, abrupt: function abrupt(type, arg) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.tryLoc <= this.prev && hasOwn.call(entry, "finallyLoc") && this.prev < entry.finallyLoc) { var finallyEntry = entry; break; } } finallyEntry && ("break" === type || "continue" === type) && finallyEntry.tryLoc <= arg && arg <= finallyEntry.finallyLoc && (finallyEntry = null); var record = finallyEntry ? finallyEntry.completion : {}; return record.type = type, record.arg = arg, finallyEntry ? (this.method = "next", this.next = finallyEntry.finallyLoc, ContinueSentinel) : this.complete(record); }, complete: function complete(record, afterLoc) { if ("throw" === record.type) throw record.arg; return "break" === record.type || "continue" === record.type ? this.next = record.arg : "return" === record.type ? (this.rval = this.arg = record.arg, this.method = "return", this.next = "end") : "normal" === record.type && afterLoc && (this.next = afterLoc), ContinueSentinel; }, finish: function finish(finallyLoc) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.finallyLoc === finallyLoc) return this.complete(entry.completion, entry.afterLoc), resetTryEntry(entry), ContinueSentinel; } }, "catch": function _catch(tryLoc) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.tryLoc === tryLoc) { var record = entry.completion; if ("throw" === record.type) { var thrown = record.arg; resetTryEntry(entry); } return thrown; } } throw new Error("illegal catch attempt"); }, delegateYield: function delegateYield(iterable, resultName, nextLoc) { return this.delegate = { iterator: values(iterable), resultName: resultName, nextLoc: nextLoc }, "next" === this.method && (this.arg = undefined), ContinueSentinel; } }, exports; }
+var microSeconds = _util.microSeconds;
 
-/**
- * A localStorage-only method which uses localstorage and its 'storage'-event
- * This does not work inside of webworkers because they have no access to locastorage
- * This is basically implemented to support IE9 or your grandmothers toaster.
- * @link https://caniuse.com/#feat=namevalue-storage
- * @link https://caniuse.com/#feat=indexeddb
- */
-var microSeconds = _util.microSeconds; // PASS IN STRING/BUFFER TO GET BUFFER
-
+// PASS IN STRING/BUFFER TO GET BUFFER
 exports.microSeconds = microSeconds;
-
 function keccak256(a) {
   return (0, _keccak["default"])('keccak256').update(a).digest();
 }
-
 var KEY_PREFIX = 'pubkey.broadcastChannel-';
 var type = 'server';
 exports.type = type;
 var SOCKET_CONN_INSTANCE = null;
-
+// used to decide to reconnect socket e.g. when socket connection is disconnected unexpectedly
+var runningChannels = new Set();
 function storageKey(channelName) {
   return KEY_PREFIX + channelName;
 }
+
 /**
  * writes the new message to the storage
  * and fires the storage-event so other readers can find it
  */
-
-
 function postMessage(channelState, messageJson) {
   return new Promise(function (res, rej) {
-    (0, _util.sleep)().then( /*#__PURE__*/(0, _asyncToGenerator2["default"])( /*#__PURE__*/_regenerator["default"].mark(function _callee() {
+    (0, _util.sleep)().then( /*#__PURE__*/(0, _asyncToGenerator2["default"])( /*#__PURE__*/_regeneratorRuntime().mark(function _callee() {
       var key, channelEncPrivKey, encData, body;
-      return _regenerator["default"].wrap(function _callee$(_context) {
+      return _regeneratorRuntime().wrap(function _callee$(_context) {
         while (1) {
           switch (_context.prev = _context.next) {
             case 0:
@@ -1189,14 +1047,12 @@ function postMessage(channelState, messageJson) {
                 data: messageJson,
                 uuid: channelState.uuid
               });
-
             case 4:
               encData = _context.sent;
               _context.t0 = (0, _eccrypto.getPublic)(channelEncPrivKey).toString('hex');
               _context.t1 = encData;
               _context.next = 9;
               return (0, _eccrypto.sign)(channelEncPrivKey, keccak256(encData));
-
             case 9:
               _context.t2 = _context.sent.toString('hex');
               body = {
@@ -1212,7 +1068,6 @@ function postMessage(channelState, messageJson) {
                   'Content-Type': 'application/json; charset=utf-8'
                 }
               }).then(res)["catch"](rej));
-
             case 13:
             case "end":
               return _context.stop();
@@ -1222,12 +1077,10 @@ function postMessage(channelState, messageJson) {
     })));
   });
 }
-
 function getSocketInstance(serverUrl) {
   if (SOCKET_CONN_INSTANCE) {
     return SOCKET_CONN_INSTANCE;
   }
-
   var SOCKET_CONN = (0, _socket.io)(serverUrl, {
     transports: ['websocket', 'polling'],
     // use WebSocket first, if available
@@ -1238,30 +1091,25 @@ function getSocketInstance(serverUrl) {
   SOCKET_CONN.on('connect_error', function (err) {
     // revert to classic upgrade
     SOCKET_CONN.io.opts.transports = ['polling', 'websocket'];
-
     _util.log.error('connect error', err);
   });
-  SOCKET_CONN.on('connect', /*#__PURE__*/(0, _asyncToGenerator2["default"])( /*#__PURE__*/_regenerator["default"].mark(function _callee2() {
+  SOCKET_CONN.on('connect', /*#__PURE__*/(0, _asyncToGenerator2["default"])( /*#__PURE__*/_regeneratorRuntime().mark(function _callee2() {
     var engine;
-    return _regenerator["default"].wrap(function _callee2$(_context2) {
+    return _regeneratorRuntime().wrap(function _callee2$(_context2) {
       while (1) {
         switch (_context2.prev = _context2.next) {
           case 0:
             engine = SOCKET_CONN.io.engine;
-
             _util.log.debug('initially connected to', engine.transport.name); // in most cases, prints "polling"
-
-
             engine.once('upgrade', function () {
               // called when the transport is upgraded (i.e. from HTTP long-polling to WebSocket)
               _util.log.debug('upgraded', engine.transport.name); // in most cases, prints "websocket"
-
             });
+
             engine.once('close', function (reason) {
               // called when the underlying connection is closed
               _util.log.debug('connection closed', reason);
             });
-
           case 4:
           case "end":
             return _context2.stop();
@@ -1271,84 +1119,70 @@ function getSocketInstance(serverUrl) {
   })));
   SOCKET_CONN.on('error', function (err) {
     _util.log.error('socket errored', err);
-
     SOCKET_CONN.disconnect();
-  });
-  SOCKET_CONN.on('disconnect', function () {
-    _util.log.debug('socket disconnected');
   });
   SOCKET_CONN_INSTANCE = SOCKET_CONN;
   return SOCKET_CONN;
 }
-
 function setupSocketConnection(serverUrl, channelName, fn) {
   var socketConn = getSocketInstance(serverUrl);
   var key = storageKey(channelName);
   var channelEncPrivKey = keccak256(key);
   var channelPubKey = (0, _eccrypto.getPublic)(channelEncPrivKey).toString('hex');
-
   if (socketConn.connected) {
     socketConn.emit('check_auth_status', channelPubKey);
   } else {
     socketConn.once('connect', function () {
       _util.log.debug('connected with socket');
-
       socketConn.emit('check_auth_status', channelPubKey);
     });
   }
-
+  var reconnect = function reconnect() {
+    socketConn.once('connect', /*#__PURE__*/(0, _asyncToGenerator2["default"])( /*#__PURE__*/_regeneratorRuntime().mark(function _callee3() {
+      return _regeneratorRuntime().wrap(function _callee3$(_context3) {
+        while (1) {
+          switch (_context3.prev = _context3.next) {
+            case 0:
+              socketConn.emit('check_auth_status', channelPubKey);
+            case 1:
+            case "end":
+              return _context3.stop();
+          }
+        }
+      }, _callee3);
+    })));
+  };
   var visibilityListener = function visibilityListener() {
     // if channel is closed, then remove the listener.
     if (!socketConn) {
       document.removeEventListener('visibilitychange', visibilityListener);
       return;
-    } // if not connected, then wait for connection and ping server for latest msg.
-
-
+    }
+    // if not connected, then wait for connection and ping server for latest msg.
     if (!socketConn.connected && document.visibilityState === 'visible') {
-      socketConn.once('connect', /*#__PURE__*/(0, _asyncToGenerator2["default"])( /*#__PURE__*/_regenerator["default"].mark(function _callee3() {
-        return _regenerator["default"].wrap(function _callee3$(_context3) {
-          while (1) {
-            switch (_context3.prev = _context3.next) {
-              case 0:
-                socketConn.emit('check_auth_status', channelPubKey);
-
-              case 1:
-              case "end":
-                return _context3.stop();
-            }
-          }
-        }, _callee3);
-      })));
+      reconnect();
     }
   };
-
   var listener = /*#__PURE__*/function () {
-    var _ref4 = (0, _asyncToGenerator2["default"])( /*#__PURE__*/_regenerator["default"].mark(function _callee4(ev) {
+    var _ref4 = (0, _asyncToGenerator2["default"])( /*#__PURE__*/_regeneratorRuntime().mark(function _callee4(ev) {
       var decData;
-      return _regenerator["default"].wrap(function _callee4$(_context4) {
+      return _regeneratorRuntime().wrap(function _callee4$(_context4) {
         while (1) {
           switch (_context4.prev = _context4.next) {
             case 0:
               _context4.prev = 0;
               _context4.next = 3;
               return (0, _metadataHelpers.decryptData)(channelEncPrivKey.toString('hex'), ev);
-
             case 3:
               decData = _context4.sent;
-
               _util.log.info(decData);
-
               fn(decData);
               _context4.next = 11;
               break;
-
             case 8:
               _context4.prev = 8;
               _context4.t0 = _context4["catch"](0);
-
               _util.log.error(_context4.t0);
-
             case 11:
             case "end":
               return _context4.stop();
@@ -1356,37 +1190,38 @@ function setupSocketConnection(serverUrl, channelName, fn) {
         }
       }, _callee4, null, [[0, 8]]);
     }));
-
     return function listener(_x) {
       return _ref4.apply(this, arguments);
     };
   }();
-
+  socketConn.on('disconnect', function () {
+    _util.log.debug('socket disconnected');
+    if (runningChannels.has(channelName)) {
+      _util.log.error('socket disconnected unexpectedly, reconnecting socket');
+      reconnect();
+    }
+  });
   socketConn.on(channelPubKey + "_success", listener);
   document.addEventListener('visibilitychange', visibilityListener);
   return socketConn;
 }
-
 function removeStorageEventListener() {
   if (SOCKET_CONN_INSTANCE) {
     SOCKET_CONN_INSTANCE.disconnect();
   }
 }
-
 function create(channelName, options) {
   options = (0, _options.fillOptionsWithDefaults)(options);
-
   if (!canBeUsed(options)) {
     throw new Error('BroadcastChannel: server cannot be used');
   }
-
   var uuid = (0, _util.randomToken)();
+
   /**
    * eMIs
    * contains all messages that have been emitted before
    * @type {ObliviousSet}
    */
-
   var eMIs = new _obliviousSet.ObliviousSet(options.server.removeTimeout);
   var state = {
     channelName: channelName,
@@ -1398,19 +1233,19 @@ function create(channelName, options) {
   if (options.server.timeout) state.timeout = options.server.timeout;
   setupSocketConnection(options.server.url, channelName, function (msgObj) {
     if (!state.messagesCallback) return; // no listener
-
     if (msgObj.uuid === state.uuid) return; // own message
-
     if (!msgObj.token || state.eMIs.has(msgObj.token)) return; // already emitted
     // if (msgObj.data.time && msgObj.data.time < state.messagesCallbackTime) return; // too old
 
     state.eMIs.add(msgObj.token);
     state.messagesCallback(msgObj.data);
   });
+  runningChannels.add(channelName);
   return state;
 }
-
-function close() {// give 2 sec for all msgs which are in transit to be consumed
+function close(channelState) {
+  runningChannels["delete"](channelState.channelName);
+  // give 2 sec for all msgs which are in transit to be consumed
   // by receiver.
   // window.setTimeout(() => {
   //     removeStorageEventListener(channelState);
@@ -1422,17 +1257,14 @@ function onMessage(channelState, fn, time) {
   channelState.messagesCallbackTime = time;
   channelState.messagesCallback = fn;
 }
-
 function canBeUsed() {
   return true;
 }
-
 function averageResponseTime() {
-  var defaultTime = 500; // TODO: Maybe increase it based on operation
-
+  var defaultTime = 500;
+  // TODO: Maybe increase it based on operation
   return defaultTime;
 }
-
 var _default = {
   create: create,
   close: close,
@@ -1444,7 +1276,7 @@ var _default = {
   microSeconds: microSeconds
 };
 exports["default"] = _default;
-},{"../options":10,"../util":11,"@babel/runtime/helpers/asyncToGenerator":14,"@babel/runtime/helpers/interopRequireDefault":16,"@babel/runtime/regenerator":17,"@toruslabs/eccrypto":19,"@toruslabs/metadata-helpers":21,"keccak":506,"oblivious-set":535,"socket.io-client":570}],9:[function(require,module,exports){
+},{"../options":10,"../util":11,"@babel/runtime/helpers/asyncToGenerator":14,"@babel/runtime/helpers/interopRequireDefault":16,"@babel/runtime/helpers/typeof":17,"@toruslabs/eccrypto":19,"@toruslabs/metadata-helpers":21,"keccak":506,"oblivious-set":535,"socket.io-client":570}],9:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -1458,15 +1290,12 @@ exports.microSeconds = exports["default"] = void 0;
 exports.onMessage = onMessage;
 exports.postMessage = postMessage;
 exports.type = void 0;
-
 var _util = require("../util");
-
 var microSeconds = _util.microSeconds;
 exports.microSeconds = microSeconds;
 var type = 'simulate';
 exports.type = type;
 var SIMULATE_CHANNELS = new Set();
-
 function create(channelName) {
   var state = {
     name: channelName,
@@ -1475,11 +1304,9 @@ function create(channelName) {
   SIMULATE_CHANNELS.add(state);
   return state;
 }
-
 function close(channelState) {
   SIMULATE_CHANNELS["delete"](channelState);
 }
-
 function postMessage(channelState, messageJson) {
   return new Promise(function (res) {
     return setTimeout(function () {
@@ -1497,19 +1324,15 @@ function postMessage(channelState, messageJson) {
     }, 5);
   });
 }
-
 function onMessage(channelState, fn) {
   channelState.messagesCallback = fn;
 }
-
 function canBeUsed() {
   return true;
 }
-
 function averageResponseTime() {
   return 5;
 }
-
 var _default = {
   create: create,
   close: close,
@@ -1528,31 +1351,33 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.fillOptionsWithDefaults = fillOptionsWithDefaults;
-
 var _util = require("./util");
-
 function fillOptionsWithDefaults() {
   var originalOptions = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
   var options = JSON.parse(JSON.stringify(originalOptions));
-  if (typeof options.support3PC === 'undefined') options.support3PC = (0, _util.are3PCSupported)(); // main
+  if (typeof options.support3PC === 'undefined') options.support3PC = (0, _util.are3PCSupported)();
 
-  if (typeof options.webWorkerSupport === 'undefined') options.webWorkerSupport = true; // indexed-db
+  // main
+  if (typeof options.webWorkerSupport === 'undefined') options.webWorkerSupport = true;
 
-  if (!options.idb) options.idb = {}; //  after this time the messages get deleted
-
+  // indexed-db
+  if (!options.idb) options.idb = {};
+  //  after this time the messages get deleted
   if (!options.idb.ttl) options.idb.ttl = 1000 * 45;
-  if (!options.idb.fallbackInterval) options.idb.fallbackInterval = 150; //  handles abrupt db onclose events.
+  if (!options.idb.fallbackInterval) options.idb.fallbackInterval = 150;
+  //  handles abrupt db onclose events.
+  if (originalOptions.idb && typeof originalOptions.idb.onclose === 'function') options.idb.onclose = originalOptions.idb.onclose;
 
-  if (originalOptions.idb && typeof originalOptions.idb.onclose === 'function') options.idb.onclose = originalOptions.idb.onclose; // localstorage
-
+  // localstorage
   if (!options.localstorage) options.localstorage = {};
-  if (!options.localstorage.removeTimeout) options.localstorage.removeTimeout = 1000 * 60; // server
+  if (!options.localstorage.removeTimeout) options.localstorage.removeTimeout = 1000 * 60;
 
+  // server
   if (!options.server) options.server = {};
   if (!options.server.url) options.server.url = 'https://broadcast-server.tor.us';
   if (!options.server.removeTimeout) options.server.removeTimeout = 1000 * 60 * 5; // 5 minutes
-  // custom methods
 
+  // custom methods
   if (originalOptions.methods) options.methods = originalOptions.methods;
   return options;
 }
@@ -1560,7 +1385,6 @@ function fillOptionsWithDefaults() {
 "use strict";
 
 var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
-
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
@@ -1573,11 +1397,8 @@ exports.randomInt = randomInt;
 exports.randomToken = randomToken;
 exports.setLogLevel = void 0;
 exports.sleep = sleep;
-
 var _bowser = _interopRequireDefault(require("bowser"));
-
 var _loglevel = _interopRequireDefault(require("loglevel"));
-
 /**
  * returns true if the given object is a promise
  */
@@ -1588,14 +1409,12 @@ function isPromise(obj) {
     return false;
   }
 }
-
 var PROMISE_RESOLVED_FALSE = Promise.resolve(false);
 exports.PROMISE_RESOLVED_FALSE = PROMISE_RESOLVED_FALSE;
 var PROMISE_RESOLVED_TRUE = Promise.resolve(true);
 exports.PROMISE_RESOLVED_TRUE = PROMISE_RESOLVED_TRUE;
 var PROMISE_RESOLVED_VOID = Promise.resolve();
 exports.PROMISE_RESOLVED_VOID = PROMISE_RESOLVED_VOID;
-
 function sleep(time, resolveWith) {
   if (!time) time = 0;
   return new Promise(function (res) {
@@ -1604,21 +1423,19 @@ function sleep(time, resolveWith) {
     }, time);
   });
 }
-
 function randomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1) + min);
 }
+
 /**
  * https://stackoverflow.com/a/8084248
  */
-
-
 function randomToken() {
   return Math.random().toString(36).substring(2);
 }
-
 var lastMs = 0;
 var additional = 0;
+
 /**
  * returns the current time in micro-seconds,
  * WARNING: This is a pseudo-function
@@ -1626,10 +1443,8 @@ var additional = 0;
  * This is enough in browsers, and this function will not be used in nodejs.
  * The main reason for this hack is to ensure that BroadcastChannel behaves equal to production when it is used in fast-running unit tests.
  */
-
 function microSeconds() {
   var ms = new Date().getTime();
-
   if (ms === lastMs) {
     additional++;
     return ms * 1000 + additional;
@@ -1639,37 +1454,28 @@ function microSeconds() {
     return ms * 1000;
   }
 }
-
 function are3PCSupported() {
   if (typeof navigator === 'undefined') return false;
-
   var browserInfo = _bowser["default"].parse(navigator.userAgent);
-
   log.info(JSON.stringify(browserInfo), 'current browser info');
-  var thirdPartyCookieSupport = true; // brave
-
+  var thirdPartyCookieSupport = true;
+  // brave
   if (navigator.brave) {
     thirdPartyCookieSupport = false;
-  } // All webkit & gecko engine instances use itp (intelligent tracking prevention -
+  }
+  // All webkit & gecko engine instances use itp (intelligent tracking prevention -
   // https://webkit.org/tracking-prevention/#intelligent-tracking-prevention-itp)
-
-
   if (browserInfo.engine.name === _bowser["default"].ENGINE_MAP.WebKit || browserInfo.engine.name === _bowser["default"].ENGINE_MAP.Gecko) {
     thirdPartyCookieSupport = false;
   }
-
   return thirdPartyCookieSupport;
 }
-
 var log = _loglevel["default"].getLogger('broadcast-channel');
-
 exports.log = log;
 log.setLevel('error');
-
 var setLogLevel = function setLogLevel(level) {
   log.setLevel(level);
 };
-
 exports.setLogLevel = setLogLevel;
 },{"@babel/runtime/helpers/interopRequireDefault":16,"bowser":56,"loglevel":528}],12:[function(require,module,exports){
 "use strict";
@@ -1724,34 +1530,28 @@ function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) {
     reject(error);
     return;
   }
-
   if (info.done) {
     resolve(value);
   } else {
     Promise.resolve(value).then(_next, _throw);
   }
 }
-
 function _asyncToGenerator(fn) {
   return function () {
     var self = this,
-        args = arguments;
+      args = arguments;
     return new Promise(function (resolve, reject) {
       var gen = fn.apply(self, args);
-
       function _next(value) {
         asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value);
       }
-
       function _throw(err) {
         asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err);
       }
-
       _next(undefined);
     });
   };
 }
-
 module.exports = _asyncToGenerator, module.exports.__esModule = true, module.exports["default"] = module.exports;
 },{}],15:[function(require,module,exports){
 function _defineProperty(obj, key, value) {
@@ -1765,10 +1565,8 @@ function _defineProperty(obj, key, value) {
   } else {
     obj[key] = value;
   }
-
   return obj;
 }
-
 module.exports = _defineProperty, module.exports.__esModule = true, module.exports["default"] = module.exports;
 },{}],16:[function(require,module,exports){
 function _interopRequireDefault(obj) {
@@ -1776,12 +1574,19 @@ function _interopRequireDefault(obj) {
     "default": obj
   };
 }
-
 module.exports = _interopRequireDefault, module.exports.__esModule = true, module.exports["default"] = module.exports;
 },{}],17:[function(require,module,exports){
-module.exports = require("regenerator-runtime");
+function _typeof(obj) {
+  "@babel/helpers - typeof";
 
-},{"regenerator-runtime":557}],18:[function(require,module,exports){
+  return (module.exports = _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) {
+    return typeof obj;
+  } : function (obj) {
+    return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
+  }, module.exports.__esModule = true, module.exports["default"] = module.exports), _typeof(obj);
+}
+module.exports = _typeof, module.exports.__esModule = true, module.exports["default"] = module.exports;
+},{}],18:[function(require,module,exports){
 
 /**
  * Expose `Emitter`.
@@ -2283,6 +2088,7 @@ __webpack_require__.r(__webpack_exports__);
 __webpack_require__.d(__webpack_exports__, {
   "clearAPIKey": () => (/* binding */ clearAPIKey),
   "clearEmbedHost": () => (/* binding */ clearEmbedHost),
+  "enableSentryTracing": () => (/* binding */ enableSentryTracing),
   "gatewayAuthHeader": () => (/* binding */ gatewayAuthHeader),
   "gatewayEmbedHostHeader": () => (/* binding */ gatewayEmbedHostHeader),
   "generateJsonRPCObject": () => (/* binding */ generateJsonRPCObject),
@@ -2293,6 +2099,7 @@ __webpack_require__.d(__webpack_exports__, {
   "post": () => (/* binding */ post),
   "promiseRace": () => (/* binding */ promiseRace),
   "promiseTimeout": () => (/* binding */ promiseTimeout),
+  "put": () => (/* binding */ put),
   "remove": () => (/* binding */ remove),
   "setAPIKey": () => (/* binding */ setAPIKey),
   "setEmbedHost": () => (/* binding */ setEmbedHost),
@@ -2325,6 +2132,14 @@ let embedHost = ""; // #region API Keys
 
 const gatewayAuthHeader = "x-api-key";
 const gatewayEmbedHostHeader = "x-embed-host";
+let sentry = null;
+const tracingOrigins = [];
+const tracingPaths = [];
+function enableSentryTracing(_sentry, _tracingOrigins, _tracingPaths) {
+  sentry = _sentry;
+  tracingOrigins.push(..._tracingOrigins);
+  tracingPaths.push(..._tracingPaths);
+}
 function setEmbedHost(embedHost_) {
   embedHost = embedHost_;
 }
@@ -2346,6 +2161,32 @@ function getAPIKey() {
 
 function setLogLevel(level) {
   log.setLevel(level);
+}
+
+async function fetchAndTrace(url, init) {
+  let _url = null;
+
+  try {
+    _url = new URL(url);
+  } catch (error) {}
+
+  if (sentry && _url && (tracingOrigins.includes(_url.origin) || tracingPaths.includes(_url.pathname))) {
+    const transaction = sentry.startTransaction({
+      name: url
+    });
+    const span = transaction.startChild({
+      op: "http"
+    }); // This function returns a Span
+
+    const response = await fetch(url, init);
+    span.finish(); // Remember that only finished spans will be sent with the transaction
+
+    transaction.finish(); // Finishing the transaction will send it to Sentry
+
+    return response;
+  }
+
+  return fetch(url, init);
 }
 
 function getApiKeyHeaders() {
@@ -2384,7 +2225,7 @@ const get = async function (url) {
   const options = external_lodash_merge_default()(defaultOptions, options_, {
     method: "GET"
   });
-  const response = await fetch(url, options);
+  const response = await fetchAndTrace(url, options);
 
   if (response.ok) {
     return response.json();
@@ -2424,7 +2265,7 @@ const post = function (url) {
     options.body = JSON.stringify(data);
   }
 
-  return promiseTimeout(customOptions.timeout || 60000, fetch(url, options).then(response => {
+  return promiseTimeout(customOptions.timeout || 60000, fetchAndTrace(url, options).then(response => {
     if (response.ok) {
       return response.json();
     }
@@ -2466,7 +2307,49 @@ const patch = async function (url) {
     options.body = JSON.stringify(data);
   }
 
-  const response = await fetch(url, options);
+  const response = await fetchAndTrace(url, options);
+
+  if (response.ok) {
+    return response.json();
+  }
+
+  debugLogResponse(response);
+  throw response;
+};
+const put = async function (url) {
+  let data = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+  let options_ = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+  let customOptions = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
+  const defaultOptions = {
+    mode: "cors",
+    headers: {
+      "Content-Type": "application/json; charset=utf-8"
+    }
+  }; // for multipart request browser/client will add multipart content type
+  // along with multipart boundary , so for multipart request send
+  // content-type: undefined or send with multipart boundary if already known
+
+  if (customOptions.useAPIKey) {
+    defaultOptions.headers = _objectSpread(_objectSpread({}, defaultOptions.headers), getApiKeyHeaders());
+  }
+
+  const options = external_lodash_merge_default()(defaultOptions, options_, {
+    method: "PUT"
+  }); // deep merge changes the structure of form data and url encoded data ,
+  // so we should not deepmerge body data
+
+  if (customOptions.isUrlEncodedData) {
+    // for multipart request browser/client will add multipart content type
+    // along with multipart boundary , so for multipart request send
+    // content-type: undefined or send with multipart boundary if already known
+    options.body = data; // If url encoded data, this must not be the content type
+
+    if (options.headers["Content-Type"] === "application/json; charset=utf-8") delete options.headers["Content-Type"];
+  } else {
+    options.body = JSON.stringify(data);
+  }
+
+  const response = await fetchAndTrace(url, options);
 
   if (response.ok) {
     return response.json();
@@ -2507,7 +2390,7 @@ const remove = async function (url) {
     options.body = JSON.stringify(data);
   }
 
-  const response = await fetch(url, options);
+  const response = await fetchAndTrace(url, options);
 
   if (response.ok) {
     return response.json();
@@ -9253,15 +9136,15 @@ function fromByteArray (uint8) {
         var w = this.words[i];
         var word = (((w << off) | carry) & 0xffffff).toString(16);
         carry = (w >>> (24 - off)) & 0xffffff;
-        if (carry !== 0 || i !== this.length - 1) {
-          out = zeros[6 - word.length] + word + out;
-        } else {
-          out = word + out;
-        }
         off += 2;
         if (off >= 26) {
           off -= 26;
           i--;
+        }
+        if (carry !== 0 || i !== this.length - 1) {
+          out = zeros[6 - word.length] + word + out;
+        } else {
+          out = word + out;
         }
       }
       if (carry !== 0) {
@@ -36088,438 +35971,425 @@ var objectKeys = Object.keys || function (obj) {
 };
 
 },{"jsonify":503}],503:[function(require,module,exports){
+'use strict';
+
 exports.parse = require('./lib/parse');
 exports.stringify = require('./lib/stringify');
 
 },{"./lib/parse":504,"./lib/stringify":505}],504:[function(require,module,exports){
-var at, // The index of the current character
-    ch, // The current character
-    escapee = {
-        '"':  '"',
-        '\\': '\\',
-        '/':  '/',
-        b:    '\b',
-        f:    '\f',
-        n:    '\n',
-        r:    '\r',
-        t:    '\t'
-    },
-    text,
+'use strict';
 
-    error = function (m) {
-        // Call error when something is wrong.
-        throw {
-            name:    'SyntaxError',
-            message: m,
-            at:      at,
-            text:    text
-        };
-    },
-    
-    next = function (c) {
-        // If a c parameter is provided, verify that it matches the current character.
-        if (c && c !== ch) {
-            error("Expected '" + c + "' instead of '" + ch + "'");
-        }
-        
-        // Get the next character. When there are no more characters,
-        // return the empty string.
-        
-        ch = text.charAt(at);
-        at += 1;
-        return ch;
-    },
-    
-    number = function () {
-        // Parse a number value.
-        var number,
-            string = '';
-        
-        if (ch === '-') {
-            string = '-';
-            next('-');
-        }
-        while (ch >= '0' && ch <= '9') {
-            string += ch;
-            next();
-        }
-        if (ch === '.') {
-            string += '.';
-            while (next() && ch >= '0' && ch <= '9') {
-                string += ch;
-            }
-        }
-        if (ch === 'e' || ch === 'E') {
-            string += ch;
-            next();
-            if (ch === '-' || ch === '+') {
-                string += ch;
-                next();
-            }
-            while (ch >= '0' && ch <= '9') {
-                string += ch;
-                next();
-            }
-        }
-        number = +string;
-        if (!isFinite(number)) {
-            error("Bad number");
-        } else {
-            return number;
-        }
-    },
-    
-    string = function () {
-        // Parse a string value.
-        var hex,
-            i,
-            string = '',
-            uffff;
-        
-        // When parsing for string values, we must look for " and \ characters.
-        if (ch === '"') {
-            while (next()) {
-                if (ch === '"') {
-                    next();
-                    return string;
-                } else if (ch === '\\') {
-                    next();
-                    if (ch === 'u') {
-                        uffff = 0;
-                        for (i = 0; i < 4; i += 1) {
-                            hex = parseInt(next(), 16);
-                            if (!isFinite(hex)) {
-                                break;
-                            }
-                            uffff = uffff * 16 + hex;
-                        }
-                        string += String.fromCharCode(uffff);
-                    } else if (typeof escapee[ch] === 'string') {
-                        string += escapee[ch];
-                    } else {
-                        break;
-                    }
-                } else {
-                    string += ch;
-                }
-            }
-        }
-        error("Bad string");
-    },
+var at; // The index of the current character
+var ch; // The current character
+var escapee = {
+	'"': '"',
+	'\\': '\\',
+	'/': '/',
+	b: '\b',
+	f: '\f',
+	n: '\n',
+	r: '\r',
+	t: '\t'
+};
+var text;
 
-    white = function () {
+// Call error when something is wrong.
+function error(m) {
+	throw {
+		name: 'SyntaxError',
+		message: m,
+		at: at,
+		text: text
+	};
+}
+
+function next(c) {
+	// If a c parameter is provided, verify that it matches the current character.
+	if (c && c !== ch) {
+		error("Expected '" + c + "' instead of '" + ch + "'");
+	}
+
+	// Get the next character. When there are no more characters, return the empty string.
+
+	ch = text.charAt(at);
+	at += 1;
+	return ch;
+}
+
+function number() {
+	// Parse a number value.
+	var num;
+	var str = '';
+
+	if (ch === '-') {
+		str = '-';
+		next('-');
+	}
+	while (ch >= '0' && ch <= '9') {
+		str += ch;
+		next();
+	}
+	if (ch === '.') {
+		str += '.';
+		while (next() && ch >= '0' && ch <= '9') {
+			str += ch;
+		}
+	}
+	if (ch === 'e' || ch === 'E') {
+		str += ch;
+		next();
+		if (ch === '-' || ch === '+') {
+			str += ch;
+			next();
+		}
+		while (ch >= '0' && ch <= '9') {
+			str += ch;
+			next();
+		}
+	}
+	num = Number(str);
+	if (!isFinite(num)) {
+		error('Bad number');
+	}
+	return num;
+}
+
+function string() {
+	// Parse a string value.
+	var hex;
+	var i;
+	var str = '';
+	var uffff;
+
+	// When parsing for string values, we must look for " and \ characters.
+	if (ch === '"') {
+		while (next()) {
+			if (ch === '"') {
+				next();
+				return str;
+			} else if (ch === '\\') {
+				next();
+				if (ch === 'u') {
+					uffff = 0;
+					for (i = 0; i < 4; i += 1) {
+						hex = parseInt(next(), 16);
+						if (!isFinite(hex)) {
+							break;
+						}
+						uffff = (uffff * 16) + hex;
+					}
+					str += String.fromCharCode(uffff);
+				} else if (typeof escapee[ch] === 'string') {
+					str += escapee[ch];
+				} else {
+					break;
+				}
+			} else {
+				str += ch;
+			}
+		}
+	}
+	error('Bad string');
+}
 
 // Skip whitespace.
-
-        while (ch && ch <= ' ') {
-            next();
-        }
-    },
-
-    word = function () {
+function white() {
+	while (ch && ch <= ' ') {
+		next();
+	}
+}
 
 // true, false, or null.
-
-        switch (ch) {
-        case 't':
-            next('t');
-            next('r');
-            next('u');
-            next('e');
-            return true;
-        case 'f':
-            next('f');
-            next('a');
-            next('l');
-            next('s');
-            next('e');
-            return false;
-        case 'n':
-            next('n');
-            next('u');
-            next('l');
-            next('l');
-            return null;
-        }
-        error("Unexpected '" + ch + "'");
-    },
-
-    value,  // Place holder for the value function.
-
-    array = function () {
+function word() {
+	switch (ch) {
+		case 't':
+			next('t');
+			next('r');
+			next('u');
+			next('e');
+			return true;
+		case 'f':
+			next('f');
+			next('a');
+			next('l');
+			next('s');
+			next('e');
+			return false;
+		case 'n':
+			next('n');
+			next('u');
+			next('l');
+			next('l');
+			return null;
+		default:
+			error("Unexpected '" + ch + "'");
+	}
+}
 
 // Parse an array value.
+function array() {
+	var arr = [];
 
-        var array = [];
-
-        if (ch === '[') {
-            next('[');
-            white();
-            if (ch === ']') {
-                next(']');
-                return array;   // empty array
-            }
-            while (ch) {
-                array.push(value());
-                white();
-                if (ch === ']') {
-                    next(']');
-                    return array;
-                }
-                next(',');
-                white();
-            }
-        }
-        error("Bad array");
-    },
-
-    object = function () {
+	if (ch === '[') {
+		next('[');
+		white();
+		if (ch === ']') {
+			next(']');
+			return arr; // empty array
+		}
+		while (ch) {
+			arr.push(value()); // eslint-disable-line no-use-before-define
+			white();
+			if (ch === ']') {
+				next(']');
+				return arr;
+			}
+			next(',');
+			white();
+		}
+	}
+	error('Bad array');
+}
 
 // Parse an object value.
+function object() {
+	var key;
+	var obj = {};
 
-        var key,
-            object = {};
+	if (ch === '{') {
+		next('{');
+		white();
+		if (ch === '}') {
+			next('}');
+			return obj; // empty object
+		}
+		while (ch) {
+			key = string();
+			white();
+			next(':');
+			if (Object.prototype.hasOwnProperty.call(obj, key)) {
+				error('Duplicate key "' + key + '"');
+			}
+			obj[key] = value(); // eslint-disable-line no-use-before-define
+			white();
+			if (ch === '}') {
+				next('}');
+				return obj;
+			}
+			next(',');
+			white();
+		}
+	}
+	error('Bad object');
+}
 
-        if (ch === '{') {
-            next('{');
-            white();
-            if (ch === '}') {
-                next('}');
-                return object;   // empty object
-            }
-            while (ch) {
-                key = string();
-                white();
-                next(':');
-                if (Object.hasOwnProperty.call(object, key)) {
-                    error('Duplicate key "' + key + '"');
-                }
-                object[key] = value();
-                white();
-                if (ch === '}') {
-                    next('}');
-                    return object;
-                }
-                next(',');
-                white();
-            }
-        }
-        error("Bad object");
-    };
+// Parse a JSON value. It could be an object, an array, a string, a number, or a word.
+function value() {
+	white();
+	switch (ch) {
+		case '{':
+			return object();
+		case '[':
+			return array();
+		case '"':
+			return string();
+		case '-':
+			return number();
+		default:
+			return ch >= '0' && ch <= '9' ? number() : word();
+	}
+}
 
-value = function () {
-
-// Parse a JSON value. It could be an object, an array, a string, a number,
-// or a word.
-
-    white();
-    switch (ch) {
-    case '{':
-        return object();
-    case '[':
-        return array();
-    case '"':
-        return string();
-    case '-':
-        return number();
-    default:
-        return ch >= '0' && ch <= '9' ? number() : word();
-    }
-};
-
-// Return the json_parse function. It will have access to all of the above
-// functions and variables.
-
+// Return the json_parse function. It will have access to all of the above functions and variables.
 module.exports = function (source, reviver) {
-    var result;
-    
-    text = source;
-    at = 0;
-    ch = ' ';
-    result = value();
-    white();
-    if (ch) {
-        error("Syntax error");
-    }
+	var result;
 
-    // If there is a reviver function, we recursively walk the new structure,
-    // passing each name/value pair to the reviver function for possible
-    // transformation, starting with a temporary root object that holds the result
-    // in an empty key. If there is not a reviver function, we simply return the
-    // result.
+	text = source;
+	at = 0;
+	ch = ' ';
+	result = value();
+	white();
+	if (ch) {
+		error('Syntax error');
+	}
 
-    return typeof reviver === 'function' ? (function walk(holder, key) {
-        var k, v, value = holder[key];
-        if (value && typeof value === 'object') {
-            for (k in value) {
-                if (Object.prototype.hasOwnProperty.call(value, k)) {
-                    v = walk(value, k);
-                    if (v !== undefined) {
-                        value[k] = v;
-                    } else {
-                        delete value[k];
-                    }
-                }
-            }
-        }
-        return reviver.call(holder, key, value);
-    }({'': result}, '')) : result;
+	// If there is a reviver function, we recursively walk the new structure,
+	// passing each name/value pair to the reviver function for possible
+	// transformation, starting with a temporary root object that holds the result
+	// in an empty key. If there is not a reviver function, we simply return the
+	// result.
+
+	return typeof reviver === 'function' ? (function walk(holder, key) {
+		var k;
+		var v;
+		var val = holder[key];
+		if (val && typeof val === 'object') {
+			for (k in value) {
+				if (Object.prototype.hasOwnProperty.call(val, k)) {
+					v = walk(val, k);
+					if (typeof v === 'undefined') {
+						delete val[k];
+					} else {
+						val[k] = v;
+					}
+				}
+			}
+		}
+		return reviver.call(holder, key, val);
+	}({ '': result }, '')) : result;
 };
 
 },{}],505:[function(require,module,exports){
-var cx = /[\u0000\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,
-    escapable = /[\\\"\x00-\x1f\x7f-\x9f\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,
-    gap,
-    indent,
-    meta = {    // table of character substitutions
-        '\b': '\\b',
-        '\t': '\\t',
-        '\n': '\\n',
-        '\f': '\\f',
-        '\r': '\\r',
-        '"' : '\\"',
-        '\\': '\\\\'
-    },
-    rep;
+'use strict';
+
+var escapable = /[\\"\x00-\x1f\x7f-\x9f\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g;
+var gap;
+var indent;
+var meta = { // table of character substitutions
+	'\b': '\\b',
+	'\t': '\\t',
+	'\n': '\\n',
+	'\f': '\\f',
+	'\r': '\\r',
+	'"': '\\"',
+	'\\': '\\\\'
+};
+var rep;
 
 function quote(string) {
-    // If the string contains no control characters, no quote characters, and no
-    // backslash characters, then we can safely slap some quotes around it.
-    // Otherwise we must also replace the offending characters with safe escape
-    // sequences.
-    
-    escapable.lastIndex = 0;
-    return escapable.test(string) ? '"' + string.replace(escapable, function (a) {
-        var c = meta[a];
-        return typeof c === 'string' ? c :
-            '\\u' + ('0000' + a.charCodeAt(0).toString(16)).slice(-4);
-    }) + '"' : '"' + string + '"';
+	// If the string contains no control characters, no quote characters, and no
+	// backslash characters, then we can safely slap some quotes around it.
+	// Otherwise we must also replace the offending characters with safe escape sequences.
+
+	escapable.lastIndex = 0;
+	return escapable.test(string) ? '"' + string.replace(escapable, function (a) {
+		var c = meta[a];
+		return typeof c === 'string' ? c
+			: '\\u' + ('0000' + a.charCodeAt(0).toString(16)).slice(-4);
+	}) + '"' : '"' + string + '"';
 }
 
 function str(key, holder) {
-    // Produce a string from holder[key].
-    var i,          // The loop counter.
-        k,          // The member key.
-        v,          // The member value.
-        length,
-        mind = gap,
-        partial,
-        value = holder[key];
-    
-    // If the value has a toJSON method, call it to obtain a replacement value.
-    if (value && typeof value === 'object' &&
-            typeof value.toJSON === 'function') {
-        value = value.toJSON(key);
-    }
-    
-    // If we were called with a replacer function, then call the replacer to
-    // obtain a replacement value.
-    if (typeof rep === 'function') {
-        value = rep.call(holder, key, value);
-    }
-    
-    // What happens next depends on the value's type.
-    switch (typeof value) {
-        case 'string':
-            return quote(value);
-        
-        case 'number':
-            // JSON numbers must be finite. Encode non-finite numbers as null.
-            return isFinite(value) ? String(value) : 'null';
-        
-        case 'boolean':
-        case 'null':
-            // If the value is a boolean or null, convert it to a string. Note:
-            // typeof null does not produce 'null'. The case is included here in
-            // the remote chance that this gets fixed someday.
-            return String(value);
-            
-        case 'object':
-            if (!value) return 'null';
-            gap += indent;
-            partial = [];
-            
-            // Array.isArray
-            if (Object.prototype.toString.apply(value) === '[object Array]') {
-                length = value.length;
-                for (i = 0; i < length; i += 1) {
-                    partial[i] = str(i, value) || 'null';
-                }
-                
-                // Join all of the elements together, separated with commas, and
-                // wrap them in brackets.
-                v = partial.length === 0 ? '[]' : gap ?
-                    '[\n' + gap + partial.join(',\n' + gap) + '\n' + mind + ']' :
-                    '[' + partial.join(',') + ']';
-                gap = mind;
-                return v;
-            }
-            
-            // If the replacer is an array, use it to select the members to be
-            // stringified.
-            if (rep && typeof rep === 'object') {
-                length = rep.length;
-                for (i = 0; i < length; i += 1) {
-                    k = rep[i];
-                    if (typeof k === 'string') {
-                        v = str(k, value);
-                        if (v) {
-                            partial.push(quote(k) + (gap ? ': ' : ':') + v);
-                        }
-                    }
-                }
-            }
-            else {
-                // Otherwise, iterate through all of the keys in the object.
-                for (k in value) {
-                    if (Object.prototype.hasOwnProperty.call(value, k)) {
-                        v = str(k, value);
-                        if (v) {
-                            partial.push(quote(k) + (gap ? ': ' : ':') + v);
-                        }
-                    }
-                }
-            }
-            
-        // Join all of the member texts together, separated with commas,
-        // and wrap them in braces.
+	// Produce a string from holder[key].
+	var i; // The loop counter.
+	var k; // The member key.
+	var v; // The member value.
+	var length;
+	var mind = gap;
+	var partial;
+	var value = holder[key];
 
-        v = partial.length === 0 ? '{}' : gap ?
-            '{\n' + gap + partial.join(',\n' + gap) + '\n' + mind + '}' :
-            '{' + partial.join(',') + '}';
-        gap = mind;
-        return v;
-    }
+	// If the value has a toJSON method, call it to obtain a replacement value.
+	if (value && typeof value === 'object' && typeof value.toJSON === 'function') {
+		value = value.toJSON(key);
+	}
+
+	// If we were called with a replacer function, then call the replacer to obtain a replacement value.
+	if (typeof rep === 'function') {
+		value = rep.call(holder, key, value);
+	}
+
+	// What happens next depends on the value's type.
+	switch (typeof value) {
+		case 'string':
+			return quote(value);
+
+		case 'number':
+			// JSON numbers must be finite. Encode non-finite numbers as null.
+			return isFinite(value) ? String(value) : 'null';
+
+		case 'boolean':
+		case 'null':
+			// If the value is a boolean or null, convert it to a string. Note:
+			// typeof null does not produce 'null'. The case is included here in
+			// the remote chance that this gets fixed someday.
+			return String(value);
+
+		case 'object':
+			if (!value) {
+				return 'null';
+			}
+			gap += indent;
+			partial = [];
+
+			// Array.isArray
+			if (Object.prototype.toString.apply(value) === '[object Array]') {
+				length = value.length;
+				for (i = 0; i < length; i += 1) {
+					partial[i] = str(i, value) || 'null';
+				}
+
+				// Join all of the elements together, separated with commas, and wrap them in brackets.
+				v = partial.length === 0 ? '[]' : gap
+					? '[\n' + gap + partial.join(',\n' + gap) + '\n' + mind + ']'
+					: '[' + partial.join(',') + ']';
+				gap = mind;
+				return v;
+			}
+
+			// If the replacer is an array, use it to select the members to be stringified.
+			if (rep && typeof rep === 'object') {
+				length = rep.length;
+				for (i = 0; i < length; i += 1) {
+					k = rep[i];
+					if (typeof k === 'string') {
+						v = str(k, value);
+						if (v) {
+							partial.push(quote(k) + (gap ? ': ' : ':') + v);
+						}
+					}
+				}
+			} else {
+				// Otherwise, iterate through all of the keys in the object.
+				for (k in value) {
+					if (Object.prototype.hasOwnProperty.call(value, k)) {
+						v = str(k, value);
+						if (v) {
+							partial.push(quote(k) + (gap ? ': ' : ':') + v);
+						}
+					}
+				}
+			}
+
+			// Join all of the member texts together, separated with commas, and wrap them in braces.
+
+			v = partial.length === 0 ? '{}' : gap
+				? '{\n' + gap + partial.join(',\n' + gap) + '\n' + mind + '}'
+				: '{' + partial.join(',') + '}';
+			gap = mind;
+			return v;
+		default:
+	}
 }
 
 module.exports = function (value, replacer, space) {
-    var i;
-    gap = '';
-    indent = '';
-    
-    // If the space parameter is a number, make an indent string containing that
-    // many spaces.
-    if (typeof space === 'number') {
-        for (i = 0; i < space; i += 1) {
-            indent += ' ';
-        }
-    }
-    // If the space parameter is a string, it will be used as the indent string.
-    else if (typeof space === 'string') {
-        indent = space;
-    }
+	var i;
+	gap = '';
+	indent = '';
 
-    // If there is a replacer, it must be a function or an array.
-    // Otherwise, throw an error.
-    rep = replacer;
-    if (replacer && typeof replacer !== 'function'
-    && (typeof replacer !== 'object' || typeof replacer.length !== 'number')) {
-        throw new Error('JSON.stringify');
-    }
-    
-    // Make a fake root object containing our value under the key of ''.
-    // Return the result of stringifying the value.
-    return str('', {'': value});
+	// If the space parameter is a number, make an indent string containing that many spaces.
+	if (typeof space === 'number') {
+		for (i = 0; i < space; i += 1) {
+			indent += ' ';
+		}
+	} else if (typeof space === 'string') {
+		// If the space parameter is a string, it will be used as the indent string.
+		indent = space;
+	}
+
+	// If there is a replacer, it must be a function or an array. Otherwise, throw an error.
+	rep = replacer;
+	if (
+		replacer
+		&& typeof replacer !== 'function'
+		&& (typeof replacer !== 'object' || typeof replacer.length !== 'number')
+	) {
+		throw new Error('JSON.stringify');
+	}
+
+	// Make a fake root object containing our value under the key of ''.
+	// Return the result of stringifying the value.
+	return str('', { '': value });
 };
 
 },{}],506:[function(require,module,exports){
@@ -43370,7 +43240,12 @@ class Manager extends component_emitter_1.Emitter {
      * @private
      */
     ondata(data) {
-        this.decoder.add(data);
+        try {
+            this.decoder.add(data);
+        }
+        catch (e) {
+            this.onclose("parse error");
+        }
     }
     /**
      * Called when parser fully decodes a packet.
@@ -43670,7 +43545,7 @@ class Socket extends component_emitter_1.Emitter {
      */
     emit(ev, ...args) {
         if (RESERVED_EVENTS.hasOwnProperty(ev)) {
-            throw new Error('"' + ev + '" is a reserved event name');
+            throw new Error('"' + ev.toString() + '" is a reserved event name');
         }
         args.unshift(ev);
         const packet = {
@@ -44308,8 +44183,16 @@ exports.reconstructPacket = reconstructPacket;
 function _reconstructPacket(data, buffers) {
     if (!data)
         return data;
-    if (data && data._placeholder) {
-        return buffers[data.num]; // appropriate buffer (should be natural order anyway)
+    if (data && data._placeholder === true) {
+        const isIndexValid = typeof data.num === "number" &&
+            data.num >= 0 &&
+            data.num < buffers.length;
+        if (isIndexValid) {
+            return buffers[data.num]; // appropriate buffer (should be natural order anyway)
+        }
+        else {
+            throw new Error("illegal attachments");
+        }
     }
     else if (Array.isArray(data)) {
         for (let i = 0; i < data.length; i++) {
@@ -44446,6 +44329,9 @@ class Decoder extends component_emitter_1.Emitter {
     add(obj) {
         let packet;
         if (typeof obj === "string") {
+            if (this.reconstructor) {
+                throw new Error("got plaintext data when reconstructing a packet");
+            }
             packet = this.decodeString(obj);
             if (packet.type === PacketType.BINARY_EVENT ||
                 packet.type === PacketType.BINARY_ACK) {
@@ -45211,28 +45097,21 @@ function config (name) {
 "use strict";
 
 var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
-
-var _regenerator = _interopRequireDefault(require("@babel/runtime/regenerator"));
-
+var _typeof = require("@babel/runtime/helpers/typeof");
 var _asyncToGenerator2 = _interopRequireDefault(require("@babel/runtime/helpers/asyncToGenerator"));
-
 var _util = require("./util.js");
-
+function _regeneratorRuntime() { "use strict"; /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/facebook/regenerator/blob/main/LICENSE */ _regeneratorRuntime = function _regeneratorRuntime() { return exports; }; var exports = {}, Op = Object.prototype, hasOwn = Op.hasOwnProperty, $Symbol = "function" == typeof Symbol ? Symbol : {}, iteratorSymbol = $Symbol.iterator || "@@iterator", asyncIteratorSymbol = $Symbol.asyncIterator || "@@asyncIterator", toStringTagSymbol = $Symbol.toStringTag || "@@toStringTag"; function define(obj, key, value) { return Object.defineProperty(obj, key, { value: value, enumerable: !0, configurable: !0, writable: !0 }), obj[key]; } try { define({}, ""); } catch (err) { define = function define(obj, key, value) { return obj[key] = value; }; } function wrap(innerFn, outerFn, self, tryLocsList) { var protoGenerator = outerFn && outerFn.prototype instanceof Generator ? outerFn : Generator, generator = Object.create(protoGenerator.prototype), context = new Context(tryLocsList || []); return generator._invoke = function (innerFn, self, context) { var state = "suspendedStart"; return function (method, arg) { if ("executing" === state) throw new Error("Generator is already running"); if ("completed" === state) { if ("throw" === method) throw arg; return doneResult(); } for (context.method = method, context.arg = arg;;) { var delegate = context.delegate; if (delegate) { var delegateResult = maybeInvokeDelegate(delegate, context); if (delegateResult) { if (delegateResult === ContinueSentinel) continue; return delegateResult; } } if ("next" === context.method) context.sent = context._sent = context.arg;else if ("throw" === context.method) { if ("suspendedStart" === state) throw state = "completed", context.arg; context.dispatchException(context.arg); } else "return" === context.method && context.abrupt("return", context.arg); state = "executing"; var record = tryCatch(innerFn, self, context); if ("normal" === record.type) { if (state = context.done ? "completed" : "suspendedYield", record.arg === ContinueSentinel) continue; return { value: record.arg, done: context.done }; } "throw" === record.type && (state = "completed", context.method = "throw", context.arg = record.arg); } }; }(innerFn, self, context), generator; } function tryCatch(fn, obj, arg) { try { return { type: "normal", arg: fn.call(obj, arg) }; } catch (err) { return { type: "throw", arg: err }; } } exports.wrap = wrap; var ContinueSentinel = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} var IteratorPrototype = {}; define(IteratorPrototype, iteratorSymbol, function () { return this; }); var getProto = Object.getPrototypeOf, NativeIteratorPrototype = getProto && getProto(getProto(values([]))); NativeIteratorPrototype && NativeIteratorPrototype !== Op && hasOwn.call(NativeIteratorPrototype, iteratorSymbol) && (IteratorPrototype = NativeIteratorPrototype); var Gp = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(IteratorPrototype); function defineIteratorMethods(prototype) { ["next", "throw", "return"].forEach(function (method) { define(prototype, method, function (arg) { return this._invoke(method, arg); }); }); } function AsyncIterator(generator, PromiseImpl) { function invoke(method, arg, resolve, reject) { var record = tryCatch(generator[method], generator, arg); if ("throw" !== record.type) { var result = record.arg, value = result.value; return value && "object" == _typeof(value) && hasOwn.call(value, "__await") ? PromiseImpl.resolve(value.__await).then(function (value) { invoke("next", value, resolve, reject); }, function (err) { invoke("throw", err, resolve, reject); }) : PromiseImpl.resolve(value).then(function (unwrapped) { result.value = unwrapped, resolve(result); }, function (error) { return invoke("throw", error, resolve, reject); }); } reject(record.arg); } var previousPromise; this._invoke = function (method, arg) { function callInvokeWithMethodAndArg() { return new PromiseImpl(function (resolve, reject) { invoke(method, arg, resolve, reject); }); } return previousPromise = previousPromise ? previousPromise.then(callInvokeWithMethodAndArg, callInvokeWithMethodAndArg) : callInvokeWithMethodAndArg(); }; } function maybeInvokeDelegate(delegate, context) { var method = delegate.iterator[context.method]; if (undefined === method) { if (context.delegate = null, "throw" === context.method) { if (delegate.iterator["return"] && (context.method = "return", context.arg = undefined, maybeInvokeDelegate(delegate, context), "throw" === context.method)) return ContinueSentinel; context.method = "throw", context.arg = new TypeError("The iterator does not provide a 'throw' method"); } return ContinueSentinel; } var record = tryCatch(method, delegate.iterator, context.arg); if ("throw" === record.type) return context.method = "throw", context.arg = record.arg, context.delegate = null, ContinueSentinel; var info = record.arg; return info ? info.done ? (context[delegate.resultName] = info.value, context.next = delegate.nextLoc, "return" !== context.method && (context.method = "next", context.arg = undefined), context.delegate = null, ContinueSentinel) : info : (context.method = "throw", context.arg = new TypeError("iterator result is not an object"), context.delegate = null, ContinueSentinel); } function pushTryEntry(locs) { var entry = { tryLoc: locs[0] }; 1 in locs && (entry.catchLoc = locs[1]), 2 in locs && (entry.finallyLoc = locs[2], entry.afterLoc = locs[3]), this.tryEntries.push(entry); } function resetTryEntry(entry) { var record = entry.completion || {}; record.type = "normal", delete record.arg, entry.completion = record; } function Context(tryLocsList) { this.tryEntries = [{ tryLoc: "root" }], tryLocsList.forEach(pushTryEntry, this), this.reset(!0); } function values(iterable) { if (iterable) { var iteratorMethod = iterable[iteratorSymbol]; if (iteratorMethod) return iteratorMethod.call(iterable); if ("function" == typeof iterable.next) return iterable; if (!isNaN(iterable.length)) { var i = -1, next = function next() { for (; ++i < iterable.length;) { if (hasOwn.call(iterable, i)) return next.value = iterable[i], next.done = !1, next; } return next.value = undefined, next.done = !0, next; }; return next.next = next; } } return { next: doneResult }; } function doneResult() { return { value: undefined, done: !0 }; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, define(Gp, "constructor", GeneratorFunctionPrototype), define(GeneratorFunctionPrototype, "constructor", GeneratorFunction), GeneratorFunction.displayName = define(GeneratorFunctionPrototype, toStringTagSymbol, "GeneratorFunction"), exports.isGeneratorFunction = function (genFun) { var ctor = "function" == typeof genFun && genFun.constructor; return !!ctor && (ctor === GeneratorFunction || "GeneratorFunction" === (ctor.displayName || ctor.name)); }, exports.mark = function (genFun) { return Object.setPrototypeOf ? Object.setPrototypeOf(genFun, GeneratorFunctionPrototype) : (genFun.__proto__ = GeneratorFunctionPrototype, define(genFun, toStringTagSymbol, "GeneratorFunction")), genFun.prototype = Object.create(Gp), genFun; }, exports.awrap = function (arg) { return { __await: arg }; }, defineIteratorMethods(AsyncIterator.prototype), define(AsyncIterator.prototype, asyncIteratorSymbol, function () { return this; }), exports.AsyncIterator = AsyncIterator, exports.async = function (innerFn, outerFn, self, tryLocsList, PromiseImpl) { void 0 === PromiseImpl && (PromiseImpl = Promise); var iter = new AsyncIterator(wrap(innerFn, outerFn, self, tryLocsList), PromiseImpl); return exports.isGeneratorFunction(outerFn) ? iter : iter.next().then(function (result) { return result.done ? result.value : iter.next(); }); }, defineIteratorMethods(Gp), define(Gp, toStringTagSymbol, "Generator"), define(Gp, iteratorSymbol, function () { return this; }), define(Gp, "toString", function () { return "[object Generator]"; }), exports.keys = function (object) { var keys = []; for (var key in object) { keys.push(key); } return keys.reverse(), function next() { for (; keys.length;) { var key = keys.pop(); if (key in object) return next.value = key, next.done = !1, next; } return next.done = !0, next; }; }, exports.values = values, Context.prototype = { constructor: Context, reset: function reset(skipTempReset) { if (this.prev = 0, this.next = 0, this.sent = this._sent = undefined, this.done = !1, this.delegate = null, this.method = "next", this.arg = undefined, this.tryEntries.forEach(resetTryEntry), !skipTempReset) for (var name in this) { "t" === name.charAt(0) && hasOwn.call(this, name) && !isNaN(+name.slice(1)) && (this[name] = undefined); } }, stop: function stop() { this.done = !0; var rootRecord = this.tryEntries[0].completion; if ("throw" === rootRecord.type) throw rootRecord.arg; return this.rval; }, dispatchException: function dispatchException(exception) { if (this.done) throw exception; var context = this; function handle(loc, caught) { return record.type = "throw", record.arg = exception, context.next = loc, caught && (context.method = "next", context.arg = undefined), !!caught; } for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i], record = entry.completion; if ("root" === entry.tryLoc) return handle("end"); if (entry.tryLoc <= this.prev) { var hasCatch = hasOwn.call(entry, "catchLoc"), hasFinally = hasOwn.call(entry, "finallyLoc"); if (hasCatch && hasFinally) { if (this.prev < entry.catchLoc) return handle(entry.catchLoc, !0); if (this.prev < entry.finallyLoc) return handle(entry.finallyLoc); } else if (hasCatch) { if (this.prev < entry.catchLoc) return handle(entry.catchLoc, !0); } else { if (!hasFinally) throw new Error("try statement without catch or finally"); if (this.prev < entry.finallyLoc) return handle(entry.finallyLoc); } } } }, abrupt: function abrupt(type, arg) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.tryLoc <= this.prev && hasOwn.call(entry, "finallyLoc") && this.prev < entry.finallyLoc) { var finallyEntry = entry; break; } } finallyEntry && ("break" === type || "continue" === type) && finallyEntry.tryLoc <= arg && arg <= finallyEntry.finallyLoc && (finallyEntry = null); var record = finallyEntry ? finallyEntry.completion : {}; return record.type = type, record.arg = arg, finallyEntry ? (this.method = "next", this.next = finallyEntry.finallyLoc, ContinueSentinel) : this.complete(record); }, complete: function complete(record, afterLoc) { if ("throw" === record.type) throw record.arg; return "break" === record.type || "continue" === record.type ? this.next = record.arg : "return" === record.type ? (this.rval = this.arg = record.arg, this.method = "return", this.next = "end") : "normal" === record.type && afterLoc && (this.next = afterLoc), ContinueSentinel; }, finish: function finish(finallyLoc) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.finallyLoc === finallyLoc) return this.complete(entry.completion, entry.afterLoc), resetTryEntry(entry), ContinueSentinel; } }, "catch": function _catch(tryLoc) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.tryLoc === tryLoc) { var record = entry.completion; if ("throw" === record.type) { var thrown = record.arg; resetTryEntry(entry); } return thrown; } } throw new Error("illegal catch attempt"); }, delegateYield: function delegateYield(iterable, resultName, nextLoc) { return this.delegate = { iterator: values(iterable), resultName: resultName, nextLoc: nextLoc }, "next" === this.method && (this.arg = undefined), ContinueSentinel; } }, exports; }
 /* eslint-disable */
-
 /**
  * used in docs/e2e.html
  */
 require('@babel/polyfill');
-
 var _require = require('../../'),
-    BroadcastChannel = _require.BroadcastChannel;
-
+  BroadcastChannel = _require.BroadcastChannel;
 var _require2 = require('async-test-util'),
-    wait = _require2.wait,
-    randomNumber = _require2.randomNumber,
-    randomBoolean = _require2.randomBoolean;
-
+  wait = _require2.wait,
+  randomNumber = _require2.randomNumber,
+  randomBoolean = _require2.randomBoolean;
 function run() {
   console.log('run()');
   console.log('navigator.userAgent: ' + navigator.userAgent);
@@ -45240,21 +45119,20 @@ function run() {
   if (!methodType || methodType === '' || methodType === 'default') methodType = undefined;
   console.log('methodType: ' + methodType);
   var autoStart = (0, _util.getParameterByName)('autoStart');
-  console.log('autoStart: ' + autoStart); // set select-input
+  console.log('autoStart: ' + autoStart);
 
+  // set select-input
   var selectEl = document.getElementById('method-type-select');
-
   selectEl.onchange = function (ev) {
     var newValue = selectEl.value;
     var newUrl = location.origin + location.pathname + '?methodType=' + newValue;
     location = newUrl;
   };
-
   if (methodType) {
     selectEl.value = methodType;
-  } // do not increase this too much because it will cause a timeout in the CI
+  }
 
-
+  // do not increase this too much because it will cause a timeout in the CI
   var TEST_MESSAGES = 25;
   var body = document.getElementById('body');
   var msgContainer = document.getElementById('messages');
@@ -45269,38 +45147,34 @@ function run() {
     type: methodType
   });
   document.getElementById('method').innerHTML = channel.type;
+
   /**
    * to measure the speed, we:
    * 1. send message
    * 2. wait until iframe and worker answers
    * 3. repeat from 1. for TEST_MESSAGES times
    */
-
   var messagesSend = 0;
   var answerPool = {};
   var useWorker = false;
-
   function gotAllAnswers(answerPool) {
     if (!answerPool.iframe) return false;
     if (useWorker && !answerPool.worker) return false;
     return true;
   }
-
-  window.startBroadcastChannel = /*#__PURE__*/(0, _asyncToGenerator2["default"])( /*#__PURE__*/_regenerator["default"].mark(function _callee() {
+  window.startBroadcastChannel = /*#__PURE__*/(0, _asyncToGenerator2["default"])( /*#__PURE__*/_regeneratorRuntime().mark(function _callee() {
     var rand, worker;
-    return _regenerator["default"].wrap(function _callee$(_context) {
+    return _regeneratorRuntime().wrap(function _callee$(_context) {
       while (1) {
         switch (_context.prev = _context.next) {
           case 0:
             console.log('window.startBroadcastChannel()');
             stateContainer.innerHTML = 'running..';
             rand = new Date().getTime();
-
             channel.onmessage = function (msg) {
               answerPool[msg.from] = msg;
               var textnode = document.createTextNode(JSON.stringify(msg) + '</br>');
               msgContainer.appendChild(textnode);
-
               if (gotAllAnswers(answerPool)) {
                 answerPool = {}; // reset
 
@@ -45323,9 +45197,9 @@ function run() {
                   });
                 }
               }
-            }; // load iframe
+            };
 
-
+            // load iframe
             iframeEl.src = './iframe.html?channelName=' + channel.name + '&methodType=' + channel.type + '&t=' + rand;
             _context.next = 7;
             return new Promise(function (res) {
@@ -45333,22 +45207,19 @@ function run() {
                 return res();
               };
             });
-
           case 7:
-            console.log('main: Iframe has loaded'); // spawn web-worker if possible
+            console.log('main: Iframe has loaded');
 
+            // spawn web-worker if possible
             if (!(channel.type !== 'localstorage' && typeof window.Worker === 'function')) {
               _context.next = 14;
               break;
             }
-
             useWorker = true;
             worker = new Worker('worker.js?t=' + rand);
-
             worker.onerror = function (event) {
               console.error('worker: ' + event.message + ' (' + event.filename + ':' + event.lineno + ')');
             };
-
             _context.next = 14;
             return new Promise(function (res) {
               worker.addEventListener('message', function (e) {
@@ -45366,7 +45237,6 @@ function run() {
                 }
               });
             });
-
           case 14:
             console.log('========== START SENDING MESSAGES ' + channel.type);
             startTime = new Date().getTime();
@@ -45375,36 +45245,34 @@ function run() {
               step: 0
             });
             console.log('main: message send (0)');
-
           case 18:
           case "end":
             return _context.stop();
         }
       }
     }, _callee);
-  })); // Worker test
+  }));
 
-  window.startWorkerTest = /*#__PURE__*/(0, _asyncToGenerator2["default"])( /*#__PURE__*/_regenerator["default"].mark(function _callee3() {
+  // Worker test
+  window.startWorkerTest = /*#__PURE__*/(0, _asyncToGenerator2["default"])( /*#__PURE__*/_regeneratorRuntime().mark(function _callee3() {
     var worker, t, perRun, k, done, amountTime;
-    return _regenerator["default"].wrap(function _callee3$(_context3) {
+    return _regeneratorRuntime().wrap(function _callee3$(_context3) {
       while (1) {
         switch (_context3.prev = _context3.next) {
           case 0:
             console.log('window.startWorkerTest()');
-            stateContainer.innerHTML = 'running..'; // spawn web-worker
+            stateContainer.innerHTML = 'running..';
 
+            // spawn web-worker
             if (!(channel.type !== 'localstorage' && typeof window.Worker === 'function')) {
               _context3.next = 8;
               break;
             }
-
             useWorker = true;
             worker = new Worker('worker.js?t=' + new Date().getTime());
-
             worker.onerror = function (event) {
               console.error('worker: ' + event.message + ' (' + event.filename + ':' + event.lineno + ')');
             };
-
             _context3.next = 8;
             return new Promise(function (res) {
               worker.addEventListener('message', function (e) {
@@ -45422,7 +45290,6 @@ function run() {
                 }
               });
             });
-
           case 8:
             console.log('========== START SENDING MESSAGES ' + channel.type);
             startTime = new Date().getTime();
@@ -45430,18 +45297,16 @@ function run() {
             perRun = 100;
             k = 0;
             done = 0;
-
           case 14:
             if (!(t > 0)) {
               _context3.next = 20;
               break;
             }
-
             t--;
             _context3.next = 18;
-            return Promise.all(new Array(perRun).fill(0).map( /*#__PURE__*/(0, _asyncToGenerator2["default"])( /*#__PURE__*/_regenerator["default"].mark(function _callee2() {
+            return Promise.all(new Array(perRun).fill(0).map( /*#__PURE__*/(0, _asyncToGenerator2["default"])( /*#__PURE__*/_regeneratorRuntime().mark(function _callee2() {
               var msgId, waitForResponsePromise;
-              return _regenerator["default"].wrap(function _callee2$(_context2) {
+              return _regeneratorRuntime().wrap(function _callee2$(_context2) {
                 while (1) {
                   switch (_context2.prev = _context2.next) {
                     case 0:
@@ -45449,10 +45314,8 @@ function run() {
                         _context2.next = 3;
                         break;
                       }
-
                       _context2.next = 3;
                       return wait(randomNumber(10, 150));
-
                     case 3:
                       msgId = 'worker-test-' + startTime + '-' + k++;
                       waitForResponsePromise = new Promise(function (res) {
@@ -45466,7 +45329,6 @@ function run() {
                             res();
                           }
                         };
-
                         channel.addEventListener('message', listener);
                       });
                       channel.postMessage({
@@ -45485,7 +45347,6 @@ function run() {
                           throw new Error(errorMessage);
                         }
                       });
-
                     case 8:
                     case "end":
                       return _context2.stop();
@@ -45493,17 +45354,14 @@ function run() {
                 }
               }, _callee2);
             }))));
-
           case 18:
             _context3.next = 14;
             break;
-
           case 20:
             body.style.backgroundColor = 'green';
             stateContainer.innerHTML = 'SUCCESS';
             amountTime = new Date().getTime() - startTime;
             document.getElementById('time-amount').innerHTML = amountTime + 'ms';
-
           case 24:
           case "end":
             return _context3.stop();
@@ -45511,27 +45369,25 @@ function run() {
       }
     }, _callee3);
   }));
-
   if (autoStart && autoStart !== '') {
     window[autoStart]();
   }
 }
-
 try {
   run();
 } catch (error) {
   console.log('error in run-function:');
   console.error(error);
 }
-},{"../../":2,"./util.js":596,"@babel/polyfill":12,"@babel/runtime/helpers/asyncToGenerator":14,"@babel/runtime/helpers/interopRequireDefault":16,"@babel/runtime/regenerator":17,"async-test-util":40}],596:[function(require,module,exports){
+},{"../../":2,"./util.js":596,"@babel/polyfill":12,"@babel/runtime/helpers/asyncToGenerator":14,"@babel/runtime/helpers/interopRequireDefault":16,"@babel/runtime/helpers/typeof":17,"async-test-util":40}],596:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getParameterByName = getParameterByName;
-
 /* eslint no-useless-escape: "off" */
+
 // https://stackoverflow.com/a/901144/3443137
 function getParameterByName(name, url) {
   if (!url) url = window.location.href;

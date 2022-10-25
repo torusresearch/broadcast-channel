@@ -6,6 +6,7 @@
  * but
  * var BroadcastChannel = require('broadcast-channel');
  */
+
 import { BroadcastChannel, enforceOptions } from './index.js';
 module.exports = {
   BroadcastChannel: BroadcastChannel,
