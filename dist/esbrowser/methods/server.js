@@ -1,6 +1,5 @@
 import _asyncToGenerator from "@babel/runtime/helpers/asyncToGenerator";
 import _regeneratorRuntime from "@babel/runtime/regenerator";
-
 /**
  * A localStorage-only method which uses localstorage and its 'storage'-event
  * This does not work inside of webworkers because they have no access to locastorage
@@ -8,6 +7,7 @@ import _regeneratorRuntime from "@babel/runtime/regenerator";
  * @link https://caniuse.com/#feat=namevalue-storage
  * @link https://caniuse.com/#feat=indexeddb
  */
+
 import { ObliviousSet } from 'oblivious-set';
 import { io } from 'socket.io-client';
 import { getPublic, sign } from '@toruslabs/eccrypto';
@@ -16,24 +16,25 @@ import createKeccakHash from 'keccak';
 import { log } from '../util';
 import { fillOptionsWithDefaults } from '../options';
 import { sleep, randomToken, microSeconds as micro } from '../util';
-export var microSeconds = micro; // PASS IN STRING/BUFFER TO GET BUFFER
+export var microSeconds = micro;
 
+// PASS IN STRING/BUFFER TO GET BUFFER
 export function keccak256(a) {
   return createKeccakHash('keccak256').update(a).digest();
 }
 var KEY_PREFIX = 'pubkey.broadcastChannel-';
 export var type = 'server';
-var SOCKET_CONN_INSTANCE = null; // used to decide to reconnect socket e.g. when socket connection is disconnected unexpectedly
-
+var SOCKET_CONN_INSTANCE = null;
+// used to decide to reconnect socket e.g. when socket connection is disconnected unexpectedly
 var runningChannels = new Set();
 export function storageKey(channelName) {
   return KEY_PREFIX + channelName;
 }
+
 /**
  * writes the new message to the storage
  * and fires the storage-event so other readers can find it
  */
-
 export function postMessage(channelState, messageJson) {
   return new Promise(function (res, rej) {
     sleep().then( /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/_regeneratorRuntime.mark(function _callee() {
@@ -51,14 +52,12 @@ export function postMessage(channelState, messageJson) {
                 data: messageJson,
                 uuid: channelState.uuid
               });
-
             case 4:
               encData = _context.sent;
               _context.t0 = getPublic(channelEncPrivKey).toString('hex');
               _context.t1 = encData;
               _context.next = 9;
               return sign(channelEncPrivKey, keccak256(encData));
-
             case 9:
               _context.t2 = _context.sent.toString('hex');
               body = {
@@ -74,7 +73,6 @@ export function postMessage(channelState, messageJson) {
                   'Content-Type': 'application/json; charset=utf-8'
                 }
               }).then(res)["catch"](rej));
-
             case 13:
             case "end":
               return _context.stop();
@@ -88,7 +86,6 @@ export function getSocketInstance(serverUrl) {
   if (SOCKET_CONN_INSTANCE) {
     return SOCKET_CONN_INSTANCE;
   }
-
   var SOCKET_CONN = io(serverUrl, {
     transports: ['websocket', 'polling'],
     // use WebSocket first, if available
@@ -109,16 +106,15 @@ export function getSocketInstance(serverUrl) {
           case 0:
             engine = SOCKET_CONN.io.engine;
             log.debug('initially connected to', engine.transport.name); // in most cases, prints "polling"
-
             engine.once('upgrade', function () {
               // called when the transport is upgraded (i.e. from HTTP long-polling to WebSocket)
               log.debug('upgraded', engine.transport.name); // in most cases, prints "websocket"
             });
+
             engine.once('close', function (reason) {
               // called when the underlying connection is closed
               log.debug('connection closed', reason);
             });
-
           case 4:
           case "end":
             return _context2.stop();
@@ -138,7 +134,6 @@ export function setupSocketConnection(serverUrl, channelName, fn) {
   var key = storageKey(channelName);
   var channelEncPrivKey = keccak256(key);
   var channelPubKey = getPublic(channelEncPrivKey).toString('hex');
-
   if (socketConn.connected) {
     socketConn.emit('check_auth_status', channelPubKey);
   } else {
@@ -147,7 +142,6 @@ export function setupSocketConnection(serverUrl, channelName, fn) {
       socketConn.emit('check_auth_status', channelPubKey);
     });
   }
-
   var reconnect = function reconnect() {
     socketConn.once('connect', /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/_regeneratorRuntime.mark(function _callee3() {
       return _regeneratorRuntime.wrap(function _callee3$(_context3) {
@@ -155,7 +149,6 @@ export function setupSocketConnection(serverUrl, channelName, fn) {
           switch (_context3.prev = _context3.next) {
             case 0:
               socketConn.emit('check_auth_status', channelPubKey);
-
             case 1:
             case "end":
               return _context3.stop();
@@ -164,20 +157,17 @@ export function setupSocketConnection(serverUrl, channelName, fn) {
       }, _callee3);
     })));
   };
-
   var visibilityListener = function visibilityListener() {
     // if channel is closed, then remove the listener.
     if (!socketConn) {
       document.removeEventListener('visibilitychange', visibilityListener);
       return;
-    } // if not connected, then wait for connection and ping server for latest msg.
-
-
+    }
+    // if not connected, then wait for connection and ping server for latest msg.
     if (!socketConn.connected && document.visibilityState === 'visible') {
       reconnect();
     }
   };
-
   var listener = /*#__PURE__*/function () {
     var _ref4 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime.mark(function _callee4(ev) {
       var decData;
@@ -188,19 +178,16 @@ export function setupSocketConnection(serverUrl, channelName, fn) {
               _context4.prev = 0;
               _context4.next = 3;
               return decryptData(channelEncPrivKey.toString('hex'), ev);
-
             case 3:
               decData = _context4.sent;
               log.info(decData);
               fn(decData);
               _context4.next = 11;
               break;
-
             case 8:
               _context4.prev = 8;
               _context4.t0 = _context4["catch"](0);
               log.error(_context4.t0);
-
             case 11:
             case "end":
               return _context4.stop();
@@ -208,15 +195,12 @@ export function setupSocketConnection(serverUrl, channelName, fn) {
         }
       }, _callee4, null, [[0, 8]]);
     }));
-
     return function listener(_x) {
       return _ref4.apply(this, arguments);
     };
   }();
-
   socketConn.on('disconnect', function () {
     log.debug('socket disconnected');
-
     if (runningChannels.has(channelName)) {
       log.error('socket disconnected unexpectedly, reconnecting socket');
       reconnect();
@@ -233,18 +217,16 @@ export function removeStorageEventListener() {
 }
 export function create(channelName, options) {
   options = fillOptionsWithDefaults(options);
-
   if (!canBeUsed(options)) {
     throw new Error('BroadcastChannel: server cannot be used');
   }
-
   var uuid = randomToken();
+
   /**
    * eMIs
    * contains all messages that have been emitted before
    * @type {ObliviousSet}
    */
-
   var eMIs = new ObliviousSet(options.server.removeTimeout);
   var state = {
     channelName: channelName,
@@ -256,9 +238,7 @@ export function create(channelName, options) {
   if (options.server.timeout) state.timeout = options.server.timeout;
   setupSocketConnection(options.server.url, channelName, function (msgObj) {
     if (!state.messagesCallback) return; // no listener
-
     if (msgObj.uuid === state.uuid) return; // own message
-
     if (!msgObj.token || state.eMIs.has(msgObj.token)) return; // already emitted
     // if (msgObj.data.time && msgObj.data.time < state.messagesCallbackTime) return; // too old
 
@@ -269,13 +249,15 @@ export function create(channelName, options) {
   return state;
 }
 export function close(channelState) {
-  runningChannels["delete"](channelState.channelName); // give 2 sec for all msgs which are in transit to be consumed
+  runningChannels["delete"](channelState.channelName);
+  // give 2 sec for all msgs which are in transit to be consumed
   // by receiver.
   // window.setTimeout(() => {
   //     removeStorageEventListener(channelState);
   //     SOCKET_CONN_INSTANCE = null;
   // }, 1000);
 }
+
 export function onMessage(channelState, fn, time) {
   channelState.messagesCallbackTime = time;
   channelState.messagesCallback = fn;
@@ -284,8 +266,8 @@ export function canBeUsed() {
   return true;
 }
 export function averageResponseTime() {
-  var defaultTime = 500; // TODO: Maybe increase it based on operation
-
+  var defaultTime = 500;
+  // TODO: Maybe increase it based on operation
   return defaultTime;
 }
 export default {
