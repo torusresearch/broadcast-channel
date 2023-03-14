@@ -452,20 +452,7 @@ const useOptions = [
     },
 ];
 
-if (isNode) {
-    useOptions.push({
-        type: 'node',
-        node: {
-            useFastPath: true,
-        },
-    });
-    useOptions.push({
-        type: 'node',
-        node: {
-            useFastPath: false,
-        },
-    });
-} else {
+if (!isNode) {
     if (window.BroadcastChannel) {
         useOptions.push({
             type: 'native',

@@ -76,7 +76,7 @@ await channel.close();
 
 ```js
 const options = {
-    type: 'localstorage', // (optional) enforce a type, oneOf['native', 'idb', 'localstorage', 'node']
+    type: 'localstorage', // (optional) enforce a type, oneOf['native', 'idb', 'localstorage']
     webWorkerSupport: true; // (optional) set this to false if you know that your channel will never be used in a WebWorker (increases performance)
 };
 const channel = new BroadcastChannel('foobar', options);

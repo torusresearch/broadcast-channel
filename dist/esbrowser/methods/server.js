@@ -40,43 +40,41 @@ export function postMessage(channelState, messageJson) {
     sleep().then( /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/_regeneratorRuntime.mark(function _callee() {
       var key, channelEncPrivKey, encData, body;
       return _regeneratorRuntime.wrap(function _callee$(_context) {
-        while (1) {
-          switch (_context.prev = _context.next) {
-            case 0:
-              key = storageKey(channelState.channelName);
-              channelEncPrivKey = keccak256(key);
-              _context.next = 4;
-              return encryptData(channelEncPrivKey.toString('hex'), {
-                token: randomToken(),
-                time: new Date().getTime(),
-                data: messageJson,
-                uuid: channelState.uuid
-              });
-            case 4:
-              encData = _context.sent;
-              _context.t0 = getPublic(channelEncPrivKey).toString('hex');
-              _context.t1 = encData;
-              _context.next = 9;
-              return sign(channelEncPrivKey, keccak256(encData));
-            case 9:
-              _context.t2 = _context.sent.toString('hex');
-              body = {
-                key: _context.t0,
-                data: _context.t1,
-                signature: _context.t2
-              };
-              if (channelState.timeout) body.timeout = channelState.timeout;
-              return _context.abrupt("return", fetch(channelState.serverUrl + '/channel/set', {
-                method: 'POST',
-                body: JSON.stringify(body),
-                headers: {
-                  'Content-Type': 'application/json; charset=utf-8'
-                }
-              }).then(res)["catch"](rej));
-            case 13:
-            case "end":
-              return _context.stop();
-          }
+        while (1) switch (_context.prev = _context.next) {
+          case 0:
+            key = storageKey(channelState.channelName);
+            channelEncPrivKey = keccak256(key);
+            _context.next = 4;
+            return encryptData(channelEncPrivKey.toString('hex'), {
+              token: randomToken(),
+              time: new Date().getTime(),
+              data: messageJson,
+              uuid: channelState.uuid
+            });
+          case 4:
+            encData = _context.sent;
+            _context.t0 = getPublic(channelEncPrivKey).toString('hex');
+            _context.t1 = encData;
+            _context.next = 9;
+            return sign(channelEncPrivKey, keccak256(encData));
+          case 9:
+            _context.t2 = _context.sent.toString('hex');
+            body = {
+              key: _context.t0,
+              data: _context.t1,
+              signature: _context.t2
+            };
+            if (channelState.timeout) body.timeout = channelState.timeout;
+            return _context.abrupt("return", fetch(channelState.serverUrl + '/channel/set', {
+              method: 'POST',
+              body: JSON.stringify(body),
+              headers: {
+                'Content-Type': 'application/json; charset=utf-8'
+              }
+            }).then(res)["catch"](rej));
+          case 13:
+          case "end":
+            return _context.stop();
         }
       }, _callee);
     })));
@@ -101,24 +99,22 @@ export function getSocketInstance(serverUrl) {
   SOCKET_CONN.on('connect', /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/_regeneratorRuntime.mark(function _callee2() {
     var engine;
     return _regeneratorRuntime.wrap(function _callee2$(_context2) {
-      while (1) {
-        switch (_context2.prev = _context2.next) {
-          case 0:
-            engine = SOCKET_CONN.io.engine;
-            log.debug('initially connected to', engine.transport.name); // in most cases, prints "polling"
-            engine.once('upgrade', function () {
-              // called when the transport is upgraded (i.e. from HTTP long-polling to WebSocket)
-              log.debug('upgraded', engine.transport.name); // in most cases, prints "websocket"
-            });
+      while (1) switch (_context2.prev = _context2.next) {
+        case 0:
+          engine = SOCKET_CONN.io.engine;
+          log.debug('initially connected to', engine.transport.name); // in most cases, prints "polling"
+          engine.once('upgrade', function () {
+            // called when the transport is upgraded (i.e. from HTTP long-polling to WebSocket)
+            log.debug('upgraded', engine.transport.name); // in most cases, prints "websocket"
+          });
 
-            engine.once('close', function (reason) {
-              // called when the underlying connection is closed
-              log.debug('connection closed', reason);
-            });
-          case 4:
-          case "end":
-            return _context2.stop();
-        }
+          engine.once('close', function (reason) {
+            // called when the underlying connection is closed
+            log.debug('connection closed', reason);
+          });
+        case 4:
+        case "end":
+          return _context2.stop();
       }
     }, _callee2);
   })));
@@ -145,14 +141,12 @@ export function setupSocketConnection(serverUrl, channelName, fn) {
   var reconnect = function reconnect() {
     socketConn.once('connect', /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/_regeneratorRuntime.mark(function _callee3() {
       return _regeneratorRuntime.wrap(function _callee3$(_context3) {
-        while (1) {
-          switch (_context3.prev = _context3.next) {
-            case 0:
-              socketConn.emit('check_auth_status', channelPubKey);
-            case 1:
-            case "end":
-              return _context3.stop();
-          }
+        while (1) switch (_context3.prev = _context3.next) {
+          case 0:
+            socketConn.emit('check_auth_status', channelPubKey);
+          case 1:
+          case "end":
+            return _context3.stop();
         }
       }, _callee3);
     })));
@@ -172,26 +166,24 @@ export function setupSocketConnection(serverUrl, channelName, fn) {
     var _ref4 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime.mark(function _callee4(ev) {
       var decData;
       return _regeneratorRuntime.wrap(function _callee4$(_context4) {
-        while (1) {
-          switch (_context4.prev = _context4.next) {
-            case 0:
-              _context4.prev = 0;
-              _context4.next = 3;
-              return decryptData(channelEncPrivKey.toString('hex'), ev);
-            case 3:
-              decData = _context4.sent;
-              log.info(decData);
-              fn(decData);
-              _context4.next = 11;
-              break;
-            case 8:
-              _context4.prev = 8;
-              _context4.t0 = _context4["catch"](0);
-              log.error(_context4.t0);
-            case 11:
-            case "end":
-              return _context4.stop();
-          }
+        while (1) switch (_context4.prev = _context4.next) {
+          case 0:
+            _context4.prev = 0;
+            _context4.next = 3;
+            return decryptData(channelEncPrivKey.toString('hex'), ev);
+          case 3:
+            decData = _context4.sent;
+            log.info(decData);
+            fn(decData);
+            _context4.next = 11;
+            break;
+          case 8:
+            _context4.prev = 8;
+            _context4.t0 = _context4["catch"](0);
+            log.error(_context4.t0);
+          case 11:
+          case "end":
+            return _context4.stop();
         }
       }, _callee4, null, [[0, 8]]);
     }));
@@ -207,7 +199,7 @@ export function setupSocketConnection(serverUrl, channelName, fn) {
     }
   });
   socketConn.on(channelPubKey + "_success", listener);
-  document.addEventListener('visibilitychange', visibilityListener);
+  if (typeof document !== 'undefined') document.addEventListener('visibilitychange', visibilityListener);
   return socketConn;
 }
 export function removeStorageEventListener() {

@@ -157,7 +157,7 @@ export function setupSocketConnection(serverUrl, channelName, fn) {
 
     socketConn.on(`${channelPubKey}_success`, listener);
 
-    document.addEventListener('visibilitychange', visibilityListener);
+    if (typeof document !== 'undefined') document.addEventListener('visibilitychange', visibilityListener);
 
     return socketConn;
 }
@@ -189,8 +189,7 @@ export function create(channelName, options) {
         eMIs, // emittedMessagesIds
         serverUrl: options.server.url,
     };
-    if (options.server.timeout)
-        state.timeout = options.server.timeout;
+    if (options.server.timeout) state.timeout = options.server.timeout;
 
     setupSocketConnection(options.server.url, channelName, (msgObj) => {
         if (!state.messagesCallback) return; // no listener
