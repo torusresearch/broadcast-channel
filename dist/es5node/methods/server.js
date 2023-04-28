@@ -10,7 +10,6 @@ exports.close = close;
 exports.create = create;
 exports["default"] = void 0;
 exports.getSocketInstance = getSocketInstance;
-exports.keccak256 = keccak256;
 exports.microSeconds = void 0;
 exports.onMessage = onMessage;
 exports.postMessage = postMessage;
@@ -24,7 +23,6 @@ var _obliviousSet = require("oblivious-set");
 var _socket = require("socket.io-client");
 var _eccrypto = require("@toruslabs/eccrypto");
 var _metadataHelpers = require("@toruslabs/metadata-helpers");
-var _keccak = _interopRequireDefault(require("keccak"));
 var _util = require("../util");
 var _options = require("../options");
 /**
@@ -36,12 +34,7 @@ var _options = require("../options");
  */
 
 var microSeconds = _util.microSeconds;
-
-// PASS IN STRING/BUFFER TO GET BUFFER
 exports.microSeconds = microSeconds;
-function keccak256(a) {
-  return (0, _keccak["default"])('keccak256').update(a).digest();
-}
 var KEY_PREFIX = 'pubkey.broadcastChannel-';
 var type = 'server';
 exports.type = type;
@@ -64,7 +57,7 @@ function postMessage(channelState, messageJson) {
         while (1) switch (_context.prev = _context.next) {
           case 0:
             key = storageKey(channelState.channelName);
-            channelEncPrivKey = keccak256(key);
+            channelEncPrivKey = (0, _metadataHelpers.keccak256)(Buffer.from(key, 'utf8'));
             _context.next = 4;
             return (0, _metadataHelpers.encryptData)(channelEncPrivKey.toString('hex'), {
               token: (0, _util.randomToken)(),
@@ -77,7 +70,7 @@ function postMessage(channelState, messageJson) {
             _context.t0 = (0, _eccrypto.getPublic)(channelEncPrivKey).toString('hex');
             _context.t1 = encData;
             _context.next = 9;
-            return (0, _eccrypto.sign)(channelEncPrivKey, keccak256(encData));
+            return (0, _eccrypto.sign)(channelEncPrivKey, (0, _metadataHelpers.keccak256)(Buffer.from(encData, 'utf8')));
           case 9:
             _context.t2 = _context.sent.toString('hex');
             body = {
@@ -149,7 +142,7 @@ function getSocketInstance(serverUrl) {
 function setupSocketConnection(serverUrl, channelName, fn) {
   var socketConn = getSocketInstance(serverUrl);
   var key = storageKey(channelName);
-  var channelEncPrivKey = keccak256(key);
+  var channelEncPrivKey = (0, _metadataHelpers.keccak256)(Buffer.from(key, 'utf8'));
   var channelPubKey = (0, _eccrypto.getPublic)(channelEncPrivKey).toString('hex');
   if (socketConn.connected) {
     socketConn.emit('check_auth_status', channelPubKey);

@@ -11,17 +11,11 @@ import _regeneratorRuntime from "@babel/runtime/regenerator";
 import { ObliviousSet } from 'oblivious-set';
 import { io } from 'socket.io-client';
 import { getPublic, sign } from '@toruslabs/eccrypto';
-import { encryptData, decryptData } from '@toruslabs/metadata-helpers';
-import createKeccakHash from 'keccak';
+import { encryptData, decryptData, keccak256 } from '@toruslabs/metadata-helpers';
 import { log } from '../util';
 import { fillOptionsWithDefaults } from '../options';
 import { sleep, randomToken, microSeconds as micro } from '../util';
 export var microSeconds = micro;
-
-// PASS IN STRING/BUFFER TO GET BUFFER
-export function keccak256(a) {
-  return createKeccakHash('keccak256').update(a).digest();
-}
 var KEY_PREFIX = 'pubkey.broadcastChannel-';
 export var type = 'server';
 var SOCKET_CONN_INSTANCE = null;
@@ -43,7 +37,7 @@ export function postMessage(channelState, messageJson) {
         while (1) switch (_context.prev = _context.next) {
           case 0:
             key = storageKey(channelState.channelName);
-            channelEncPrivKey = keccak256(key);
+            channelEncPrivKey = keccak256(Buffer.from(key, 'utf8'));
             _context.next = 4;
             return encryptData(channelEncPrivKey.toString('hex'), {
               token: randomToken(),
@@ -56,7 +50,7 @@ export function postMessage(channelState, messageJson) {
             _context.t0 = getPublic(channelEncPrivKey).toString('hex');
             _context.t1 = encData;
             _context.next = 9;
-            return sign(channelEncPrivKey, keccak256(encData));
+            return sign(channelEncPrivKey, keccak256(Buffer.from(encData, 'utf8')));
           case 9:
             _context.t2 = _context.sent.toString('hex');
             body = {
@@ -128,7 +122,7 @@ export function getSocketInstance(serverUrl) {
 export function setupSocketConnection(serverUrl, channelName, fn) {
   var socketConn = getSocketInstance(serverUrl);
   var key = storageKey(channelName);
-  var channelEncPrivKey = keccak256(key);
+  var channelEncPrivKey = keccak256(Buffer.from(key, 'utf8'));
   var channelPubKey = getPublic(channelEncPrivKey).toString('hex');
   if (socketConn.connected) {
     socketConn.emit('check_auth_status', channelPubKey);
