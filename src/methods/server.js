@@ -45,6 +45,8 @@ export function postMessage(channelState, messageJson) {
                 uuid: channelState.uuid,
             });
             const body = {
+                sameOriginCheck: channelState.sameOriginCheck,
+                sameIpCheck: channelState.sameIpCheck,
                 key: getPublic(channelEncPrivKey).toString('hex'),
                 data: encData,
                 signature: (await sign(channelEncPrivKey, keccak256(Buffer.from(encData, 'utf8')))).toString('hex'),
@@ -183,6 +185,7 @@ export function create(channelName, options) {
         uuid,
         eMIs, // emittedMessagesIds
         serverUrl: options.server.url,
+        sameOriginCheck: options.sameOriginCheck || false,
     };
     if (options.server.timeout) state.timeout = options.server.timeout;
 
