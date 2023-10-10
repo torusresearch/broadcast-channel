@@ -7,8 +7,6 @@ export function fillOptionsWithDefaults(originalOptions = {}) {
 
     // main
     if (typeof options.webWorkerSupport === 'undefined') options.webWorkerSupport = true;
-    if (typeof options.sameOriginCheck === 'undefined') options.sameOriginCheck = false;
-    if (typeof options.sameIpCheck === 'undefined') options.sameIpCheck = false;
 
     // indexed-db
     if (!options.idb) options.idb = {};

@@ -45,8 +45,8 @@ export function postMessage(channelState, messageJson) {
                 uuid: channelState.uuid,
             });
             const body = {
-                sameOriginCheck: channelState.sameOriginCheck,
-                sameIpCheck: channelState.sameIpCheck,
+                sameOriginCheck: true,
+                sameIpCheck: true,
                 key: getPublic(channelEncPrivKey).toString('hex'),
                 data: encData,
                 signature: (await sign(channelEncPrivKey, keccak256(Buffer.from(encData, 'utf8')))).toString('hex'),
@@ -109,13 +109,13 @@ export function setupSocketConnection(serverUrl, channelState, fn) {
     const channelEncPrivKey = keccak256(Buffer.from(key, 'utf8'));
     const channelPubKey = getPublic(channelEncPrivKey).toString('hex');
     if (socketConn.connected) {
-        socketConn.emit('check_auth_status', channelPubKey, { sameOriginCheck: channelState.sameOriginCheck, sameIpCheck: channelState.sameIpCheck });
+        socketConn.emit('check_auth_status', channelPubKey, { sameOriginCheck: true, sameIpCheck: true });
     } else {
         socketConn.once('connect', () => {
             log.debug('connected with socket');
             socketConn.emit('check_auth_status', channelPubKey, {
-                sameOriginCheck: channelState.sameOriginCheck,
-                sameIpCheck: channelState.sameIpCheck,
+                sameOriginCheck: true,
+                sameIpCheck: true,
             });
         });
     }
@@ -123,8 +123,8 @@ export function setupSocketConnection(serverUrl, channelState, fn) {
     const reconnect = () => {
         socketConn.once('connect', async () => {
             socketConn.emit('check_auth_status', channelPubKey, {
-                sameOriginCheck: channelState.sameOriginCheck,
-                sameIpCheck: channelState.sameIpCheck,
+                sameOriginCheck: true,
+                sameIpCheck: true,
             });
         });
     };
@@ -191,8 +191,6 @@ export function create(channelName, options) {
         uuid,
         eMIs, // emittedMessagesIds
         serverUrl: options.server.url,
-        sameOriginCheck: options.sameOriginCheck || false,
-        sameIpCheck: options.sameIpCheck || false,
     };
     if (options.server.timeout) state.timeout = options.server.timeout;
 
