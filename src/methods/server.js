@@ -45,6 +45,8 @@ export function postMessage(channelState, messageJson) {
                 uuid: channelState.uuid,
             });
             const body = {
+                sameOriginCheck: true,
+                sameIpCheck: true,
                 key: getPublic(channelEncPrivKey).toString('hex'),
                 data: encData,
                 signature: (await sign(channelEncPrivKey, keccak256(Buffer.from(encData, 'utf8')))).toString('hex'),
@@ -100,24 +102,30 @@ export function getSocketInstance(serverUrl) {
     return SOCKET_CONN;
 }
 
-export function setupSocketConnection(serverUrl, channelName, fn) {
+export function setupSocketConnection(serverUrl, channelState, fn) {
     const socketConn = getSocketInstance(serverUrl);
 
-    const key = storageKey(channelName);
+    const key = storageKey(channelState.channelName);
     const channelEncPrivKey = keccak256(Buffer.from(key, 'utf8'));
     const channelPubKey = getPublic(channelEncPrivKey).toString('hex');
     if (socketConn.connected) {
-        socketConn.emit('check_auth_status', channelPubKey);
+        socketConn.emit('check_auth_status', channelPubKey, { sameOriginCheck: true, sameIpCheck: true });
     } else {
         socketConn.once('connect', () => {
             log.debug('connected with socket');
-            socketConn.emit('check_auth_status', channelPubKey);
+            socketConn.emit('check_auth_status', channelPubKey, {
+                sameOriginCheck: true,
+                sameIpCheck: true,
+            });
         });
     }
 
     const reconnect = () => {
         socketConn.once('connect', async () => {
-            socketConn.emit('check_auth_status', channelPubKey);
+            socketConn.emit('check_auth_status', channelPubKey, {
+                sameOriginCheck: true,
+                sameIpCheck: true,
+            });
         });
     };
     const visibilityListener = () => {
@@ -144,7 +152,7 @@ export function setupSocketConnection(serverUrl, channelName, fn) {
 
     socketConn.on('disconnect', () => {
         log.debug('socket disconnected');
-        if (runningChannels.has(channelName)) {
+        if (runningChannels.has(channelState.channelName)) {
             log.error('socket disconnected unexpectedly, reconnecting socket');
             reconnect();
         }
@@ -186,7 +194,7 @@ export function create(channelName, options) {
     };
     if (options.server.timeout) state.timeout = options.server.timeout;
 
-    setupSocketConnection(options.server.url, channelName, (msgObj) => {
+    setupSocketConnection(options.server.url, state, (msgObj) => {
         if (!state.messagesCallback) return; // no listener
         if (msgObj.uuid === state.uuid) return; // own message
         if (!msgObj.token || state.eMIs.has(msgObj.token)) return; // already emitted
