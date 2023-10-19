@@ -122,15 +122,17 @@ export function setupSocketConnection(serverUrl, channelState, fn) {
 
     const reconnect = () => {
         socketConn.once('connect', async () => {
-            socketConn.emit('check_auth_status', channelPubKey, {
-                sameOriginCheck: true,
-                sameIpCheck: true,
-            });
+            if (runningChannels.has(channelState.channelName)) {
+                socketConn.emit('check_auth_status', channelPubKey, {
+                    sameOriginCheck: true,
+                    sameIpCheck: true,
+                });
+            }
         });
     };
     const visibilityListener = () => {
         // if channel is closed, then remove the listener.
-        if (!socketConn) {
+        if (!socketConn || !runningChannels.has(channelState.channelName)) {
             document.removeEventListener('visibilitychange', visibilityListener);
             return;
         }
@@ -158,7 +160,7 @@ export function setupSocketConnection(serverUrl, channelState, fn) {
         }
     });
 
-    socketConn.on(`${channelPubKey}_success`, listener);
+    socketConn.once(`${channelPubKey}_success`, listener);
 
     if (typeof document !== 'undefined') document.addEventListener('visibilitychange', visibilityListener);
 
