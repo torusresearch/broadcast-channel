@@ -145,10 +145,12 @@ export function setupSocketConnection(serverUrl, channelState, fn) {
       return _regeneratorRuntime.wrap(function _callee3$(_context3) {
         while (1) switch (_context3.prev = _context3.next) {
           case 0:
-            socketConn.emit('check_auth_status', channelPubKey, {
-              sameOriginCheck: true,
-              sameIpCheck: true
-            });
+            if (runningChannels.has(channelState.channelName)) {
+              socketConn.emit('check_auth_status', channelPubKey, {
+                sameOriginCheck: true,
+                sameIpCheck: true
+              });
+            }
           case 1:
           case "end":
             return _context3.stop();
@@ -158,7 +160,7 @@ export function setupSocketConnection(serverUrl, channelState, fn) {
   };
   var visibilityListener = function visibilityListener() {
     // if channel is closed, then remove the listener.
-    if (!socketConn) {
+    if (!socketConn || !runningChannels.has(channelState.channelName)) {
       document.removeEventListener('visibilitychange', visibilityListener);
       return;
     }
@@ -203,7 +205,7 @@ export function setupSocketConnection(serverUrl, channelState, fn) {
       reconnect();
     }
   });
-  socketConn.on(channelPubKey + "_success", listener);
+  socketConn.once(channelPubKey + "_success", listener);
   if (typeof document !== 'undefined') document.addEventListener('visibilitychange', visibilityListener);
   return socketConn;
 }
