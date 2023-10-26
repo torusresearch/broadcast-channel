@@ -1213,7 +1213,7 @@ function setupSocketConnection(serverUrl, channelState, fn) {
       reconnect();
     }
   });
-  socketConn.once(channelPubKey + "_success", listener);
+  socketConn.on(channelPubKey + "_success", listener);
   if (typeof document !== 'undefined') document.addEventListener('visibilitychange', visibilityListener);
   return socketConn;
 }
