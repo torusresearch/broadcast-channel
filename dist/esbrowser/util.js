@@ -1,4 +1,4 @@
-import Bowser from 'bowser';
+// import Bowser from 'bowser';
 import loglevel from 'loglevel';
 
 /**
@@ -33,7 +33,6 @@ export function randomToken() {
   return Math.random().toString(36).substring(2);
 }
 var lastMs = 0;
-var additional = 0;
 
 /**
  * returns the current time in micro-seconds,
@@ -43,32 +42,38 @@ var additional = 0;
  * The main reason for this hack is to ensure that BroadcastChannel behaves equal to production when it is used in fast-running unit tests.
  */
 export function microSeconds() {
-  var ms = new Date().getTime();
-  if (ms === lastMs) {
-    additional++;
-    return ms * 1000 + additional;
-  } else {
-    lastMs = ms;
-    additional = 0;
-    return ms * 1000;
+  var ret = Date.now() * 1000; // milliseconds to microseconds
+  if (ret <= lastMs) {
+    ret = lastMs + 1;
   }
+  lastMs = ret;
+  return ret;
 }
-export function are3PCSupported() {
-  if (typeof navigator === 'undefined') return false;
-  var browserInfo = Bowser.parse(navigator.userAgent);
-  log.info(JSON.stringify(browserInfo), 'current browser info');
-  var thirdPartyCookieSupport = true;
-  // brave
-  if (navigator.brave) {
-    thirdPartyCookieSupport = false;
-  }
-  // All webkit & gecko engine instances use itp (intelligent tracking prevention -
-  // https://webkit.org/tracking-prevention/#intelligent-tracking-prevention-itp)
-  if (browserInfo.engine.name === Bowser.ENGINE_MAP.WebKit || browserInfo.engine.name === Bowser.ENGINE_MAP.Gecko) {
-    thirdPartyCookieSupport = false;
-  }
-  return thirdPartyCookieSupport;
-}
+
+// the problem is only in iframes. we should default to server in case of iframes.
+// storage scoping is present in all browsers now
+// Safari and other browsers support native Broadcast channel now. It's in LS.
+// test here: https://pubkey.github.io/broadcast-channel/e2e.html?methodType=native
+// https://caniuse.com/broadcastchannel
+// export function are3PCSupported() {
+//     if (typeof navigator === 'undefined') return false;
+//     const browserInfo = Bowser.parse(navigator.userAgent);
+//     log.info(JSON.stringify(browserInfo), 'current browser info');
+
+//     let thirdPartyCookieSupport = true;
+//     // brave
+//     if (navigator.brave) {
+//         thirdPartyCookieSupport = false;
+//     }
+//     // All webkit & gecko engine instances use itp (intelligent tracking prevention -
+//     // https://webkit.org/tracking-prevention/#intelligent-tracking-prevention-itp)
+//     if (browserInfo.engine.name === Bowser.ENGINE_MAP.WebKit || browserInfo.engine.name === Bowser.ENGINE_MAP.Gecko) {
+//         thirdPartyCookieSupport = false;
+//     }
+
+//     return thirdPartyCookieSupport;
+// }
+
 export var log = loglevel.getLogger('broadcast-channel');
 log.setLevel('error');
 export var setLogLevel = function setLogLevel(level) {

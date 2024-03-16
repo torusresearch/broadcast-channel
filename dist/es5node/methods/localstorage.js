@@ -27,16 +27,14 @@ var _util = require("../util");
  * @link https://caniuse.com/#feat=indexeddb
  */
 
-var microSeconds = _util.microSeconds;
-exports.microSeconds = microSeconds;
+var microSeconds = exports.microSeconds = _util.microSeconds;
 var KEY_PREFIX = 'pubkey.broadcastChannel-';
-var type = 'localstorage';
+var type = exports.type = 'localstorage';
 
 /**
  * copied from crosstab
  * @link https://github.com/tejacques/crosstab/blob/master/src/crosstab.js#L32
  */
-exports.type = type;
 function getLocalStorage() {
   var localStorage;
   if (typeof window === 'undefined') return null;
@@ -64,7 +62,7 @@ function postMessage(channelState, messageJson) {
       var key = storageKey(channelState.channelName);
       var writeObj = {
         token: (0, _util.randomToken)(),
-        time: new Date().getTime(),
+        time: Date.now(),
         data: messageJson,
         uuid: channelState.uuid
       };
@@ -114,9 +112,9 @@ function create(channelName, options) {
   var state = {
     channelName: channelName,
     uuid: uuid,
+    time: (0, _util.microSeconds)(),
     eMIs: eMIs // emittedMessagesIds
   };
-
   state.listener = addStorageEventListener(channelName, function (msgObj) {
     if (!state.messagesCallback) return; // no listener
     if (msgObj.uuid === uuid) return; // own message
@@ -135,8 +133,7 @@ function onMessage(channelState, fn, time) {
   channelState.messagesCallbackTime = time;
   channelState.messagesCallback = fn;
 }
-function canBeUsed(options) {
-  if (!options.support3PC) return false;
+function canBeUsed() {
   var ls = getLocalStorage();
   if (!ls) return false;
   try {
@@ -160,7 +157,7 @@ function averageResponseTime() {
   }
   return defaultTime;
 }
-var _default = {
+var _default = exports["default"] = {
   create: create,
   close: close,
   onMessage: onMessage,
@@ -170,4 +167,3 @@ var _default = {
   averageResponseTime: averageResponseTime,
   microSeconds: microSeconds
 };
-exports["default"] = _default;

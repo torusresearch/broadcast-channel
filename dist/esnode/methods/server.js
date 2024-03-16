@@ -41,7 +41,7 @@ export function postMessage(channelState, messageJson) {
             _context.next = 4;
             return encryptData(channelEncPrivKey.toString('hex'), {
               token: randomToken(),
-              time: new Date().getTime(),
+              time: Date.now(),
               data: messageJson,
               uuid: channelState.uuid
             });
@@ -103,7 +103,6 @@ export function getSocketInstance(serverUrl) {
             // called when the transport is upgraded (i.e. from HTTP long-polling to WebSocket)
             log.debug('upgraded', engine.transport.name); // in most cases, prints "websocket"
           });
-
           engine.once('close', function (reason) {
             // called when the underlying connection is closed
             log.debug('connection closed', reason);
@@ -232,7 +231,8 @@ export function create(channelName, options) {
     uuid: uuid,
     eMIs: eMIs,
     // emittedMessagesIds
-    serverUrl: options.server.url
+    serverUrl: options.server.url,
+    time: micro()
   };
   if (options.server.timeout) state.timeout = options.server.timeout;
   setupSocketConnection(options.server.url, state, function (msgObj) {
@@ -256,7 +256,6 @@ export function close(channelState) {
   //     SOCKET_CONN_INSTANCE = null;
   // }, 1000);
 }
-
 export function onMessage(channelState, fn, time) {
   channelState.messagesCallbackTime = time;
   channelState.messagesCallback = fn;

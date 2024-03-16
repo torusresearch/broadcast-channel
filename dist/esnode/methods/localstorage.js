@@ -44,7 +44,7 @@ export function postMessage(channelState, messageJson) {
       var key = storageKey(channelState.channelName);
       var writeObj = {
         token: randomToken(),
-        time: new Date().getTime(),
+        time: Date.now(),
         data: messageJson,
         uuid: channelState.uuid
       };
@@ -94,9 +94,9 @@ export function create(channelName, options) {
   var state = {
     channelName: channelName,
     uuid: uuid,
+    time: micro(),
     eMIs: eMIs // emittedMessagesIds
   };
-
   state.listener = addStorageEventListener(channelName, function (msgObj) {
     if (!state.messagesCallback) return; // no listener
     if (msgObj.uuid === uuid) return; // own message
@@ -115,8 +115,7 @@ export function onMessage(channelState, fn, time) {
   channelState.messagesCallbackTime = time;
   channelState.messagesCallback = fn;
 }
-export function canBeUsed(options) {
-  if (!options.support3PC) return false;
+export function canBeUsed() {
   var ls = getLocalStorage();
   if (!ls) return false;
   try {

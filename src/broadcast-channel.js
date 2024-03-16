@@ -228,10 +228,10 @@ function _startListening(channel) {
                  * Not doing this would make messages missing when we send data directly after subscribing and awaiting a response.
                  * @link https://johnresig.com/blog/accuracy-of-javascript-time/
                  */
-                const hundredMsInMicro = 100 * 1000;
-                const minMessageTime = listenerObject.time - hundredMsInMicro;
+                // const hundredMsInMicro = 100 * 1000;
+                // const minMessageTime = listenerObject.time - hundredMsInMicro;
 
-                if (msgObj.time >= minMessageTime) {
+                if (msgObj.time >= listenerObject.time) {
                     listenerObject.fn(msgObj.data);
                 } else if (channel.method.type === 'server') {
                     // server msg might lag based on connection.

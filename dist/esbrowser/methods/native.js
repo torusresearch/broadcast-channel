@@ -3,11 +3,11 @@ export var microSeconds = micro;
 export var type = 'native';
 export function create(channelName) {
   var state = {
+    time: micro(),
     messagesCallback: null,
     bc: new BroadcastChannel(channelName),
     subFns: [] // subscriberFunctions
   };
-
   state.bc.onmessage = function (msg) {
     if (state.messagesCallback) {
       state.messagesCallback(msg.data);
@@ -30,13 +30,12 @@ export function postMessage(channelState, messageJson) {
 export function onMessage(channelState, fn) {
   channelState.messagesCallback = fn;
 }
-export function canBeUsed(options) {
+export function canBeUsed() {
   /**
    * in the electron-renderer, isNode will be true even if we are in browser-context
    * so we also check if window is undefined
    */
   if (typeof window === 'undefined') return false;
-  if (!options.support3PC) return false;
   if (typeof BroadcastChannel === 'function') {
     if (BroadcastChannel._pubkey) {
       throw new Error('BroadcastChannel: Do not overwrite window.BroadcastChannel with this module, this is not a polyfill');

@@ -172,7 +172,7 @@ describe('unit/indexed-db.method.test.js', () => {
         });
         describe('.canBeUsed()', () => {
             it('should be true on browsers', async () => {
-                const ok = IndexedDbMethod.canBeUsed({ support3PC: true });
+                const ok = IndexedDbMethod.canBeUsed();
                 assert.ok(ok);
             });
         });

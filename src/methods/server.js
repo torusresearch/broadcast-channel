@@ -40,7 +40,7 @@ export function postMessage(channelState, messageJson) {
             const channelEncPrivKey = keccak256(Buffer.from(key, 'utf8'));
             const encData = await encryptData(channelEncPrivKey.toString('hex'), {
                 token: randomToken(),
-                time: new Date().getTime(),
+                time: Date.now(),
                 data: messageJson,
                 uuid: channelState.uuid,
             });
@@ -193,6 +193,7 @@ export function create(channelName, options) {
         uuid,
         eMIs, // emittedMessagesIds
         serverUrl: options.server.url,
+        time: micro(),
     };
     if (options.server.timeout) state.timeout = options.server.timeout;
 

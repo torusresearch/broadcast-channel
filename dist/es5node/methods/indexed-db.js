@@ -34,8 +34,7 @@ var _options = require("../options");
  * @link https://rxdb.info/slow-indexeddb.html
  */
 
-var microSeconds = _util.microSeconds;
-exports.microSeconds = microSeconds;
+var microSeconds = exports.microSeconds = _util.microSeconds;
 var DB_PREFIX = 'pubkey.broadcast-channel-0-';
 var OBJECT_STORE_ID = 'messages';
 
@@ -43,12 +42,10 @@ var OBJECT_STORE_ID = 'messages';
  * Use relaxed durability for faster performance on all transactions.
  * @link https://nolanlawson.com/2021/08/22/speeding-up-indexeddb-reads-and-writes/
  */
-var TRANSACTION_SETTINGS = {
+var TRANSACTION_SETTINGS = exports.TRANSACTION_SETTINGS = {
   durability: 'relaxed'
 };
-exports.TRANSACTION_SETTINGS = TRANSACTION_SETTINGS;
-var type = 'idb';
-exports.type = type;
+var type = exports.type = 'idb';
 function getIdb() {
   if (typeof indexedDB !== 'undefined') return indexedDB;
   if (typeof window !== 'undefined') {
@@ -104,7 +101,7 @@ function createDatabase(channelName) {
  * so other readers can find it
  */
 function writeMessage(db, readerUuid, messageJson) {
-  var time = new Date().getTime();
+  var time = Date.now();
   var writeObject = {
     uuid: readerUuid,
     time: time,
@@ -208,7 +205,7 @@ function removeMessagesById(db, ids) {
   }));
 }
 function getOldMessages(db, ttl) {
-  var olderThen = new Date().getTime() - ttl;
+  var olderThen = Date.now() - ttl;
   var tx = db.transaction(OBJECT_STORE_ID, 'readonly', TRANSACTION_SETTINGS);
   var objectStore = tx.objectStore(OBJECT_STORE_ID);
   var ret = [];
@@ -259,7 +256,8 @@ function create(channelName, options) {
       writeBlockPromise: _util.PROMISE_RESOLVED_VOID,
       messagesCallback: null,
       readQueuePromises: [],
-      db: db
+      db: db,
+      time: (0, _util.microSeconds)()
     };
 
     /**
@@ -353,8 +351,7 @@ function onMessage(channelState, fn, time) {
   channelState.messagesCallback = fn;
   readNewMessages(channelState);
 }
-function canBeUsed(options) {
-  if (!options.support3PC) return false;
+function canBeUsed() {
   var idb = getIdb();
   if (!idb) return false;
   return true;
@@ -362,7 +359,7 @@ function canBeUsed(options) {
 function averageResponseTime(options) {
   return options.idb.fallbackInterval * 2;
 }
-var _default = {
+var _default = exports["default"] = {
   create: create,
   close: close,
   onMessage: onMessage,
@@ -372,4 +369,3 @@ var _default = {
   averageResponseTime: averageResponseTime,
   microSeconds: microSeconds
 };
-exports["default"] = _default;

@@ -6,6 +6,7 @@ export const type = 'native';
 
 export function create(channelName) {
     const state = {
+        time: micro(),
         messagesCallback: null,
         bc: new BroadcastChannel(channelName),
         subFns: [], // subscriberFunctions
@@ -38,13 +39,12 @@ export function onMessage(channelState, fn) {
     channelState.messagesCallback = fn;
 }
 
-export function canBeUsed(options) {
+export function canBeUsed() {
     /**
      * in the electron-renderer, isNode will be true even if we are in browser-context
      * so we also check if window is undefined
      */
     if (typeof window === 'undefined') return false;
-    if (!options.support3PC) return false;
 
     if (typeof BroadcastChannel === 'function') {
         if (BroadcastChannel._pubkey) {

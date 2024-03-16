@@ -12,17 +12,15 @@ exports.onMessage = onMessage;
 exports.postMessage = postMessage;
 exports.type = void 0;
 var _util = require("../util");
-var microSeconds = _util.microSeconds;
-exports.microSeconds = microSeconds;
-var type = 'native';
-exports.type = type;
+var microSeconds = exports.microSeconds = _util.microSeconds;
+var type = exports.type = 'native';
 function create(channelName) {
   var state = {
+    time: (0, _util.microSeconds)(),
     messagesCallback: null,
     bc: new BroadcastChannel(channelName),
     subFns: [] // subscriberFunctions
   };
-
   state.bc.onmessage = function (msg) {
     if (state.messagesCallback) {
       state.messagesCallback(msg.data);
@@ -45,13 +43,12 @@ function postMessage(channelState, messageJson) {
 function onMessage(channelState, fn) {
   channelState.messagesCallback = fn;
 }
-function canBeUsed(options) {
+function canBeUsed() {
   /**
    * in the electron-renderer, isNode will be true even if we are in browser-context
    * so we also check if window is undefined
    */
   if (typeof window === 'undefined') return false;
-  if (!options.support3PC) return false;
   if (typeof BroadcastChannel === 'function') {
     if (BroadcastChannel._pubkey) {
       throw new Error('BroadcastChannel: Do not overwrite window.BroadcastChannel with this module, this is not a polyfill');
@@ -62,7 +59,7 @@ function canBeUsed(options) {
 function averageResponseTime() {
   return 150;
 }
-var _default = {
+var _default = exports["default"] = {
   create: create,
   close: close,
   onMessage: onMessage,
@@ -72,4 +69,3 @@ var _default = {
   averageResponseTime: averageResponseTime,
   microSeconds: microSeconds
 };
-exports["default"] = _default;

@@ -33,11 +33,9 @@ var _options = require("../options");
  * @link https://caniuse.com/#feat=indexeddb
  */
 
-var microSeconds = _util.microSeconds;
-exports.microSeconds = microSeconds;
+var microSeconds = exports.microSeconds = _util.microSeconds;
 var KEY_PREFIX = 'pubkey.broadcastChannel-';
-var type = 'server';
-exports.type = type;
+var type = exports.type = 'server';
 var SOCKET_CONN_INSTANCE = null;
 // used to decide to reconnect socket e.g. when socket connection is disconnected unexpectedly
 var runningChannels = new Set();
@@ -61,7 +59,7 @@ function postMessage(channelState, messageJson) {
             _context.next = 4;
             return (0, _metadataHelpers.encryptData)(channelEncPrivKey.toString('hex'), {
               token: (0, _util.randomToken)(),
-              time: new Date().getTime(),
+              time: Date.now(),
               data: messageJson,
               uuid: channelState.uuid
             });
@@ -123,7 +121,6 @@ function getSocketInstance(serverUrl) {
             // called when the transport is upgraded (i.e. from HTTP long-polling to WebSocket)
             _util.log.debug('upgraded', engine.transport.name); // in most cases, prints "websocket"
           });
-
           engine.once('close', function (reason) {
             // called when the underlying connection is closed
             _util.log.debug('connection closed', reason);
@@ -252,7 +249,8 @@ function create(channelName, options) {
     uuid: uuid,
     eMIs: eMIs,
     // emittedMessagesIds
-    serverUrl: options.server.url
+    serverUrl: options.server.url,
+    time: (0, _util.microSeconds)()
   };
   if (options.server.timeout) state.timeout = options.server.timeout;
   setupSocketConnection(options.server.url, state, function (msgObj) {
@@ -276,7 +274,6 @@ function close(channelState) {
   //     SOCKET_CONN_INSTANCE = null;
   // }, 1000);
 }
-
 function onMessage(channelState, fn, time) {
   channelState.messagesCallbackTime = time;
   channelState.messagesCallback = fn;
@@ -289,7 +286,7 @@ function averageResponseTime() {
   // TODO: Maybe increase it based on operation
   return defaultTime;
 }
-var _default = {
+var _default = exports["default"] = {
   create: create,
   close: close,
   onMessage: onMessage,
@@ -299,4 +296,3 @@ var _default = {
   averageResponseTime: averageResponseTime,
   microSeconds: microSeconds
 };
-exports["default"] = _default;

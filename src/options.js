@@ -1,9 +1,5 @@
-import { are3PCSupported } from './util';
-
 export function fillOptionsWithDefaults(originalOptions = {}) {
     const options = JSON.parse(JSON.stringify(originalOptions));
-
-    if (typeof options.support3PC === 'undefined') options.support3PC = are3PCSupported();
 
     // main
     if (typeof options.webWorkerSupport === 'undefined') options.webWorkerSupport = true;
@@ -22,7 +18,7 @@ export function fillOptionsWithDefaults(originalOptions = {}) {
 
     // server
     if (!options.server) options.server = {};
-    if (!options.server.url) options.server.url = 'https://broadcast-server.tor.us';
+    if (!options.server.url) options.server.url = 'https://session.web3auth.io';
     if (!options.server.removeTimeout) options.server.removeTimeout = 1000 * 60 * 5; // 5 minutes
 
     // custom methods

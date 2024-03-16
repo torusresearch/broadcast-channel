@@ -5,7 +5,6 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.PROMISE_RESOLVED_VOID = exports.PROMISE_RESOLVED_TRUE = exports.PROMISE_RESOLVED_FALSE = void 0;
-exports.are3PCSupported = are3PCSupported;
 exports.isPromise = isPromise;
 exports.log = void 0;
 exports.microSeconds = microSeconds;
@@ -13,8 +12,9 @@ exports.randomInt = randomInt;
 exports.randomToken = randomToken;
 exports.setLogLevel = void 0;
 exports.sleep = sleep;
-var _bowser = _interopRequireDefault(require("bowser"));
 var _loglevel = _interopRequireDefault(require("loglevel"));
+// import Bowser from 'bowser';
+
 /**
  * returns true if the given object is a promise
  */
@@ -25,12 +25,9 @@ function isPromise(obj) {
     return false;
   }
 }
-var PROMISE_RESOLVED_FALSE = Promise.resolve(false);
-exports.PROMISE_RESOLVED_FALSE = PROMISE_RESOLVED_FALSE;
-var PROMISE_RESOLVED_TRUE = Promise.resolve(true);
-exports.PROMISE_RESOLVED_TRUE = PROMISE_RESOLVED_TRUE;
-var PROMISE_RESOLVED_VOID = Promise.resolve();
-exports.PROMISE_RESOLVED_VOID = PROMISE_RESOLVED_VOID;
+var PROMISE_RESOLVED_FALSE = exports.PROMISE_RESOLVED_FALSE = Promise.resolve(false);
+var PROMISE_RESOLVED_TRUE = exports.PROMISE_RESOLVED_TRUE = Promise.resolve(true);
+var PROMISE_RESOLVED_VOID = exports.PROMISE_RESOLVED_VOID = Promise.resolve();
 function sleep(time, resolveWith) {
   if (!time) time = 0;
   return new Promise(function (res) {
@@ -50,7 +47,6 @@ function randomToken() {
   return Math.random().toString(36).substring(2);
 }
 var lastMs = 0;
-var additional = 0;
 
 /**
  * returns the current time in micro-seconds,
@@ -60,36 +56,40 @@ var additional = 0;
  * The main reason for this hack is to ensure that BroadcastChannel behaves equal to production when it is used in fast-running unit tests.
  */
 function microSeconds() {
-  var ms = new Date().getTime();
-  if (ms === lastMs) {
-    additional++;
-    return ms * 1000 + additional;
-  } else {
-    lastMs = ms;
-    additional = 0;
-    return ms * 1000;
+  var ret = Date.now() * 1000; // milliseconds to microseconds
+  if (ret <= lastMs) {
+    ret = lastMs + 1;
   }
+  lastMs = ret;
+  return ret;
 }
-function are3PCSupported() {
-  if (typeof navigator === 'undefined') return false;
-  var browserInfo = _bowser["default"].parse(navigator.userAgent);
-  log.info(JSON.stringify(browserInfo), 'current browser info');
-  var thirdPartyCookieSupport = true;
-  // brave
-  if (navigator.brave) {
-    thirdPartyCookieSupport = false;
-  }
-  // All webkit & gecko engine instances use itp (intelligent tracking prevention -
-  // https://webkit.org/tracking-prevention/#intelligent-tracking-prevention-itp)
-  if (browserInfo.engine.name === _bowser["default"].ENGINE_MAP.WebKit || browserInfo.engine.name === _bowser["default"].ENGINE_MAP.Gecko) {
-    thirdPartyCookieSupport = false;
-  }
-  return thirdPartyCookieSupport;
-}
-var log = _loglevel["default"].getLogger('broadcast-channel');
-exports.log = log;
+
+// the problem is only in iframes. we should default to server in case of iframes.
+// storage scoping is present in all browsers now
+// Safari and other browsers support native Broadcast channel now. It's in LS.
+// test here: https://pubkey.github.io/broadcast-channel/e2e.html?methodType=native
+// https://caniuse.com/broadcastchannel
+// export function are3PCSupported() {
+//     if (typeof navigator === 'undefined') return false;
+//     const browserInfo = Bowser.parse(navigator.userAgent);
+//     log.info(JSON.stringify(browserInfo), 'current browser info');
+
+//     let thirdPartyCookieSupport = true;
+//     // brave
+//     if (navigator.brave) {
+//         thirdPartyCookieSupport = false;
+//     }
+//     // All webkit & gecko engine instances use itp (intelligent tracking prevention -
+//     // https://webkit.org/tracking-prevention/#intelligent-tracking-prevention-itp)
+//     if (browserInfo.engine.name === Bowser.ENGINE_MAP.WebKit || browserInfo.engine.name === Bowser.ENGINE_MAP.Gecko) {
+//         thirdPartyCookieSupport = false;
+//     }
+
+//     return thirdPartyCookieSupport;
+// }
+
+var log = exports.log = _loglevel["default"].getLogger('broadcast-channel');
 log.setLevel('error');
-var setLogLevel = function setLogLevel(level) {
+var setLogLevel = exports.setLogLevel = function setLogLevel(level) {
   log.setLevel(level);
 };
-exports.setLogLevel = setLogLevel;
