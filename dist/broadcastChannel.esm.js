@@ -1,7 +1,5 @@
 import loglevel from 'loglevel';
 import { ObliviousSet } from 'oblivious-set';
-import _asyncToGenerator from '@babel/runtime/helpers/asyncToGenerator';
-import _regeneratorRuntime from '@babel/runtime/regenerator';
 import { io } from 'socket.io-client';
 import { getPublic, sign } from '@toruslabs/eccrypto';
 import { keccak256, encryptData, decryptData } from '@toruslabs/metadata-helpers';
@@ -20,14 +18,10 @@ function isPromise(obj) {
 }
 Promise.resolve(false);
 Promise.resolve(true);
-var PROMISE_RESOLVED_VOID = Promise.resolve();
+const PROMISE_RESOLVED_VOID = Promise.resolve();
 function sleep(time, resolveWith) {
   if (!time) time = 0;
-  return new Promise(function (res) {
-    return setTimeout(function () {
-      return res(resolveWith);
-    }, time);
-  });
+  return new Promise(res => setTimeout(() => res(resolveWith), time));
 }
 function randomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1) + min);
@@ -39,7 +33,7 @@ function randomInt(min, max) {
 function randomToken() {
   return Math.random().toString(36).substring(2);
 }
-var lastMs = 0;
+let lastMs = 0;
 
 /**
  * returns the current time in micro-seconds,
@@ -49,7 +43,7 @@ var lastMs = 0;
  * The main reason for this hack is to ensure that BroadcastChannel behaves equal to production when it is used in fast-running unit tests.
  */
 function microSeconds$5() {
-  var ret = Date.now() * 1000; // milliseconds to microseconds
+  let ret = Date.now() * 1000; // milliseconds to microseconds
   if (ret <= lastMs) {
     ret = lastMs + 1;
   }
@@ -81,19 +75,19 @@ function microSeconds$5() {
 //     return thirdPartyCookieSupport;
 // }
 
-var log = loglevel.getLogger('broadcast-channel');
+const log = loglevel.getLogger('broadcast-channel');
 log.setLevel('error');
 
-var microSeconds$4 = microSeconds$5;
-var type$4 = 'native';
+const microSeconds$4 = microSeconds$5;
+const type$4 = 'native';
 function create$4(channelName) {
-  var state = {
+  const state = {
     time: microSeconds$5(),
     messagesCallback: null,
     bc: new BroadcastChannel(channelName),
     subFns: [] // subscriberFunctions
   };
-  state.bc.onmessage = function (msg) {
+  state.bc.onmessage = msg => {
     if (state.messagesCallback) {
       state.messagesCallback(msg.data);
     }
@@ -143,8 +137,8 @@ var NativeMethod = {
 };
 
 function fillOptionsWithDefaults() {
-  var originalOptions = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-  var options = JSON.parse(JSON.stringify(originalOptions));
+  let originalOptions = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+  const options = JSON.parse(JSON.stringify(originalOptions));
 
   // main
   if (typeof options.webWorkerSupport === 'undefined') options.webWorkerSupport = true;
@@ -180,18 +174,18 @@ function fillOptionsWithDefaults() {
  * @link https://rxdb.info/slow-indexeddb.html
  */
 
-var microSeconds$3 = microSeconds$5;
-var DB_PREFIX = 'pubkey.broadcast-channel-0-';
-var OBJECT_STORE_ID = 'messages';
+const microSeconds$3 = microSeconds$5;
+const DB_PREFIX = 'pubkey.broadcast-channel-0-';
+const OBJECT_STORE_ID = 'messages';
 
 /**
  * Use relaxed durability for faster performance on all transactions.
  * @link https://nolanlawson.com/2021/08/22/speeding-up-indexeddb-reads-and-writes/
  */
-var TRANSACTION_SETTINGS = {
+const TRANSACTION_SETTINGS = {
   durability: 'relaxed'
 };
-var type$3 = 'idb';
+const type$3 = 'idb';
 function getIdb() {
   if (typeof indexedDB !== 'undefined') return indexedDB;
   if (typeof window !== 'undefined') {
@@ -213,29 +207,27 @@ function commitIndexedDBTransaction(tx) {
   }
 }
 function createDatabase(channelName) {
-  var IndexedDB = getIdb();
+  const IndexedDB = getIdb();
 
   // create table
-  var dbName = DB_PREFIX + channelName;
+  const dbName = DB_PREFIX + channelName;
 
   /**
    * All IndexedDB databases are opened without version
    * because it is a bit faster, especially on firefox
    * @link http://nparashuram.com/IndexedDB/perf/#Open%20Database%20with%20version
    */
-  var openRequest = IndexedDB.open(dbName);
-  openRequest.onupgradeneeded = function (ev) {
-    var db = ev.target.result;
+  const openRequest = IndexedDB.open(dbName);
+  openRequest.onupgradeneeded = ev => {
+    const db = ev.target.result;
     db.createObjectStore(OBJECT_STORE_ID, {
       keyPath: 'id',
       autoIncrement: true
     });
   };
-  var dbPromise = new Promise(function (res, rej) {
-    openRequest.onerror = function (ev) {
-      return rej(ev);
-    };
-    openRequest.onsuccess = function () {
+  const dbPromise = new Promise((res, rej) => {
+    openRequest.onerror = ev => rej(ev);
+    openRequest.onsuccess = () => {
       res(openRequest.result);
     };
   });
@@ -247,30 +239,26 @@ function createDatabase(channelName) {
  * so other readers can find it
  */
 function writeMessage(db, readerUuid, messageJson) {
-  var time = Date.now();
-  var writeObject = {
+  const time = Date.now();
+  const writeObject = {
     uuid: readerUuid,
-    time: time,
+    time,
     data: messageJson
   };
-  var tx = db.transaction([OBJECT_STORE_ID], 'readwrite', TRANSACTION_SETTINGS);
-  return new Promise(function (res, rej) {
-    tx.oncomplete = function () {
-      return res();
-    };
-    tx.onerror = function (ev) {
-      return rej(ev);
-    };
-    var objectStore = tx.objectStore(OBJECT_STORE_ID);
+  const tx = db.transaction([OBJECT_STORE_ID], 'readwrite', TRANSACTION_SETTINGS);
+  return new Promise((res, rej) => {
+    tx.oncomplete = () => res();
+    tx.onerror = ev => rej(ev);
+    const objectStore = tx.objectStore(OBJECT_STORE_ID);
     objectStore.add(writeObject);
     commitIndexedDBTransaction(tx);
   });
 }
 function getMessagesHigherThan(db, lastCursorId) {
-  var tx = db.transaction(OBJECT_STORE_ID, 'readonly', TRANSACTION_SETTINGS);
-  var objectStore = tx.objectStore(OBJECT_STORE_ID);
-  var ret = [];
-  var keyRangeValue = IDBKeyRange.bound(lastCursorId + 1, Infinity);
+  const tx = db.transaction(OBJECT_STORE_ID, 'readonly', TRANSACTION_SETTINGS);
+  const objectStore = tx.objectStore(OBJECT_STORE_ID);
+  const ret = [];
+  let keyRangeValue = IDBKeyRange.bound(lastCursorId + 1, Infinity);
 
   /**
    * Optimization shortcut,
@@ -278,11 +266,9 @@ function getMessagesHigherThan(db, lastCursorId) {
    * @link https://rxdb.info/slow-indexeddb.html
    */
   if (objectStore.getAll) {
-    var getAllRequest = objectStore.getAll(keyRangeValue);
-    return new Promise(function (res, rej) {
-      getAllRequest.onerror = function (err) {
-        return rej(err);
-      };
+    const getAllRequest = objectStore.getAll(keyRangeValue);
+    return new Promise((res, rej) => {
+      getAllRequest.onerror = err => rej(err);
       getAllRequest.onsuccess = function (e) {
         res(e.target.result);
       };
@@ -299,19 +285,17 @@ function getMessagesHigherThan(db, lastCursorId) {
       return objectStore.openCursor();
     }
   }
-  return new Promise(function (res, rej) {
-    var openCursorRequest = openCursor();
-    openCursorRequest.onerror = function (err) {
-      return rej(err);
-    };
-    openCursorRequest.onsuccess = function (ev) {
-      var cursor = ev.target.result;
+  return new Promise((res, rej) => {
+    const openCursorRequest = openCursor();
+    openCursorRequest.onerror = err => rej(err);
+    openCursorRequest.onsuccess = ev => {
+      const cursor = ev.target.result;
       if (cursor) {
         if (cursor.value.id < lastCursorId + 1) {
-          cursor["continue"](lastCursorId + 1);
+          cursor.continue(lastCursorId + 1);
         } else {
           ret.push(cursor.value);
-          cursor["continue"]();
+          cursor.continue();
         }
       } else {
         commitIndexedDBTransaction(tx);
@@ -321,31 +305,29 @@ function getMessagesHigherThan(db, lastCursorId) {
   });
 }
 function removeMessagesById(db, ids) {
-  var tx = db.transaction([OBJECT_STORE_ID], 'readwrite', TRANSACTION_SETTINGS);
-  var objectStore = tx.objectStore(OBJECT_STORE_ID);
-  return Promise.all(ids.map(function (id) {
-    var deleteRequest = objectStore["delete"](id);
-    return new Promise(function (res) {
-      deleteRequest.onsuccess = function () {
-        return res();
-      };
+  const tx = db.transaction([OBJECT_STORE_ID], 'readwrite', TRANSACTION_SETTINGS);
+  const objectStore = tx.objectStore(OBJECT_STORE_ID);
+  return Promise.all(ids.map(id => {
+    const deleteRequest = objectStore.delete(id);
+    return new Promise(res => {
+      deleteRequest.onsuccess = () => res();
     });
   }));
 }
 function getOldMessages(db, ttl) {
-  var olderThen = Date.now() - ttl;
-  var tx = db.transaction(OBJECT_STORE_ID, 'readonly', TRANSACTION_SETTINGS);
-  var objectStore = tx.objectStore(OBJECT_STORE_ID);
-  var ret = [];
-  return new Promise(function (res) {
-    objectStore.openCursor().onsuccess = function (ev) {
-      var cursor = ev.target.result;
+  const olderThen = Date.now() - ttl;
+  const tx = db.transaction(OBJECT_STORE_ID, 'readonly', TRANSACTION_SETTINGS);
+  const objectStore = tx.objectStore(OBJECT_STORE_ID);
+  const ret = [];
+  return new Promise(res => {
+    objectStore.openCursor().onsuccess = ev => {
+      const cursor = ev.target.result;
       if (cursor) {
-        var msgObk = cursor.value;
+        const msgObk = cursor.value;
         if (msgObk.time < olderThen) {
           ret.push(msgObk);
           //alert("Name for SSN " + cursor.key + " is " + cursor.value.name);
-          cursor["continue"]();
+          cursor.continue();
         } else {
           // no more old messages,
           commitIndexedDBTransaction(tx);
@@ -359,20 +341,18 @@ function getOldMessages(db, ttl) {
   });
 }
 function cleanOldMessages(db, ttl) {
-  return getOldMessages(db, ttl).then(function (tooOld) {
-    return removeMessagesById(db, tooOld.map(function (msg) {
-      return msg.id;
-    }));
+  return getOldMessages(db, ttl).then(tooOld => {
+    return removeMessagesById(db, tooOld.map(msg => msg.id));
   });
 }
 function create$3(channelName, options) {
   options = fillOptionsWithDefaults(options);
-  return createDatabase(channelName).then(function (db) {
-    var state = {
+  return createDatabase(channelName).then(db => {
+    const state = {
       closed: false,
       lastCursorId: 0,
-      channelName: channelName,
-      options: options,
+      channelName,
+      options,
       uuid: randomToken(),
       /**
        * emittedMessagesIds
@@ -384,7 +364,7 @@ function create$3(channelName, options) {
       writeBlockPromise: PROMISE_RESOLVED_VOID,
       messagesCallback: null,
       readQueuePromises: [],
-      db: db,
+      db,
       time: microSeconds$5()
     };
 
@@ -410,11 +390,7 @@ function create$3(channelName, options) {
 }
 function _readLoop(state) {
   if (state.closed) return;
-  readNewMessages(state).then(function () {
-    return sleep(state.options.idb.fallbackInterval);
-  }).then(function () {
-    return _readLoop(state);
-  });
+  readNewMessages(state).then(() => sleep(state.options.idb.fallbackInterval)).then(() => _readLoop(state));
 }
 function _filterMessage(msgObj, state) {
   if (msgObj.uuid === state.uuid) return false; // send by own
@@ -432,25 +408,19 @@ function readNewMessages(state) {
 
   // if no one is listening, we do not need to scan for new messages
   if (!state.messagesCallback) return PROMISE_RESOLVED_VOID;
-  return getMessagesHigherThan(state.db, state.lastCursorId).then(function (newerMessages) {
-    var useMessages = newerMessages
+  return getMessagesHigherThan(state.db, state.lastCursorId).then(newerMessages => {
+    const useMessages = newerMessages
     /**
      * there is a bug in iOS where the msgObj can be undefined some times
      * so we filter them out
      * @link https://github.com/pubkey/broadcast-channel/issues/19
-     */.filter(function (msgObj) {
-      return !!msgObj;
-    }).map(function (msgObj) {
+     */.filter(msgObj => !!msgObj).map(msgObj => {
       if (msgObj.id > state.lastCursorId) {
         state.lastCursorId = msgObj.id;
       }
       return msgObj;
-    }).filter(function (msgObj) {
-      return _filterMessage(msgObj, state);
-    }).sort(function (msgObjA, msgObjB) {
-      return msgObjA.time - msgObjB.time;
-    }); // sort by time
-    useMessages.forEach(function (msgObj) {
+    }).filter(msgObj => _filterMessage(msgObj, state)).sort((msgObjA, msgObjB) => msgObjA.time - msgObjB.time); // sort by time
+    useMessages.forEach(msgObj => {
       if (state.messagesCallback) {
         state.eMIs.add(msgObj.id);
         state.messagesCallback(msgObj.data);
@@ -464,9 +434,7 @@ function close$3(channelState) {
   channelState.db.close();
 }
 function postMessage$3(channelState, messageJson) {
-  channelState.writeBlockPromise = channelState.writeBlockPromise.then(function () {
-    return writeMessage(channelState.db, channelState.uuid, messageJson);
-  }).then(function () {
+  channelState.writeBlockPromise = channelState.writeBlockPromise.then(() => writeMessage(channelState.db, channelState.uuid, messageJson)).then(() => {
     if (randomInt(0, 10) === 0) {
       /* await (do not await) */
       cleanOldMessages(channelState.db, channelState.options.idb.ttl);
@@ -480,7 +448,7 @@ function onMessage$3(channelState, fn, time) {
   readNewMessages(channelState);
 }
 function canBeUsed$3() {
-  var idb = getIdb();
+  const idb = getIdb();
   if (!idb) return false;
   return true;
 }
@@ -506,16 +474,16 @@ var IndexeDbMethod = {
  * @link https://caniuse.com/#feat=indexeddb
  */
 
-var microSeconds$2 = microSeconds$5;
-var KEY_PREFIX$1 = 'pubkey.broadcastChannel-';
-var type$2 = 'localstorage';
+const microSeconds$2 = microSeconds$5;
+const KEY_PREFIX$1 = 'pubkey.broadcastChannel-';
+const type$2 = 'localstorage';
 
 /**
  * copied from crosstab
  * @link https://github.com/tejacques/crosstab/blob/master/src/crosstab.js#L32
  */
 function getLocalStorage() {
-  var localStorage;
+  let localStorage;
   if (typeof window === 'undefined') return null;
   try {
     localStorage = window.localStorage;
@@ -536,16 +504,16 @@ function storageKey$1(channelName) {
  * and fires the storage-event so other readers can find it
  */
 function postMessage$2(channelState, messageJson) {
-  return new Promise(function (res) {
-    sleep().then(function () {
-      var key = storageKey$1(channelState.channelName);
-      var writeObj = {
+  return new Promise(res => {
+    sleep().then(() => {
+      const key = storageKey$1(channelState.channelName);
+      const writeObj = {
         token: randomToken(),
         time: Date.now(),
         data: messageJson,
         uuid: channelState.uuid
       };
-      var value = JSON.stringify(writeObj);
+      const value = JSON.stringify(writeObj);
       getLocalStorage().setItem(key, value);
 
       /**
@@ -553,7 +521,7 @@ function postMessage$2(channelState, messageJson) {
        * in the window that changes the state of the local storage.
        * So we fire it manually
        */
-      var ev = document.createEvent('Event');
+      const ev = document.createEvent('Event');
       ev.initEvent('storage', true, true);
       ev.key = key;
       ev.newValue = value;
@@ -563,8 +531,8 @@ function postMessage$2(channelState, messageJson) {
   });
 }
 function addStorageEventListener(channelName, fn) {
-  var key = storageKey$1(channelName);
-  var listener = function listener(ev) {
+  const key = storageKey$1(channelName);
+  const listener = ev => {
     if (ev.key === key) {
       fn(JSON.parse(ev.newValue));
     }
@@ -580,21 +548,21 @@ function create$2(channelName, options) {
   if (!canBeUsed$2()) {
     throw new Error('BroadcastChannel: localstorage cannot be used');
   }
-  var uuid = randomToken();
+  const uuid = randomToken();
 
   /**
    * eMIs
    * contains all messages that have been emitted before
    * @type {ObliviousSet}
    */
-  var eMIs = new ObliviousSet(options.localstorage.removeTimeout);
-  var state = {
-    channelName: channelName,
-    uuid: uuid,
+  const eMIs = new ObliviousSet(options.localstorage.removeTimeout);
+  const state = {
+    channelName,
+    uuid,
     time: microSeconds$5(),
-    eMIs: eMIs // emittedMessagesIds
+    eMIs // emittedMessagesIds
   };
-  state.listener = addStorageEventListener(channelName, function (msgObj) {
+  state.listener = addStorageEventListener(channelName, msgObj => {
     if (!state.messagesCallback) return; // no listener
     if (msgObj.uuid === uuid) return; // own message
     if (!msgObj.token || eMIs.has(msgObj.token)) return; // already emitted
@@ -613,10 +581,10 @@ function onMessage$2(channelState, fn, time) {
   channelState.messagesCallback = fn;
 }
 function canBeUsed$2() {
-  var ls = getLocalStorage();
+  const ls = getLocalStorage();
   if (!ls) return false;
   try {
-    var key = '__broadcastchannel_check';
+    const key = '__broadcastchannel_check';
     ls.setItem(key, 'works');
     ls.removeItem(key);
   } catch (e) {
@@ -628,8 +596,8 @@ function canBeUsed$2() {
   return true;
 }
 function averageResponseTime$2() {
-  var defaultTime = 120;
-  var userAgent = navigator.userAgent.toLowerCase();
+  const defaultTime = 120;
+  const userAgent = navigator.userAgent.toLowerCase();
   if (userAgent.includes('safari') && !userAgent.includes('chrome')) {
     // safari is much slower so this time is higher
     return defaultTime * 2;
@@ -647,12 +615,20 @@ var LocalstorageMethod = {
   microSeconds: microSeconds$2
 };
 
-var microSeconds$1 = microSeconds$5;
-var KEY_PREFIX = 'pubkey.broadcastChannel-';
-var type$1 = 'server';
-var SOCKET_CONN_INSTANCE = null;
+/**
+ * A localStorage-only method which uses localstorage and its 'storage'-event
+ * This does not work inside of webworkers because they have no access to locastorage
+ * This is basically implemented to support IE9 or your grandmothers toaster.
+ * @link https://caniuse.com/#feat=namevalue-storage
+ * @link https://caniuse.com/#feat=indexeddb
+ */
+
+const microSeconds$1 = microSeconds$5;
+const KEY_PREFIX = 'pubkey.broadcastChannel-';
+const type$1 = 'server';
+let SOCKET_CONN_INSTANCE = null;
 // used to decide to reconnect socket e.g. when socket connection is disconnected unexpectedly
-var runningChannels = new Set();
+const runningChannels = new Set();
 function storageKey(channelName) {
   return KEY_PREFIX + channelName;
 }
@@ -662,90 +638,65 @@ function storageKey(channelName) {
  * and fires the storage-event so other readers can find it
  */
 function postMessage$1(channelState, messageJson) {
-  return new Promise(function (res, rej) {
-    sleep().then( /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/_regeneratorRuntime.mark(function _callee() {
-      var key, channelEncPrivKey, encData, body;
-      return _regeneratorRuntime.wrap(function _callee$(_context) {
-        while (1) switch (_context.prev = _context.next) {
-          case 0:
-            key = storageKey(channelState.channelName);
-            channelEncPrivKey = keccak256(Buffer.from(key, 'utf8'));
-            _context.next = 4;
-            return encryptData(channelEncPrivKey.toString('hex'), {
-              token: randomToken(),
-              time: Date.now(),
-              data: messageJson,
-              uuid: channelState.uuid
-            });
-          case 4:
-            encData = _context.sent;
-            _context.t0 = getPublic(channelEncPrivKey).toString('hex');
-            _context.t1 = encData;
-            _context.next = 9;
-            return sign(channelEncPrivKey, keccak256(Buffer.from(encData, 'utf8')));
-          case 9:
-            _context.t2 = _context.sent.toString('hex');
-            body = {
-              sameOriginCheck: true,
-              sameIpCheck: true,
-              key: _context.t0,
-              data: _context.t1,
-              signature: _context.t2
-            };
-            if (channelState.timeout) body.timeout = channelState.timeout;
-            return _context.abrupt("return", fetch(channelState.serverUrl + '/channel/set', {
-              method: 'POST',
-              body: JSON.stringify(body),
-              headers: {
-                'Content-Type': 'application/json; charset=utf-8'
-              }
-            }).then(res)["catch"](rej));
-          case 13:
-          case "end":
-            return _context.stop();
+  return new Promise((res, rej) => {
+    sleep().then(async () => {
+      const key = storageKey(channelState.channelName);
+      const channelEncPrivKey = keccak256(Buffer.from(key, 'utf8'));
+      const encData = await encryptData(channelEncPrivKey.toString('hex'), {
+        token: randomToken(),
+        time: Date.now(),
+        data: messageJson,
+        uuid: channelState.uuid
+      });
+      const body = {
+        sameOriginCheck: true,
+        sameIpCheck: true,
+        key: getPublic(channelEncPrivKey).toString('hex'),
+        data: encData,
+        signature: (await sign(channelEncPrivKey, keccak256(Buffer.from(encData, 'utf8')))).toString('hex')
+      };
+      if (channelState.timeout) body.timeout = channelState.timeout;
+      return fetch(channelState.serverUrl + '/channel/set', {
+        method: 'POST',
+        body: JSON.stringify(body),
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8'
         }
-      }, _callee);
-    })));
+      }).then(res).catch(rej);
+    });
   });
 }
 function getSocketInstance(serverUrl) {
   if (SOCKET_CONN_INSTANCE) {
     return SOCKET_CONN_INSTANCE;
   }
-  var SOCKET_CONN = io(serverUrl, {
+  const SOCKET_CONN = io(serverUrl, {
     transports: ['websocket', 'polling'],
     // use WebSocket first, if available
     withCredentials: true,
     reconnectionDelayMax: 10000,
     reconnectionAttempts: 10
   });
-  SOCKET_CONN.on('connect_error', function (err) {
+  SOCKET_CONN.on('connect_error', err => {
     // revert to classic upgrade
     SOCKET_CONN.io.opts.transports = ['polling', 'websocket'];
     log.error('connect error', err);
   });
-  SOCKET_CONN.on('connect', /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/_regeneratorRuntime.mark(function _callee2() {
-    var engine;
-    return _regeneratorRuntime.wrap(function _callee2$(_context2) {
-      while (1) switch (_context2.prev = _context2.next) {
-        case 0:
-          engine = SOCKET_CONN.io.engine;
-          log.debug('initially connected to', engine.transport.name); // in most cases, prints "polling"
-          engine.once('upgrade', function () {
-            // called when the transport is upgraded (i.e. from HTTP long-polling to WebSocket)
-            log.debug('upgraded', engine.transport.name); // in most cases, prints "websocket"
-          });
-          engine.once('close', function (reason) {
-            // called when the underlying connection is closed
-            log.debug('connection closed', reason);
-          });
-        case 4:
-        case "end":
-          return _context2.stop();
-      }
-    }, _callee2);
-  })));
-  SOCKET_CONN.on('error', function (err) {
+  SOCKET_CONN.on('connect', async () => {
+    const {
+      engine
+    } = SOCKET_CONN.io;
+    log.debug('initially connected to', engine.transport.name); // in most cases, prints "polling"
+    engine.once('upgrade', () => {
+      // called when the transport is upgraded (i.e. from HTTP long-polling to WebSocket)
+      log.debug('upgraded', engine.transport.name); // in most cases, prints "websocket"
+    });
+    engine.once('close', reason => {
+      // called when the underlying connection is closed
+      log.debug('connection closed', reason);
+    });
+  });
+  SOCKET_CONN.on('error', err => {
     log.error('socket errored', err);
     SOCKET_CONN.disconnect();
   });
@@ -753,17 +704,17 @@ function getSocketInstance(serverUrl) {
   return SOCKET_CONN;
 }
 function setupSocketConnection(serverUrl, channelState, fn) {
-  var socketConn = getSocketInstance(serverUrl);
-  var key = storageKey(channelState.channelName);
-  var channelEncPrivKey = keccak256(Buffer.from(key, 'utf8'));
-  var channelPubKey = getPublic(channelEncPrivKey).toString('hex');
+  const socketConn = getSocketInstance(serverUrl);
+  const key = storageKey(channelState.channelName);
+  const channelEncPrivKey = keccak256(Buffer.from(key, 'utf8'));
+  const channelPubKey = getPublic(channelEncPrivKey).toString('hex');
   if (socketConn.connected) {
     socketConn.emit('check_auth_status', channelPubKey, {
       sameOriginCheck: true,
       sameIpCheck: true
     });
   } else {
-    socketConn.once('connect', function () {
+    socketConn.once('connect', () => {
       log.debug('connected with socket');
       socketConn.emit('check_auth_status', channelPubKey, {
         sameOriginCheck: true,
@@ -771,25 +722,17 @@ function setupSocketConnection(serverUrl, channelState, fn) {
       });
     });
   }
-  var reconnect = function reconnect() {
-    socketConn.once('connect', /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/_regeneratorRuntime.mark(function _callee3() {
-      return _regeneratorRuntime.wrap(function _callee3$(_context3) {
-        while (1) switch (_context3.prev = _context3.next) {
-          case 0:
-            if (runningChannels.has(channelState.channelName)) {
-              socketConn.emit('check_auth_status', channelPubKey, {
-                sameOriginCheck: true,
-                sameIpCheck: true
-              });
-            }
-          case 1:
-          case "end":
-            return _context3.stop();
-        }
-      }, _callee3);
-    })));
+  const reconnect = () => {
+    socketConn.once('connect', async () => {
+      if (runningChannels.has(channelState.channelName)) {
+        socketConn.emit('check_auth_status', channelPubKey, {
+          sameOriginCheck: true,
+          sameIpCheck: true
+        });
+      }
+    });
   };
-  var visibilityListener = function visibilityListener() {
+  const visibilityListener = () => {
     // if channel is closed, then remove the listener.
     if (!socketConn || !runningChannels.has(channelState.channelName)) {
       document.removeEventListener('visibilitychange', visibilityListener);
@@ -800,66 +743,46 @@ function setupSocketConnection(serverUrl, channelState, fn) {
       reconnect();
     }
   };
-  var listener = /*#__PURE__*/function () {
-    var _ref4 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime.mark(function _callee4(ev) {
-      var decData;
-      return _regeneratorRuntime.wrap(function _callee4$(_context4) {
-        while (1) switch (_context4.prev = _context4.next) {
-          case 0:
-            _context4.prev = 0;
-            _context4.next = 3;
-            return decryptData(channelEncPrivKey.toString('hex'), ev);
-          case 3:
-            decData = _context4.sent;
-            log.info(decData);
-            fn(decData);
-            _context4.next = 11;
-            break;
-          case 8:
-            _context4.prev = 8;
-            _context4.t0 = _context4["catch"](0);
-            log.error(_context4.t0);
-          case 11:
-          case "end":
-            return _context4.stop();
-        }
-      }, _callee4, null, [[0, 8]]);
-    }));
-    return function listener(_x) {
-      return _ref4.apply(this, arguments);
-    };
-  }();
-  socketConn.on('disconnect', function () {
+  const listener = async ev => {
+    try {
+      const decData = await decryptData(channelEncPrivKey.toString('hex'), ev);
+      log.info(decData);
+      fn(decData);
+    } catch (error) {
+      log.error(error);
+    }
+  };
+  socketConn.on('disconnect', () => {
     log.debug('socket disconnected');
     if (runningChannels.has(channelState.channelName)) {
       log.error('socket disconnected unexpectedly, reconnecting socket');
       reconnect();
     }
   });
-  socketConn.on(channelPubKey + "_success", listener);
+  socketConn.on(`${channelPubKey}_success`, listener);
   if (typeof document !== 'undefined') document.addEventListener('visibilitychange', visibilityListener);
   return socketConn;
 }
 function create$1(channelName, options) {
   options = fillOptionsWithDefaults(options);
-  var uuid = randomToken();
+  const uuid = randomToken();
 
   /**
    * eMIs
    * contains all messages that have been emitted before
    * @type {ObliviousSet}
    */
-  var eMIs = new ObliviousSet(options.server.removeTimeout);
-  var state = {
-    channelName: channelName,
-    uuid: uuid,
-    eMIs: eMIs,
+  const eMIs = new ObliviousSet(options.server.removeTimeout);
+  const state = {
+    channelName,
+    uuid,
+    eMIs,
     // emittedMessagesIds
     serverUrl: options.server.url,
     time: microSeconds$5()
   };
   if (options.server.timeout) state.timeout = options.server.timeout;
-  setupSocketConnection(options.server.url, state, function (msgObj) {
+  setupSocketConnection(options.server.url, state, msgObj => {
     if (!state.messagesCallback) return; // no listener
     if (msgObj.uuid === state.uuid) return; // own message
     if (!msgObj.token || state.eMIs.has(msgObj.token)) return; // already emitted
@@ -872,7 +795,7 @@ function create$1(channelName, options) {
   return state;
 }
 function close$1(channelState) {
-  runningChannels["delete"](channelState.channelName);
+  runningChannels.delete(channelState.channelName);
   // give 2 sec for all msgs which are in transit to be consumed
   // by receiver.
   // window.setTimeout(() => {
@@ -888,7 +811,7 @@ function canBeUsed$1() {
   return true;
 }
 function averageResponseTime$1() {
-  var defaultTime = 500;
+  const defaultTime = 500;
   // TODO: Maybe increase it based on operation
   return defaultTime;
 }
@@ -903,12 +826,12 @@ var ServerMethod = {
   microSeconds: microSeconds$1
 };
 
-var microSeconds = microSeconds$5;
-var type = 'simulate';
-var SIMULATE_CHANNELS = new Set();
-var SIMULATE_DELAY_TIME = 5;
+const microSeconds = microSeconds$5;
+const type = 'simulate';
+const SIMULATE_CHANNELS = new Set();
+const SIMULATE_DELAY_TIME = 5;
 function create(channelName) {
-  var state = {
+  const state = {
     time: microSeconds$5(),
     name: channelName,
     messagesCallback: null
@@ -917,27 +840,25 @@ function create(channelName) {
   return state;
 }
 function close(channelState) {
-  SIMULATE_CHANNELS["delete"](channelState);
+  SIMULATE_CHANNELS.delete(channelState);
 }
 function postMessage(channelState, messageJson) {
-  return new Promise(function (res) {
-    return setTimeout(function () {
-      var channelArray = Array.from(SIMULATE_CHANNELS);
-      channelArray.forEach(function (channel) {
-        if (channel.name === channelState.name &&
-        // has same name
-        channel !== channelState &&
-        // not own channel
-        !!channel.messagesCallback &&
-        // has subscribers
-        channel.time < messageJson.time // channel not created after postMessage() call
-        ) {
-          channel.messagesCallback(messageJson);
-        }
-      });
-      res();
-    }, SIMULATE_DELAY_TIME);
-  });
+  return new Promise(res => setTimeout(() => {
+    const channelArray = Array.from(SIMULATE_CHANNELS);
+    channelArray.forEach(channel => {
+      if (channel.name === channelState.name &&
+      // has same name
+      channel !== channelState &&
+      // not own channel
+      !!channel.messagesCallback &&
+      // has subscribers
+      channel.time < messageJson.time // channel not created after postMessage() call
+      ) {
+        channel.messagesCallback(messageJson);
+      }
+    });
+    res();
+  }, SIMULATE_DELAY_TIME));
 }
 function onMessage(channelState, fn) {
   channelState.messagesCallback = fn;
@@ -949,22 +870,22 @@ function averageResponseTime() {
   return SIMULATE_DELAY_TIME;
 }
 var SimulateMethod = {
-  create: create,
-  close: close,
-  onMessage: onMessage,
-  postMessage: postMessage,
-  canBeUsed: canBeUsed,
-  type: type,
-  averageResponseTime: averageResponseTime,
-  microSeconds: microSeconds
+  create,
+  close,
+  onMessage,
+  postMessage,
+  canBeUsed,
+  type,
+  averageResponseTime,
+  microSeconds
 };
 
 // order is important
-var METHODS = [NativeMethod,
+const METHODS = [NativeMethod,
 // fastest
 IndexeDbMethod, LocalstorageMethod, ServerMethod];
 function chooseMethod(options) {
-  var chooseMethods = [].concat(options.methods, METHODS).filter(Boolean);
+  let chooseMethods = [].concat(options.methods, METHODS).filter(Boolean);
 
   // directly chosen
   if (options.type) {
@@ -972,9 +893,7 @@ function chooseMethod(options) {
       // only use simulate-method if directly chosen
       return SimulateMethod;
     }
-    var ret = chooseMethods.find(function (m) {
-      return m.type === options.type;
-    });
+    const ret = chooseMethods.find(m => m.type === options.type);
     if (!ret) throw new Error('method-type ' + options.type + ' not found');else return ret;
   }
 
@@ -983,25 +902,19 @@ function chooseMethod(options) {
    * remove idb from the list so that localstorage is been chosen
    */
   if (!options.webWorkerSupport) {
-    chooseMethods = chooseMethods.filter(function (m) {
-      return m.type !== 'idb';
-    });
+    chooseMethods = chooseMethods.filter(m => m.type !== 'idb');
   }
-  var useMethod = chooseMethods.find(function (method) {
-    return method.canBeUsed(options);
-  });
-  if (!useMethod) throw new Error("No useable method found in " + JSON.stringify(METHODS.map(function (m) {
-    return m.type;
-  })));else return useMethod;
+  const useMethod = chooseMethods.find(method => method.canBeUsed(options));
+  if (!useMethod) throw new Error(`No useable method found in ${JSON.stringify(METHODS.map(m => m.type))}`);else return useMethod;
 }
 
 /**
  * Contains all open channels,
  * used in tests to ensure everything is closed.
  */
-var OPEN_BROADCAST_CHANNELS = new Set();
-var lastId = 0;
-var BroadcastChannel$1 = function BroadcastChannel(name, options) {
+const OPEN_BROADCAST_CHANNELS = new Set();
+let lastId = 0;
+const BroadcastChannel$1 = function (name, options) {
   // identifier of the channel to debug stuff
   this.id = lastId++;
   OPEN_BROADCAST_CHANNELS.add(this);
@@ -1064,14 +977,14 @@ BroadcastChannel$1._pubkey = true;
  * if set, this method is enforced,
  * no mather what the options are
  */
-var ENFORCED_OPTIONS;
+let ENFORCED_OPTIONS;
 function enforceOptions(options) {
   ENFORCED_OPTIONS = options;
 }
 
 // PROTOTYPE
 BroadcastChannel$1.prototype = {
-  postMessage: function postMessage(msg) {
+  postMessage(msg) {
     if (this.closed) {
       throw new Error('BroadcastChannel.postMessage(): ' + 'Cannot post message after channel has closed ' +
       /**
@@ -1083,14 +996,14 @@ BroadcastChannel$1.prototype = {
     }
     return _post(this, 'message', msg);
   },
-  postInternal: function postInternal(msg) {
+  postInternal(msg) {
     return _post(this, 'internal', msg);
   },
   set onmessage(fn) {
-    var time = this.method.microSeconds();
-    var listenObj = {
-      time: time,
-      fn: fn
+    const time = this.method.microSeconds();
+    const listenObj = {
+      time,
+      fn
     };
     _removeListenerObject(this, 'message', this._onML);
     if (fn && typeof fn === 'function') {
@@ -1100,45 +1013,34 @@ BroadcastChannel$1.prototype = {
       this._onML = null;
     }
   },
-  addEventListener: function addEventListener(type, fn) {
-    var time = this.method.microSeconds();
-    var listenObj = {
-      time: time,
-      fn: fn
+  addEventListener(type, fn) {
+    const time = this.method.microSeconds();
+    const listenObj = {
+      time,
+      fn
     };
     _addListenerObject(this, type, listenObj);
   },
-  removeEventListener: function removeEventListener(type, fn) {
-    var obj = this._addEL[type].find(function (obj) {
-      return obj.fn === fn;
-    });
+  removeEventListener(type, fn) {
+    const obj = this._addEL[type].find(obj => obj.fn === fn);
     _removeListenerObject(this, type, obj);
   },
-  close: function close() {
-    var _this = this;
+  close() {
     if (this.closed) {
       return;
     }
-    OPEN_BROADCAST_CHANNELS["delete"](this);
+    OPEN_BROADCAST_CHANNELS.delete(this);
     this.closed = true;
-    var awaitPrepare = this._prepP ? this._prepP : PROMISE_RESOLVED_VOID;
+    const awaitPrepare = this._prepP ? this._prepP : PROMISE_RESOLVED_VOID;
     this._onML = null;
     this._addEL.message = [];
     return awaitPrepare
     // wait until all current sending are processed
-    .then(function () {
-      return Promise.all(Array.from(_this._uMP));
-    })
+    .then(() => Promise.all(Array.from(this._uMP)))
     // run before-close hooks
-    .then(function () {
-      return Promise.all(_this._befC.map(function (fn) {
-        return fn();
-      }));
-    })
+    .then(() => Promise.all(this._befC.map(fn => fn())))
     // close the channel
-    .then(function () {
-      return _this.method.close(_this._state);
-    });
+    .then(() => this.method.close(this._state));
   },
   get type() {
     return this.method.type;
@@ -1153,29 +1055,27 @@ BroadcastChannel$1.prototype = {
  * @returns {Promise} that resolved when the message sending is done
  */
 function _post(broadcastChannel, type, msg) {
-  var time = broadcastChannel.method.microSeconds();
-  var msgObj = {
-    time: time,
-    type: type,
+  const time = broadcastChannel.method.microSeconds();
+  const msgObj = {
+    time,
+    type,
     data: msg
   };
-  var awaitPrepare = broadcastChannel._prepP ? broadcastChannel._prepP : PROMISE_RESOLVED_VOID;
-  return awaitPrepare.then(function () {
-    var sendPromise = broadcastChannel.method.postMessage(broadcastChannel._state, msgObj);
+  const awaitPrepare = broadcastChannel._prepP ? broadcastChannel._prepP : PROMISE_RESOLVED_VOID;
+  return awaitPrepare.then(() => {
+    const sendPromise = broadcastChannel.method.postMessage(broadcastChannel._state, msgObj);
 
     // add/remove to unsend messages list
     broadcastChannel._uMP.add(sendPromise);
-    sendPromise["catch"]().then(function () {
-      return broadcastChannel._uMP["delete"](sendPromise);
-    });
+    sendPromise.catch().then(() => broadcastChannel._uMP.delete(sendPromise));
     return sendPromise;
   });
 }
 function _prepareChannel(channel) {
-  var maybePromise = channel.method.create(channel.name, channel.options);
+  const maybePromise = channel.method.create(channel.name, channel.options);
   if (isPromise(maybePromise)) {
     channel._prepP = maybePromise;
-    maybePromise.then(function (s) {
+    maybePromise.then(s => {
       // used in tests to simulate slow runtime
       /*if (channel.options.prepareDelay) {
            await new Promise(res => setTimeout(res, this.options.prepareDelay));
@@ -1196,17 +1096,15 @@ function _addListenerObject(channel, type, obj) {
   _startListening(channel);
 }
 function _removeListenerObject(channel, type, obj) {
-  channel._addEL[type] = channel._addEL[type].filter(function (o) {
-    return o !== obj;
-  });
+  channel._addEL[type] = channel._addEL[type].filter(o => o !== obj);
   _stopListening(channel);
 }
 function _startListening(channel) {
   if (!channel._iL && _hasMessageListeners(channel)) {
     // someone is listening, start subscribing
 
-    var listenerFn = function listenerFn(msgObj) {
-      channel._addEL[msgObj.type].forEach(function (listenerObject) {
+    const listenerFn = msgObj => {
+      channel._addEL[msgObj.type].forEach(listenerObject => {
         /**
          * Getting the current time in JavaScript has no good precision.
          * So instead of only listening to events that happend 'after' the listener
@@ -1227,9 +1125,9 @@ function _startListening(channel) {
         }
       });
     };
-    var time = channel.method.microSeconds();
+    const time = channel.method.microSeconds();
     if (channel._prepP) {
-      channel._prepP.then(function () {
+      channel._prepP.then(() => {
         channel._iL = true;
         channel.method.onMessage(channel._state, listenerFn, time);
       });
@@ -1243,7 +1141,7 @@ function _stopListening(channel) {
   if (channel._iL && !_hasMessageListeners(channel)) {
     // noone is listening, stop subscribing
     channel._iL = false;
-    var time = channel.method.microSeconds();
+    const time = channel.method.microSeconds();
     channel.method.onMessage(channel._state, null, time);
   }
 }
