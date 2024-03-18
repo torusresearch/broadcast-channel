@@ -160,6 +160,7 @@ export function averageResponseTime() {
 }
 
 export default {
+    getLocalStorage,
     create,
     close,
     onMessage,
@@ -168,4 +169,7 @@ export default {
     type,
     averageResponseTime,
     microSeconds,
+    storageKey,
+    addStorageEventListener,
+    removeStorageEventListener,
 };

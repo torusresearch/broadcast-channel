@@ -1,7 +1,8 @@
 const AsyncTestUtil = require('async-test-util');
 const assert = require('assert');
 const isNode = require('detect-node');
-const IndexedDbMethod = require('../../dist/lib/methods/indexed-db.js');
+const { IndexedDbMethod } = require('../../');
+console.log(IndexedDbMethod.getIdb);
 
 describe('unit/indexed-db.method.test.js', () => {
     if (isNode) return;

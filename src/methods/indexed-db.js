@@ -359,6 +359,8 @@ export function averageResponseTime(options) {
 }
 
 export default {
+    getIdb,
+    createDatabase,
     create,
     close,
     onMessage,
@@ -367,4 +369,9 @@ export default {
     type,
     averageResponseTime,
     microSeconds,
+    writeMessage,
+    getAllMessages,
+    cleanOldMessages,
+    getMessagesHigherThan,
+    getOldMessages,
 };

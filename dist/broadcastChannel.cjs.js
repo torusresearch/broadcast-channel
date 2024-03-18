@@ -52,7 +52,12 @@ __webpack_require__.r(__webpack_exports__);
 // EXPORTS
 __webpack_require__.d(__webpack_exports__, {
   BroadcastChannel: () => (/* reexport */ broadcast_channel_BroadcastChannel),
+  IndexedDbMethod: () => (/* reexport */ indexed_db),
+  LocalStorageMethod: () => (/* reexport */ localstorage),
+  NativeMethod: () => (/* reexport */ methods_native),
   OPEN_BROADCAST_CHANNELS: () => (/* reexport */ OPEN_BROADCAST_CHANNELS),
+  ServerMethod: () => (/* reexport */ server),
+  chooseMethod: () => (/* reexport */ chooseMethod),
   enforceOptions: () => (/* reexport */ enforceOptions)
 });
 
@@ -540,6 +545,8 @@ function indexed_db_averageResponseTime(options) {
   return options.idb.fallbackInterval * 2;
 }
 /* harmony default export */ const indexed_db = ({
+  getIdb,
+  createDatabase,
   create: indexed_db_create,
   close: indexed_db_close,
   onMessage: indexed_db_onMessage,
@@ -547,7 +554,12 @@ function indexed_db_averageResponseTime(options) {
   canBeUsed: indexed_db_canBeUsed,
   type: indexed_db_type,
   averageResponseTime: indexed_db_averageResponseTime,
-  microSeconds: indexed_db_microSeconds
+  microSeconds: indexed_db_microSeconds,
+  writeMessage,
+  getAllMessages,
+  cleanOldMessages,
+  getMessagesHigherThan,
+  getOldMessages
 });
 ;// CONCATENATED MODULE: ./src/methods/localstorage.js
 /**
@@ -692,6 +704,7 @@ function localstorage_averageResponseTime() {
   return defaultTime;
 }
 /* harmony default export */ const localstorage = ({
+  getLocalStorage,
   create: localstorage_create,
   close: localstorage_close,
   onMessage: localstorage_onMessage,
@@ -699,7 +712,10 @@ function localstorage_averageResponseTime() {
   canBeUsed: localstorage_canBeUsed,
   type: localstorage_type,
   averageResponseTime: localstorage_averageResponseTime,
-  microSeconds: localstorage_microSeconds
+  microSeconds: localstorage_microSeconds,
+  storageKey,
+  addStorageEventListener,
+  removeStorageEventListener
 });
 ;// CONCATENATED MODULE: external "socket.io-client"
 const external_socket_io_client_namespaceObject = require("socket.io-client");
@@ -1265,6 +1281,11 @@ function _stopListening(channel) {
   }
 }
 ;// CONCATENATED MODULE: ./src/index.js
+
+
+
+
+
 
 module.exports = __webpack_exports__;
 /******/ })()

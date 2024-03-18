@@ -254,6 +254,24 @@ function writeMessage(db, readerUuid, messageJson) {
     commitIndexedDBTransaction(tx);
   });
 }
+function getAllMessages(db) {
+  const tx = db.transaction(OBJECT_STORE_ID, 'readonly', TRANSACTION_SETTINGS);
+  const objectStore = tx.objectStore(OBJECT_STORE_ID);
+  const ret = [];
+  return new Promise(res => {
+    objectStore.openCursor().onsuccess = ev => {
+      const cursor = ev.target.result;
+      if (cursor) {
+        ret.push(cursor.value);
+        //alert("Name for SSN " + cursor.key + " is " + cursor.value.name);
+        cursor.continue();
+      } else {
+        commitIndexedDBTransaction(tx);
+        res(ret);
+      }
+    };
+  });
+}
 function getMessagesHigherThan(db, lastCursorId) {
   const tx = db.transaction(OBJECT_STORE_ID, 'readonly', TRANSACTION_SETTINGS);
   const objectStore = tx.objectStore(OBJECT_STORE_ID);
@@ -456,6 +474,8 @@ function averageResponseTime$3(options) {
   return options.idb.fallbackInterval * 2;
 }
 var IndexeDbMethod = {
+  getIdb,
+  createDatabase,
   create: create$3,
   close: close$3,
   onMessage: onMessage$3,
@@ -463,7 +483,12 @@ var IndexeDbMethod = {
   canBeUsed: canBeUsed$3,
   type: type$3,
   averageResponseTime: averageResponseTime$3,
-  microSeconds: microSeconds$3
+  microSeconds: microSeconds$3,
+  writeMessage,
+  getAllMessages,
+  cleanOldMessages,
+  getMessagesHigherThan,
+  getOldMessages
 };
 
 /**
@@ -605,6 +630,7 @@ function averageResponseTime$2() {
   return defaultTime;
 }
 var LocalstorageMethod = {
+  getLocalStorage,
   create: create$2,
   close: close$2,
   onMessage: onMessage$2,
@@ -612,7 +638,10 @@ var LocalstorageMethod = {
   canBeUsed: canBeUsed$2,
   type: type$2,
   averageResponseTime: averageResponseTime$2,
-  microSeconds: microSeconds$2
+  microSeconds: microSeconds$2,
+  storageKey: storageKey$1,
+  addStorageEventListener,
+  removeStorageEventListener
 };
 
 /**
@@ -1146,4 +1175,4 @@ function _stopListening(channel) {
   }
 }
 
-export { BroadcastChannel$1 as BroadcastChannel, OPEN_BROADCAST_CHANNELS, enforceOptions };
+export { BroadcastChannel$1 as BroadcastChannel, IndexeDbMethod as IndexedDbMethod, LocalstorageMethod as LocalStorageMethod, NativeMethod, OPEN_BROADCAST_CHANNELS, ServerMethod, chooseMethod, enforceOptions };

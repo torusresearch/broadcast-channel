@@ -45,6 +45,8 @@ export namespace TRANSACTION_SETTINGS {
 }
 export const type: "idb";
 declare namespace _default {
+    export { getIdb };
+    export { createDatabase };
     export { create };
     export { close };
     export { onMessage };
@@ -53,6 +55,11 @@ declare namespace _default {
     export { type };
     export { averageResponseTime };
     export { microSeconds };
+    export { writeMessage };
+    export { getAllMessages };
+    export { cleanOldMessages };
+    export { getMessagesHigherThan };
+    export { getOldMessages };
 }
 export default _default;
 import { ObliviousSet } from 'oblivious-set';
