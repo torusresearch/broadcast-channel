@@ -49,7 +49,7 @@ export function postMessage(channelState, messageJson) {
             const key = storageKey(channelState.channelName);
             const writeObj = {
                 token: randomToken(),
-                time: new Date().getTime(),
+                time: Date.now(),
                 data: messageJson,
                 uuid: channelState.uuid,
             };
@@ -104,6 +104,7 @@ export function create(channelName, options) {
     const state = {
         channelName,
         uuid,
+        time: micro(),
         eMIs, // emittedMessagesIds
     };
 
@@ -129,8 +130,7 @@ export function onMessage(channelState, fn, time) {
     channelState.messagesCallback = fn;
 }
 
-export function canBeUsed(options) {
-    if (!options.support3PC) return false;
+export function canBeUsed() {
     const ls = getLocalStorage();
 
     if (!ls) return false;
@@ -160,6 +160,7 @@ export function averageResponseTime() {
 }
 
 export default {
+    getLocalStorage,
     create,
     close,
     onMessage,
@@ -168,4 +169,7 @@ export default {
     type,
     averageResponseTime,
     microSeconds,
+    storageKey,
+    addStorageEventListener,
+    removeStorageEventListener,
 };

@@ -82,7 +82,7 @@ export function createDatabase(channelName) {
  * so other readers can find it
  */
 export function writeMessage(db, readerUuid, messageJson) {
-    const time = new Date().getTime();
+    const time = Date.now();
     const writeObject = {
         uuid: readerUuid,
         time,
@@ -189,7 +189,7 @@ export function removeMessagesById(db, ids) {
 }
 
 export function getOldMessages(db, ttl) {
-    const olderThen = new Date().getTime() - ttl;
+    const olderThen = Date.now() - ttl;
     const tx = db.transaction(OBJECT_STORE_ID, 'readonly', TRANSACTION_SETTINGS);
     const objectStore = tx.objectStore(OBJECT_STORE_ID);
     const ret = [];
@@ -245,6 +245,7 @@ export function create(channelName, options) {
             messagesCallback: null,
             readQueuePromises: [],
             db,
+            time: micro(),
         };
 
         /**
@@ -346,8 +347,7 @@ export function onMessage(channelState, fn, time) {
     readNewMessages(channelState);
 }
 
-export function canBeUsed(options) {
-    if (!options.support3PC) return false;
+export function canBeUsed() {
     const idb = getIdb();
 
     if (!idb) return false;
@@ -359,6 +359,8 @@ export function averageResponseTime(options) {
 }
 
 export default {
+    getIdb,
+    createDatabase,
     create,
     close,
     onMessage,
@@ -367,4 +369,9 @@ export default {
     type,
     averageResponseTime,
     microSeconds,
+    writeMessage,
+    getAllMessages,
+    cleanOldMessages,
+    getMessagesHigherThan,
+    getOldMessages,
 };

@@ -1,17 +1,17 @@
-import {
-    microSeconds as micro,
-} from '../util';
+import { microSeconds as micro } from '../util';
 
 export const microSeconds = micro;
 
 export const type = 'simulate';
 
 const SIMULATE_CHANNELS = new Set();
+export const SIMULATE_DELAY_TIME = 5;
 
 export function create(channelName) {
     const state = {
+        time: micro(),
         name: channelName,
-        messagesCallback: null
+        messagesCallback: null,
     };
     SIMULATE_CHANNELS.add(state);
 
@@ -23,15 +23,22 @@ export function close(channelState) {
 }
 
 export function postMessage(channelState, messageJson) {
-    return new Promise(res => setTimeout(() => {
-        const channelArray = Array.from(SIMULATE_CHANNELS);
-        channelArray
-            .filter(channel => channel.name === channelState.name)
-            .filter(channel => channel !== channelState)
-            .filter(channel => !!channel.messagesCallback)
-            .forEach(channel => channel.messagesCallback(messageJson));
-        res();
-    }, 5));
+    return new Promise((res) =>
+        setTimeout(() => {
+            const channelArray = Array.from(SIMULATE_CHANNELS);
+            channelArray.forEach((channel) => {
+                if (
+                    channel.name === channelState.name && // has same name
+                    channel !== channelState && // not own channel
+                    !!channel.messagesCallback && // has subscribers
+                    channel.time < messageJson.time // channel not created after postMessage() call
+                ) {
+                    channel.messagesCallback(messageJson);
+                }
+            });
+            res();
+        }, SIMULATE_DELAY_TIME)
+    );
 }
 
 export function onMessage(channelState, fn) {
@@ -42,9 +49,8 @@ export function canBeUsed() {
     return true;
 }
 
-
 export function averageResponseTime() {
-    return 5;
+    return SIMULATE_DELAY_TIME;
 }
 
 export default {
@@ -55,5 +61,5 @@ export default {
     canBeUsed,
     type,
     averageResponseTime,
-    microSeconds
+    microSeconds,
 };
