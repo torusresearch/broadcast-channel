@@ -235,14 +235,3 @@ export function averageResponseTime() {
     // TODO: Maybe increase it based on operation
     return defaultTime;
 }
-
-export default {
-    create,
-    close,
-    onMessage,
-    postMessage,
-    canBeUsed,
-    type,
-    averageResponseTime,
-    microSeconds,
-};

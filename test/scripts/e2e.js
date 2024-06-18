@@ -4,7 +4,7 @@
  */
 require('@babel/polyfill');
 var { BroadcastChannel } = require('../../');
-import { getParameterByName } from './util.js';
+var { getParameterByName } = require('./util.js');
 var { wait, randomNumber, randomBoolean } = require('async-test-util');
 
 function run() {

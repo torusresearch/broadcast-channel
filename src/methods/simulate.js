@@ -52,14 +52,3 @@ export function canBeUsed() {
 export function averageResponseTime() {
     return SIMULATE_DELAY_TIME;
 }
-
-export default {
-    create,
-    close,
-    onMessage,
-    postMessage,
-    canBeUsed,
-    type,
-    averageResponseTime,
-    microSeconds,
-};

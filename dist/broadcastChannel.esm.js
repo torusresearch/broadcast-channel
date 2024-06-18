@@ -125,19 +125,20 @@ function canBeUsed$4() {
 function averageResponseTime$4() {
   return 150;
 }
-var NativeMethod = {
-  create: create$4,
-  close: close$4,
-  onMessage: onMessage$4,
-  postMessage: postMessage$4,
-  canBeUsed: canBeUsed$4,
-  type: type$4,
-  averageResponseTime: averageResponseTime$4,
-  microSeconds: microSeconds$4
-};
 
-function fillOptionsWithDefaults() {
-  let originalOptions = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+var NativeMethod = /*#__PURE__*/Object.freeze({
+    __proto__: null,
+    averageResponseTime: averageResponseTime$4,
+    canBeUsed: canBeUsed$4,
+    close: close$4,
+    create: create$4,
+    microSeconds: microSeconds$4,
+    onMessage: onMessage$4,
+    postMessage: postMessage$4,
+    type: type$4
+});
+
+function fillOptionsWithDefaults(originalOptions = {}) {
   const options = JSON.parse(JSON.stringify(originalOptions));
 
   // main
@@ -473,23 +474,28 @@ function canBeUsed$3() {
 function averageResponseTime$3(options) {
   return options.idb.fallbackInterval * 2;
 }
-var IndexeDbMethod = {
-  getIdb,
-  createDatabase,
-  create: create$3,
-  close: close$3,
-  onMessage: onMessage$3,
-  postMessage: postMessage$3,
-  canBeUsed: canBeUsed$3,
-  type: type$3,
-  averageResponseTime: averageResponseTime$3,
-  microSeconds: microSeconds$3,
-  writeMessage,
-  getAllMessages,
-  cleanOldMessages,
-  getMessagesHigherThan,
-  getOldMessages
-};
+
+var IndexeDbMethod = /*#__PURE__*/Object.freeze({
+    __proto__: null,
+    TRANSACTION_SETTINGS: TRANSACTION_SETTINGS,
+    averageResponseTime: averageResponseTime$3,
+    canBeUsed: canBeUsed$3,
+    cleanOldMessages: cleanOldMessages,
+    close: close$3,
+    commitIndexedDBTransaction: commitIndexedDBTransaction,
+    create: create$3,
+    createDatabase: createDatabase,
+    getAllMessages: getAllMessages,
+    getIdb: getIdb,
+    getMessagesHigherThan: getMessagesHigherThan,
+    getOldMessages: getOldMessages,
+    microSeconds: microSeconds$3,
+    onMessage: onMessage$3,
+    postMessage: postMessage$3,
+    removeMessagesById: removeMessagesById,
+    type: type$3,
+    writeMessage: writeMessage
+});
 
 /**
  * A localStorage-only method which uses localstorage and its 'storage'-event
@@ -565,7 +571,7 @@ function addStorageEventListener(channelName, fn) {
   window.addEventListener('storage', listener);
   return listener;
 }
-function removeStorageEventListener(listener) {
+function removeStorageEventListener$1(listener) {
   window.removeEventListener('storage', listener);
 }
 function create$2(channelName, options) {
@@ -599,7 +605,7 @@ function create$2(channelName, options) {
   return state;
 }
 function close$2(channelState) {
-  removeStorageEventListener(channelState.listener);
+  removeStorageEventListener$1(channelState.listener);
 }
 function onMessage$2(channelState, fn, time) {
   channelState.messagesCallbackTime = time;
@@ -629,20 +635,22 @@ function averageResponseTime$2() {
   }
   return defaultTime;
 }
-var LocalstorageMethod = {
-  getLocalStorage,
-  create: create$2,
-  close: close$2,
-  onMessage: onMessage$2,
-  postMessage: postMessage$2,
-  canBeUsed: canBeUsed$2,
-  type: type$2,
-  averageResponseTime: averageResponseTime$2,
-  microSeconds: microSeconds$2,
-  storageKey: storageKey$1,
-  addStorageEventListener,
-  removeStorageEventListener
-};
+
+var LocalstorageMethod = /*#__PURE__*/Object.freeze({
+    __proto__: null,
+    addStorageEventListener: addStorageEventListener,
+    averageResponseTime: averageResponseTime$2,
+    canBeUsed: canBeUsed$2,
+    close: close$2,
+    create: create$2,
+    getLocalStorage: getLocalStorage,
+    microSeconds: microSeconds$2,
+    onMessage: onMessage$2,
+    postMessage: postMessage$2,
+    removeStorageEventListener: removeStorageEventListener$1,
+    storageKey: storageKey$1,
+    type: type$2
+});
 
 /**
  * A localStorage-only method which uses localstorage and its 'storage'-event
@@ -792,6 +800,11 @@ function setupSocketConnection(serverUrl, channelState, fn) {
   if (typeof document !== 'undefined') document.addEventListener('visibilitychange', visibilityListener);
   return socketConn;
 }
+function removeStorageEventListener() {
+  if (SOCKET_CONN_INSTANCE) {
+    SOCKET_CONN_INSTANCE.disconnect();
+  }
+}
 function create$1(channelName, options) {
   options = fillOptionsWithDefaults(options);
   const uuid = randomToken();
@@ -844,16 +857,22 @@ function averageResponseTime$1() {
   // TODO: Maybe increase it based on operation
   return defaultTime;
 }
-var ServerMethod = {
-  create: create$1,
-  close: close$1,
-  onMessage: onMessage$1,
-  postMessage: postMessage$1,
-  canBeUsed: canBeUsed$1,
-  type: type$1,
-  averageResponseTime: averageResponseTime$1,
-  microSeconds: microSeconds$1
-};
+
+var ServerMethod = /*#__PURE__*/Object.freeze({
+    __proto__: null,
+    averageResponseTime: averageResponseTime$1,
+    canBeUsed: canBeUsed$1,
+    close: close$1,
+    create: create$1,
+    getSocketInstance: getSocketInstance,
+    microSeconds: microSeconds$1,
+    onMessage: onMessage$1,
+    postMessage: postMessage$1,
+    removeStorageEventListener: removeStorageEventListener,
+    setupSocketConnection: setupSocketConnection,
+    storageKey: storageKey,
+    type: type$1
+});
 
 const microSeconds = microSeconds$5;
 const type = 'simulate';
@@ -898,16 +917,19 @@ function canBeUsed() {
 function averageResponseTime() {
   return SIMULATE_DELAY_TIME;
 }
-var SimulateMethod = {
-  create,
-  close,
-  onMessage,
-  postMessage,
-  canBeUsed,
-  type,
-  averageResponseTime,
-  microSeconds
-};
+
+var SimulateMethod = /*#__PURE__*/Object.freeze({
+    __proto__: null,
+    SIMULATE_DELAY_TIME: SIMULATE_DELAY_TIME,
+    averageResponseTime: averageResponseTime,
+    canBeUsed: canBeUsed,
+    close: close,
+    create: create,
+    microSeconds: microSeconds,
+    onMessage: onMessage,
+    postMessage: postMessage,
+    type: type
+});
 
 // order is important
 const METHODS = [NativeMethod,
@@ -1175,4 +1197,4 @@ function _stopListening(channel) {
   }
 }
 
-export { BroadcastChannel$1 as BroadcastChannel, IndexeDbMethod as IndexedDbMethod, LocalstorageMethod as LocalStorageMethod, NativeMethod, OPEN_BROADCAST_CHANNELS, ServerMethod, chooseMethod, enforceOptions };
+export { BroadcastChannel$1 as BroadcastChannel, IndexeDbMethod, LocalstorageMethod, NativeMethod, OPEN_BROADCAST_CHANNELS, ServerMethod, chooseMethod, enforceOptions };

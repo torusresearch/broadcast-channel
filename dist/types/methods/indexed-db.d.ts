@@ -44,23 +44,5 @@ export namespace TRANSACTION_SETTINGS {
     let durability: string;
 }
 export const type: "idb";
-declare namespace _default {
-    export { getIdb };
-    export { createDatabase };
-    export { create };
-    export { close };
-    export { onMessage };
-    export { postMessage };
-    export { canBeUsed };
-    export { type };
-    export { averageResponseTime };
-    export { microSeconds };
-    export { writeMessage };
-    export { getAllMessages };
-    export { cleanOldMessages };
-    export { getMessagesHigherThan };
-    export { getOldMessages };
-}
-export default _default;
 import { ObliviousSet } from 'oblivious-set';
 import { microSeconds as micro } from '../util.js';

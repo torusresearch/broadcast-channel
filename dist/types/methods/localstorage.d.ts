@@ -23,20 +23,5 @@ export function canBeUsed(): boolean;
 export function averageResponseTime(): number;
 export const microSeconds: typeof micro;
 export const type: "localstorage";
-declare namespace _default {
-    export { getLocalStorage };
-    export { create };
-    export { close };
-    export { onMessage };
-    export { postMessage };
-    export { canBeUsed };
-    export { type };
-    export { averageResponseTime };
-    export { microSeconds };
-    export { storageKey };
-    export { addStorageEventListener };
-    export { removeStorageEventListener };
-}
-export default _default;
 import { ObliviousSet } from 'oblivious-set';
 import { microSeconds as micro } from '../util';

@@ -158,18 +158,3 @@ export function averageResponseTime() {
     }
     return defaultTime;
 }
-
-export default {
-    getLocalStorage,
-    create,
-    close,
-    onMessage,
-    postMessage,
-    canBeUsed,
-    type,
-    averageResponseTime,
-    microSeconds,
-    storageKey,
-    addStorageEventListener,
-    removeStorageEventListener,
-};

@@ -1,6 +1,7 @@
 export * from "./method-chooser";
-export { default as NativeMethod } from "./methods/native";
-export { default as LocalStorageMethod } from "./methods/localstorage";
-export { default as ServerMethod } from "./methods/server";
-export { default as IndexedDbMethod } from "./methods/indexed-db";
+import * as NativeMethod from './methods/native';
+import * as IndexeDbMethod from './methods/indexed-db';
+import * as LocalstorageMethod from './methods/localstorage';
+import * as ServerMethod from './methods/server';
+export { NativeMethod, IndexeDbMethod, LocalstorageMethod, ServerMethod };
 export { BroadcastChannel, enforceOptions, OPEN_BROADCAST_CHANNELS } from "./broadcast-channel";
