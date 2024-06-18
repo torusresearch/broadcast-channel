@@ -3,9 +3,7 @@
  * used in docs/iframe.html
  */
 require('@babel/polyfill');
-import {
-    getParameterByName
-} from './util.js';
+var { getParameterByName } = require('./util.js');
 
 var msgContainer = document.getElementById('messages');
 

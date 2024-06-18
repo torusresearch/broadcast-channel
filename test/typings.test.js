@@ -22,9 +22,11 @@ describe('typings.test.ts', () => {
         const stderr = [];
 
         const tsConfig = {
+            module: 'commonjs',
             target: 'es6',
             strict: true,
             isolatedModules: false,
+            noUnusedLocals: false,
         };
         const promise = spawn('ts-node', ['--compiler-options', JSON.stringify(tsConfig), '-e', codeBase + '\n' + code]);
         const childProcess = promise.childProcess;
@@ -69,7 +71,7 @@ describe('typings.test.ts', () => {
         it('should be ok to create post and recieve', async () => {
             const code = `
                 (async() => {
-                    const channel = new BroadcastChannel('foobar');
+                    const channel = new BroadcastChannel('foobar', { type: 'simulate' });
                     const emitted: any[] = [];
                     channel.onmessage = msg => emitted.push(msg);
                     await channel.postMessage({foo: 'bar'});
@@ -96,7 +98,7 @@ describe('typings.test.ts', () => {
         it('should be ok to create and post', async () => {
             const code = `
                 (async() => {
-                    const channel = new BroadcastChannel<Message>('foobar');
+                    const channel = new BroadcastChannel<Message>('foobar', { type: 'simulate' });
                     await channel.postMessage({foo: 'bar'});
                     channel.close();
                 })();
@@ -106,7 +108,7 @@ describe('typings.test.ts', () => {
         it('should be ok to recieve', async () => {
             const code = `
                 (async() => {
-                    const channel: BroadcastChannel<Message> = new BroadcastChannel('foobar');
+                    const channel: BroadcastChannel<Message> = new BroadcastChannel('foobar', { type: 'simulate' });
                     const emitted: Message[] = [];
                     channel.onmessage = msg => {
                         const f: string = msg.foo;

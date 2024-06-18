@@ -1,8 +1,8 @@
-import NativeMethod from './methods/native.js';
-import IndexeDbMethod from './methods/indexed-db.js';
-import LocalstorageMethod from './methods/localstorage.js';
-import ServerMethod from './methods/server.js';
-import SimulateMethod from './methods/simulate.js';
+import * as NativeMethod from './methods/native.js';
+import * as IndexeDbMethod from './methods/indexed-db.js';
+import * as LocalstorageMethod from './methods/localstorage.js';
+import * as ServerMethod from './methods/server.js';
+import * as SimulateMethod from './methods/simulate.js';
 
 // order is important
 const METHODS = [

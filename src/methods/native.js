@@ -58,13 +58,3 @@ export function averageResponseTime() {
     return 150;
 }
 
-export default {
-    create,
-    close,
-    onMessage,
-    postMessage,
-    canBeUsed,
-    type,
-    averageResponseTime,
-    microSeconds,
-};

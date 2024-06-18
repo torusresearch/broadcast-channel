@@ -357,21 +357,3 @@ export function canBeUsed() {
 export function averageResponseTime(options) {
     return options.idb.fallbackInterval * 2;
 }
-
-export default {
-    getIdb,
-    createDatabase,
-    create,
-    close,
-    onMessage,
-    postMessage,
-    canBeUsed,
-    type,
-    averageResponseTime,
-    microSeconds,
-    writeMessage,
-    getAllMessages,
-    cleanOldMessages,
-    getMessagesHigherThan,
-    getOldMessages,
-};

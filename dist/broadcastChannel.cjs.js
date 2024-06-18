@@ -52,13 +52,102 @@ __webpack_require__.r(__webpack_exports__);
 // EXPORTS
 __webpack_require__.d(__webpack_exports__, {
   BroadcastChannel: () => (/* reexport */ broadcast_channel_BroadcastChannel),
-  IndexedDbMethod: () => (/* reexport */ indexed_db),
-  LocalStorageMethod: () => (/* reexport */ localstorage),
-  NativeMethod: () => (/* reexport */ methods_native),
+  IndexedDbMethod: () => (/* reexport */ indexed_db_namespaceObject),
+  LocalstorageMethod: () => (/* reexport */ localstorage_namespaceObject),
+  NativeMethod: () => (/* reexport */ native_namespaceObject),
   OPEN_BROADCAST_CHANNELS: () => (/* reexport */ OPEN_BROADCAST_CHANNELS),
-  ServerMethod: () => (/* reexport */ server),
+  ServerMethod: () => (/* reexport */ server_namespaceObject),
   chooseMethod: () => (/* reexport */ chooseMethod),
   enforceOptions: () => (/* reexport */ enforceOptions)
+});
+
+// NAMESPACE OBJECT: ./src/methods/native.js
+var native_namespaceObject = {};
+__webpack_require__.r(native_namespaceObject);
+__webpack_require__.d(native_namespaceObject, {
+  averageResponseTime: () => (averageResponseTime),
+  canBeUsed: () => (canBeUsed),
+  close: () => (native_close),
+  create: () => (create),
+  microSeconds: () => (native_microSeconds),
+  onMessage: () => (onMessage),
+  postMessage: () => (postMessage),
+  type: () => (type)
+});
+
+// NAMESPACE OBJECT: ./src/methods/indexed-db.js
+var indexed_db_namespaceObject = {};
+__webpack_require__.r(indexed_db_namespaceObject);
+__webpack_require__.d(indexed_db_namespaceObject, {
+  TRANSACTION_SETTINGS: () => (TRANSACTION_SETTINGS),
+  averageResponseTime: () => (indexed_db_averageResponseTime),
+  canBeUsed: () => (indexed_db_canBeUsed),
+  cleanOldMessages: () => (cleanOldMessages),
+  close: () => (indexed_db_close),
+  commitIndexedDBTransaction: () => (commitIndexedDBTransaction),
+  create: () => (indexed_db_create),
+  createDatabase: () => (createDatabase),
+  getAllMessages: () => (getAllMessages),
+  getIdb: () => (getIdb),
+  getMessagesHigherThan: () => (getMessagesHigherThan),
+  getOldMessages: () => (getOldMessages),
+  microSeconds: () => (indexed_db_microSeconds),
+  onMessage: () => (indexed_db_onMessage),
+  postMessage: () => (indexed_db_postMessage),
+  removeMessagesById: () => (removeMessagesById),
+  type: () => (indexed_db_type),
+  writeMessage: () => (writeMessage)
+});
+
+// NAMESPACE OBJECT: ./src/methods/localstorage.js
+var localstorage_namespaceObject = {};
+__webpack_require__.r(localstorage_namespaceObject);
+__webpack_require__.d(localstorage_namespaceObject, {
+  addStorageEventListener: () => (addStorageEventListener),
+  averageResponseTime: () => (localstorage_averageResponseTime),
+  canBeUsed: () => (localstorage_canBeUsed),
+  close: () => (localstorage_close),
+  create: () => (localstorage_create),
+  getLocalStorage: () => (getLocalStorage),
+  microSeconds: () => (localstorage_microSeconds),
+  onMessage: () => (localstorage_onMessage),
+  postMessage: () => (localstorage_postMessage),
+  removeStorageEventListener: () => (removeStorageEventListener),
+  storageKey: () => (storageKey),
+  type: () => (localstorage_type)
+});
+
+// NAMESPACE OBJECT: ./src/methods/server.js
+var server_namespaceObject = {};
+__webpack_require__.r(server_namespaceObject);
+__webpack_require__.d(server_namespaceObject, {
+  averageResponseTime: () => (server_averageResponseTime),
+  canBeUsed: () => (server_canBeUsed),
+  close: () => (server_close),
+  create: () => (server_create),
+  getSocketInstance: () => (getSocketInstance),
+  microSeconds: () => (server_microSeconds),
+  onMessage: () => (server_onMessage),
+  postMessage: () => (server_postMessage),
+  removeStorageEventListener: () => (server_removeStorageEventListener),
+  setupSocketConnection: () => (setupSocketConnection),
+  storageKey: () => (server_storageKey),
+  type: () => (server_type)
+});
+
+// NAMESPACE OBJECT: ./src/methods/simulate.js
+var simulate_namespaceObject = {};
+__webpack_require__.r(simulate_namespaceObject);
+__webpack_require__.d(simulate_namespaceObject, {
+  SIMULATE_DELAY_TIME: () => (SIMULATE_DELAY_TIME),
+  averageResponseTime: () => (simulate_averageResponseTime),
+  canBeUsed: () => (simulate_canBeUsed),
+  close: () => (simulate_close),
+  create: () => (simulate_create),
+  microSeconds: () => (simulate_microSeconds),
+  onMessage: () => (simulate_onMessage),
+  postMessage: () => (simulate_postMessage),
+  type: () => (simulate_type)
 });
 
 ;// CONCATENATED MODULE: external "loglevel"
@@ -191,21 +280,10 @@ function canBeUsed() {
 function averageResponseTime() {
   return 150;
 }
-/* harmony default export */ const methods_native = ({
-  create,
-  close: native_close,
-  onMessage,
-  postMessage,
-  canBeUsed,
-  type,
-  averageResponseTime,
-  microSeconds: native_microSeconds
-});
 ;// CONCATENATED MODULE: external "oblivious-set"
 const external_oblivious_set_namespaceObject = require("oblivious-set");
 ;// CONCATENATED MODULE: ./src/options.js
-function fillOptionsWithDefaults() {
-  let originalOptions = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+function fillOptionsWithDefaults(originalOptions = {}) {
   const options = JSON.parse(JSON.stringify(originalOptions));
 
   // main
@@ -544,23 +622,6 @@ function indexed_db_canBeUsed() {
 function indexed_db_averageResponseTime(options) {
   return options.idb.fallbackInterval * 2;
 }
-/* harmony default export */ const indexed_db = ({
-  getIdb,
-  createDatabase,
-  create: indexed_db_create,
-  close: indexed_db_close,
-  onMessage: indexed_db_onMessage,
-  postMessage: indexed_db_postMessage,
-  canBeUsed: indexed_db_canBeUsed,
-  type: indexed_db_type,
-  averageResponseTime: indexed_db_averageResponseTime,
-  microSeconds: indexed_db_microSeconds,
-  writeMessage,
-  getAllMessages,
-  cleanOldMessages,
-  getMessagesHigherThan,
-  getOldMessages
-});
 ;// CONCATENATED MODULE: ./src/methods/localstorage.js
 /**
  * A localStorage-only method which uses localstorage and its 'storage'-event
@@ -703,20 +764,6 @@ function localstorage_averageResponseTime() {
   }
   return defaultTime;
 }
-/* harmony default export */ const localstorage = ({
-  getLocalStorage,
-  create: localstorage_create,
-  close: localstorage_close,
-  onMessage: localstorage_onMessage,
-  postMessage: localstorage_postMessage,
-  canBeUsed: localstorage_canBeUsed,
-  type: localstorage_type,
-  averageResponseTime: localstorage_averageResponseTime,
-  microSeconds: localstorage_microSeconds,
-  storageKey,
-  addStorageEventListener,
-  removeStorageEventListener
-});
 ;// CONCATENATED MODULE: external "socket.io-client"
 const external_socket_io_client_namespaceObject = require("socket.io-client");
 ;// CONCATENATED MODULE: external "@toruslabs/eccrypto"
@@ -939,16 +986,6 @@ function server_averageResponseTime() {
   // TODO: Maybe increase it based on operation
   return defaultTime;
 }
-/* harmony default export */ const server = ({
-  create: server_create,
-  close: server_close,
-  onMessage: server_onMessage,
-  postMessage: server_postMessage,
-  canBeUsed: server_canBeUsed,
-  type: server_type,
-  averageResponseTime: server_averageResponseTime,
-  microSeconds: server_microSeconds
-});
 ;// CONCATENATED MODULE: ./src/methods/simulate.js
 
 const simulate_microSeconds = microSeconds;
@@ -994,16 +1031,6 @@ function simulate_canBeUsed() {
 function simulate_averageResponseTime() {
   return SIMULATE_DELAY_TIME;
 }
-/* harmony default export */ const simulate = ({
-  create: simulate_create,
-  close: simulate_close,
-  onMessage: simulate_onMessage,
-  postMessage: simulate_postMessage,
-  canBeUsed: simulate_canBeUsed,
-  type: simulate_type,
-  averageResponseTime: simulate_averageResponseTime,
-  microSeconds: simulate_microSeconds
-});
 ;// CONCATENATED MODULE: ./src/method-chooser.js
 
 
@@ -1012,9 +1039,9 @@ function simulate_averageResponseTime() {
 
 
 // order is important
-const METHODS = [methods_native,
+const METHODS = [native_namespaceObject,
 // fastest
-indexed_db, localstorage, server];
+indexed_db_namespaceObject, localstorage_namespaceObject, server_namespaceObject];
 function chooseMethod(options) {
   let chooseMethods = [].concat(options.methods, METHODS).filter(Boolean);
 
@@ -1022,7 +1049,7 @@ function chooseMethod(options) {
   if (options.type) {
     if (options.type === 'simulate') {
       // only use simulate-method if directly chosen
-      return simulate;
+      return simulate_namespaceObject;
     }
     const ret = chooseMethods.find(m => m.type === options.type);
     if (!ret) throw new Error('method-type ' + options.type + ' not found');else return ret;
@@ -1281,6 +1308,7 @@ function _stopListening(channel) {
   }
 }
 ;// CONCATENATED MODULE: ./src/index.js
+
 
 
 

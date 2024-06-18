@@ -1,7 +1,7 @@
 /* eslint no-useless-escape: "off" */
 
 // https://stackoverflow.com/a/901144/3443137
-export function getParameterByName(name, url) {
+function getParameterByName(name, url) {
     if (!url) url = window.location.href;
     name = name.replace(/[\[\]]/g, '\\$&');
     const regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)');
@@ -10,3 +10,5 @@ export function getParameterByName(name, url) {
     if (!results[2]) return '';
     return decodeURIComponent(results[2].replace(/\+/g, ' '));
 }
+
+module.exports = { getParameterByName };

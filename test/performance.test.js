@@ -10,6 +10,7 @@ const options = {
     node: {
         useFastPath: false,
     },
+    type: 'simulate'
 };
 
 const elapsedTime = (before) => {
