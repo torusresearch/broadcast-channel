@@ -1197,4 +1197,4 @@ function _stopListening(channel) {
   }
 }
 
-export { BroadcastChannel$1 as BroadcastChannel, IndexeDbMethod, LocalstorageMethod, NativeMethod, OPEN_BROADCAST_CHANNELS, ServerMethod, chooseMethod, enforceOptions };
+export { BroadcastChannel$1 as BroadcastChannel, IndexeDbMethod as IndexedDbMethod, LocalstorageMethod, NativeMethod, OPEN_BROADCAST_CHANNELS, ServerMethod, chooseMethod, enforceOptions };

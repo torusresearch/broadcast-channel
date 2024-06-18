@@ -8,20 +8,20 @@
  */
 
 import { sleep, randomInt, randomToken, microSeconds as micro, PROMISE_RESOLVED_VOID } from '../util.js';
-export const microSeconds = micro;
+export var microSeconds = micro;
 import { ObliviousSet } from 'oblivious-set';
 import { fillOptionsWithDefaults } from '../options';
-const DB_PREFIX = 'pubkey.broadcast-channel-0-';
-const OBJECT_STORE_ID = 'messages';
+var DB_PREFIX = 'pubkey.broadcast-channel-0-';
+var OBJECT_STORE_ID = 'messages';
 
 /**
  * Use relaxed durability for faster performance on all transactions.
  * @link https://nolanlawson.com/2021/08/22/speeding-up-indexeddb-reads-and-writes/
  */
-export const TRANSACTION_SETTINGS = {
+export var TRANSACTION_SETTINGS = {
   durability: 'relaxed'
 };
-export const type = 'idb';
+export var type = 'idb';
 export function getIdb() {
   if (typeof indexedDB !== 'undefined') return indexedDB;
   if (typeof window !== 'undefined') {
@@ -43,27 +43,29 @@ export function commitIndexedDBTransaction(tx) {
   }
 }
 export function createDatabase(channelName) {
-  const IndexedDB = getIdb();
+  var IndexedDB = getIdb();
 
   // create table
-  const dbName = DB_PREFIX + channelName;
+  var dbName = DB_PREFIX + channelName;
 
   /**
    * All IndexedDB databases are opened without version
    * because it is a bit faster, especially on firefox
    * @link http://nparashuram.com/IndexedDB/perf/#Open%20Database%20with%20version
    */
-  const openRequest = IndexedDB.open(dbName);
-  openRequest.onupgradeneeded = ev => {
-    const db = ev.target.result;
+  var openRequest = IndexedDB.open(dbName);
+  openRequest.onupgradeneeded = function (ev) {
+    var db = ev.target.result;
     db.createObjectStore(OBJECT_STORE_ID, {
       keyPath: 'id',
       autoIncrement: true
     });
   };
-  const dbPromise = new Promise((res, rej) => {
-    openRequest.onerror = ev => rej(ev);
-    openRequest.onsuccess = () => {
+  var dbPromise = new Promise(function (res, rej) {
+    openRequest.onerror = function (ev) {
+      return rej(ev);
+    };
+    openRequest.onsuccess = function () {
       res(openRequest.result);
     };
   });
@@ -75,32 +77,36 @@ export function createDatabase(channelName) {
  * so other readers can find it
  */
 export function writeMessage(db, readerUuid, messageJson) {
-  const time = Date.now();
-  const writeObject = {
+  var time = Date.now();
+  var writeObject = {
     uuid: readerUuid,
-    time,
+    time: time,
     data: messageJson
   };
-  const tx = db.transaction([OBJECT_STORE_ID], 'readwrite', TRANSACTION_SETTINGS);
-  return new Promise((res, rej) => {
-    tx.oncomplete = () => res();
-    tx.onerror = ev => rej(ev);
-    const objectStore = tx.objectStore(OBJECT_STORE_ID);
+  var tx = db.transaction([OBJECT_STORE_ID], 'readwrite', TRANSACTION_SETTINGS);
+  return new Promise(function (res, rej) {
+    tx.oncomplete = function () {
+      return res();
+    };
+    tx.onerror = function (ev) {
+      return rej(ev);
+    };
+    var objectStore = tx.objectStore(OBJECT_STORE_ID);
     objectStore.add(writeObject);
     commitIndexedDBTransaction(tx);
   });
 }
 export function getAllMessages(db) {
-  const tx = db.transaction(OBJECT_STORE_ID, 'readonly', TRANSACTION_SETTINGS);
-  const objectStore = tx.objectStore(OBJECT_STORE_ID);
-  const ret = [];
-  return new Promise(res => {
-    objectStore.openCursor().onsuccess = ev => {
-      const cursor = ev.target.result;
+  var tx = db.transaction(OBJECT_STORE_ID, 'readonly', TRANSACTION_SETTINGS);
+  var objectStore = tx.objectStore(OBJECT_STORE_ID);
+  var ret = [];
+  return new Promise(function (res) {
+    objectStore.openCursor().onsuccess = function (ev) {
+      var cursor = ev.target.result;
       if (cursor) {
         ret.push(cursor.value);
         //alert("Name for SSN " + cursor.key + " is " + cursor.value.name);
-        cursor.continue();
+        cursor["continue"]();
       } else {
         commitIndexedDBTransaction(tx);
         res(ret);
@@ -109,10 +115,10 @@ export function getAllMessages(db) {
   });
 }
 export function getMessagesHigherThan(db, lastCursorId) {
-  const tx = db.transaction(OBJECT_STORE_ID, 'readonly', TRANSACTION_SETTINGS);
-  const objectStore = tx.objectStore(OBJECT_STORE_ID);
-  const ret = [];
-  let keyRangeValue = IDBKeyRange.bound(lastCursorId + 1, Infinity);
+  var tx = db.transaction(OBJECT_STORE_ID, 'readonly', TRANSACTION_SETTINGS);
+  var objectStore = tx.objectStore(OBJECT_STORE_ID);
+  var ret = [];
+  var keyRangeValue = IDBKeyRange.bound(lastCursorId + 1, Infinity);
 
   /**
    * Optimization shortcut,
@@ -120,9 +126,11 @@ export function getMessagesHigherThan(db, lastCursorId) {
    * @link https://rxdb.info/slow-indexeddb.html
    */
   if (objectStore.getAll) {
-    const getAllRequest = objectStore.getAll(keyRangeValue);
-    return new Promise((res, rej) => {
-      getAllRequest.onerror = err => rej(err);
+    var getAllRequest = objectStore.getAll(keyRangeValue);
+    return new Promise(function (res, rej) {
+      getAllRequest.onerror = function (err) {
+        return rej(err);
+      };
       getAllRequest.onsuccess = function (e) {
         res(e.target.result);
       };
@@ -139,17 +147,19 @@ export function getMessagesHigherThan(db, lastCursorId) {
       return objectStore.openCursor();
     }
   }
-  return new Promise((res, rej) => {
-    const openCursorRequest = openCursor();
-    openCursorRequest.onerror = err => rej(err);
-    openCursorRequest.onsuccess = ev => {
-      const cursor = ev.target.result;
+  return new Promise(function (res, rej) {
+    var openCursorRequest = openCursor();
+    openCursorRequest.onerror = function (err) {
+      return rej(err);
+    };
+    openCursorRequest.onsuccess = function (ev) {
+      var cursor = ev.target.result;
       if (cursor) {
         if (cursor.value.id < lastCursorId + 1) {
-          cursor.continue(lastCursorId + 1);
+          cursor["continue"](lastCursorId + 1);
         } else {
           ret.push(cursor.value);
-          cursor.continue();
+          cursor["continue"]();
         }
       } else {
         commitIndexedDBTransaction(tx);
@@ -159,29 +169,31 @@ export function getMessagesHigherThan(db, lastCursorId) {
   });
 }
 export function removeMessagesById(db, ids) {
-  const tx = db.transaction([OBJECT_STORE_ID], 'readwrite', TRANSACTION_SETTINGS);
-  const objectStore = tx.objectStore(OBJECT_STORE_ID);
-  return Promise.all(ids.map(id => {
-    const deleteRequest = objectStore.delete(id);
-    return new Promise(res => {
-      deleteRequest.onsuccess = () => res();
+  var tx = db.transaction([OBJECT_STORE_ID], 'readwrite', TRANSACTION_SETTINGS);
+  var objectStore = tx.objectStore(OBJECT_STORE_ID);
+  return Promise.all(ids.map(function (id) {
+    var deleteRequest = objectStore["delete"](id);
+    return new Promise(function (res) {
+      deleteRequest.onsuccess = function () {
+        return res();
+      };
     });
   }));
 }
 export function getOldMessages(db, ttl) {
-  const olderThen = Date.now() - ttl;
-  const tx = db.transaction(OBJECT_STORE_ID, 'readonly', TRANSACTION_SETTINGS);
-  const objectStore = tx.objectStore(OBJECT_STORE_ID);
-  const ret = [];
-  return new Promise(res => {
-    objectStore.openCursor().onsuccess = ev => {
-      const cursor = ev.target.result;
+  var olderThen = Date.now() - ttl;
+  var tx = db.transaction(OBJECT_STORE_ID, 'readonly', TRANSACTION_SETTINGS);
+  var objectStore = tx.objectStore(OBJECT_STORE_ID);
+  var ret = [];
+  return new Promise(function (res) {
+    objectStore.openCursor().onsuccess = function (ev) {
+      var cursor = ev.target.result;
       if (cursor) {
-        const msgObk = cursor.value;
+        var msgObk = cursor.value;
         if (msgObk.time < olderThen) {
           ret.push(msgObk);
           //alert("Name for SSN " + cursor.key + " is " + cursor.value.name);
-          cursor.continue();
+          cursor["continue"]();
         } else {
           // no more old messages,
           commitIndexedDBTransaction(tx);
@@ -195,18 +207,20 @@ export function getOldMessages(db, ttl) {
   });
 }
 export function cleanOldMessages(db, ttl) {
-  return getOldMessages(db, ttl).then(tooOld => {
-    return removeMessagesById(db, tooOld.map(msg => msg.id));
+  return getOldMessages(db, ttl).then(function (tooOld) {
+    return removeMessagesById(db, tooOld.map(function (msg) {
+      return msg.id;
+    }));
   });
 }
 export function create(channelName, options) {
   options = fillOptionsWithDefaults(options);
-  return createDatabase(channelName).then(db => {
-    const state = {
+  return createDatabase(channelName).then(function (db) {
+    var state = {
       closed: false,
       lastCursorId: 0,
-      channelName,
-      options,
+      channelName: channelName,
+      options: options,
       uuid: randomToken(),
       /**
        * emittedMessagesIds
@@ -218,7 +232,7 @@ export function create(channelName, options) {
       writeBlockPromise: PROMISE_RESOLVED_VOID,
       messagesCallback: null,
       readQueuePromises: [],
-      db,
+      db: db,
       time: micro()
     };
 
@@ -244,7 +258,11 @@ export function create(channelName, options) {
 }
 function _readLoop(state) {
   if (state.closed) return;
-  readNewMessages(state).then(() => sleep(state.options.idb.fallbackInterval)).then(() => _readLoop(state));
+  readNewMessages(state).then(function () {
+    return sleep(state.options.idb.fallbackInterval);
+  }).then(function () {
+    return _readLoop(state);
+  });
 }
 function _filterMessage(msgObj, state) {
   if (msgObj.uuid === state.uuid) return false; // send by own
@@ -262,19 +280,25 @@ function readNewMessages(state) {
 
   // if no one is listening, we do not need to scan for new messages
   if (!state.messagesCallback) return PROMISE_RESOLVED_VOID;
-  return getMessagesHigherThan(state.db, state.lastCursorId).then(newerMessages => {
-    const useMessages = newerMessages
+  return getMessagesHigherThan(state.db, state.lastCursorId).then(function (newerMessages) {
+    var useMessages = newerMessages
     /**
      * there is a bug in iOS where the msgObj can be undefined some times
      * so we filter them out
      * @link https://github.com/pubkey/broadcast-channel/issues/19
-     */.filter(msgObj => !!msgObj).map(msgObj => {
+     */.filter(function (msgObj) {
+      return !!msgObj;
+    }).map(function (msgObj) {
       if (msgObj.id > state.lastCursorId) {
         state.lastCursorId = msgObj.id;
       }
       return msgObj;
-    }).filter(msgObj => _filterMessage(msgObj, state)).sort((msgObjA, msgObjB) => msgObjA.time - msgObjB.time); // sort by time
-    useMessages.forEach(msgObj => {
+    }).filter(function (msgObj) {
+      return _filterMessage(msgObj, state);
+    }).sort(function (msgObjA, msgObjB) {
+      return msgObjA.time - msgObjB.time;
+    }); // sort by time
+    useMessages.forEach(function (msgObj) {
       if (state.messagesCallback) {
         state.eMIs.add(msgObj.id);
         state.messagesCallback(msgObj.data);
@@ -288,7 +312,9 @@ export function close(channelState) {
   channelState.db.close();
 }
 export function postMessage(channelState, messageJson) {
-  channelState.writeBlockPromise = channelState.writeBlockPromise.then(() => writeMessage(channelState.db, channelState.uuid, messageJson)).then(() => {
+  channelState.writeBlockPromise = channelState.writeBlockPromise.then(function () {
+    return writeMessage(channelState.db, channelState.uuid, messageJson);
+  }).then(function () {
     if (randomInt(0, 10) === 0) {
       /* await (do not await) */
       cleanOldMessages(channelState.db, channelState.options.idb.ttl);
@@ -302,7 +328,7 @@ export function onMessage(channelState, fn, time) {
   readNewMessages(channelState);
 }
 export function canBeUsed() {
-  const idb = getIdb();
+  var idb = getIdb();
   if (!idb) return false;
   return true;
 }

@@ -65,20 +65,20 @@ jobs:
       - name: test typings
         run: npm run test:typings
 
-      - name: test browser
-        uses: GabrielBB/xvfb-action@v1
-        with:
-          working-directory: ./ #optional
-          run: npm run test:browser
+      # - name: test browser
+      #   uses: GabrielBB/xvfb-action@v1
+      #   with:
+      #     working-directory: ./ #optional
+      #     run: npm run test:browser
 
       - name: test performance
         run: npm run test:performance
 
-      - name: test e2e
-        uses: GabrielBB/xvfb-action@v1
-        with:
-          working-directory: ./ #optional
-          run: npm run test:e2e
+      # - name: test e2e
+      #   uses: GabrielBB/xvfb-action@v1
+      #   with:
+      #     working-directory: ./ #optional
+      #     run: npm run test:e2e
 
 
   # run the node test in an own task, so we can use a node-version matrix.

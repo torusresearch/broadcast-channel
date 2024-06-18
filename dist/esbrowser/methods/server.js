@@ -1,3 +1,5 @@
+import _asyncToGenerator from "@babel/runtime/helpers/asyncToGenerator";
+import _regeneratorRuntime from "@babel/runtime/regenerator";
 /**
  * A localStorage-only method which uses localstorage and its 'storage'-event
  * This does not work inside of webworkers because they have no access to locastorage
@@ -13,12 +15,12 @@ import { encryptData, decryptData, keccak256 } from '@toruslabs/metadata-helpers
 import { log } from '../util';
 import { fillOptionsWithDefaults } from '../options';
 import { sleep, randomToken, microSeconds as micro } from '../util';
-export const microSeconds = micro;
-const KEY_PREFIX = 'pubkey.broadcastChannel-';
-export const type = 'server';
-let SOCKET_CONN_INSTANCE = null;
+export var microSeconds = micro;
+var KEY_PREFIX = 'pubkey.broadcastChannel-';
+export var type = 'server';
+var SOCKET_CONN_INSTANCE = null;
 // used to decide to reconnect socket e.g. when socket connection is disconnected unexpectedly
-const runningChannels = new Set();
+var runningChannels = new Set();
 export function storageKey(channelName) {
   return KEY_PREFIX + channelName;
 }
@@ -28,65 +30,90 @@ export function storageKey(channelName) {
  * and fires the storage-event so other readers can find it
  */
 export function postMessage(channelState, messageJson) {
-  return new Promise((res, rej) => {
-    sleep().then(async () => {
-      const key = storageKey(channelState.channelName);
-      const channelEncPrivKey = keccak256(Buffer.from(key, 'utf8'));
-      const encData = await encryptData(channelEncPrivKey.toString('hex'), {
-        token: randomToken(),
-        time: Date.now(),
-        data: messageJson,
-        uuid: channelState.uuid
-      });
-      const body = {
-        sameOriginCheck: true,
-        sameIpCheck: true,
-        key: getPublic(channelEncPrivKey).toString('hex'),
-        data: encData,
-        signature: (await sign(channelEncPrivKey, keccak256(Buffer.from(encData, 'utf8')))).toString('hex')
-      };
-      if (channelState.timeout) body.timeout = channelState.timeout;
-      return fetch(channelState.serverUrl + '/channel/set', {
-        method: 'POST',
-        body: JSON.stringify(body),
-        headers: {
-          'Content-Type': 'application/json; charset=utf-8'
+  return new Promise(function (res, rej) {
+    sleep().then( /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/_regeneratorRuntime.mark(function _callee() {
+      var key, channelEncPrivKey, encData, body;
+      return _regeneratorRuntime.wrap(function _callee$(_context) {
+        while (1) switch (_context.prev = _context.next) {
+          case 0:
+            key = storageKey(channelState.channelName);
+            channelEncPrivKey = keccak256(Buffer.from(key, 'utf8'));
+            _context.next = 4;
+            return encryptData(channelEncPrivKey.toString('hex'), {
+              token: randomToken(),
+              time: Date.now(),
+              data: messageJson,
+              uuid: channelState.uuid
+            });
+          case 4:
+            encData = _context.sent;
+            _context.t0 = getPublic(channelEncPrivKey).toString('hex');
+            _context.t1 = encData;
+            _context.next = 9;
+            return sign(channelEncPrivKey, keccak256(Buffer.from(encData, 'utf8')));
+          case 9:
+            _context.t2 = _context.sent.toString('hex');
+            body = {
+              sameOriginCheck: true,
+              sameIpCheck: true,
+              key: _context.t0,
+              data: _context.t1,
+              signature: _context.t2
+            };
+            if (channelState.timeout) body.timeout = channelState.timeout;
+            return _context.abrupt("return", fetch(channelState.serverUrl + '/channel/set', {
+              method: 'POST',
+              body: JSON.stringify(body),
+              headers: {
+                'Content-Type': 'application/json; charset=utf-8'
+              }
+            }).then(res)["catch"](rej));
+          case 13:
+          case "end":
+            return _context.stop();
         }
-      }).then(res).catch(rej);
-    });
+      }, _callee);
+    })));
   });
 }
 export function getSocketInstance(serverUrl) {
   if (SOCKET_CONN_INSTANCE) {
     return SOCKET_CONN_INSTANCE;
   }
-  const SOCKET_CONN = io(serverUrl, {
+  var SOCKET_CONN = io(serverUrl, {
     transports: ['websocket', 'polling'],
     // use WebSocket first, if available
     withCredentials: true,
     reconnectionDelayMax: 10000,
     reconnectionAttempts: 10
   });
-  SOCKET_CONN.on('connect_error', err => {
+  SOCKET_CONN.on('connect_error', function (err) {
     // revert to classic upgrade
     SOCKET_CONN.io.opts.transports = ['polling', 'websocket'];
     log.error('connect error', err);
   });
-  SOCKET_CONN.on('connect', async () => {
-    const {
-      engine
-    } = SOCKET_CONN.io;
-    log.debug('initially connected to', engine.transport.name); // in most cases, prints "polling"
-    engine.once('upgrade', () => {
-      // called when the transport is upgraded (i.e. from HTTP long-polling to WebSocket)
-      log.debug('upgraded', engine.transport.name); // in most cases, prints "websocket"
-    });
-    engine.once('close', reason => {
-      // called when the underlying connection is closed
-      log.debug('connection closed', reason);
-    });
-  });
-  SOCKET_CONN.on('error', err => {
+  SOCKET_CONN.on('connect', /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/_regeneratorRuntime.mark(function _callee2() {
+    var engine;
+    return _regeneratorRuntime.wrap(function _callee2$(_context2) {
+      while (1) switch (_context2.prev = _context2.next) {
+        case 0:
+          engine = SOCKET_CONN.io.engine;
+          log.debug('initially connected to', engine.transport.name); // in most cases, prints "polling"
+          engine.once('upgrade', function () {
+            // called when the transport is upgraded (i.e. from HTTP long-polling to WebSocket)
+            log.debug('upgraded', engine.transport.name); // in most cases, prints "websocket"
+          });
+          engine.once('close', function (reason) {
+            // called when the underlying connection is closed
+            log.debug('connection closed', reason);
+          });
+        case 4:
+        case "end":
+          return _context2.stop();
+      }
+    }, _callee2);
+  })));
+  SOCKET_CONN.on('error', function (err) {
     log.error('socket errored', err);
     SOCKET_CONN.disconnect();
   });
@@ -94,17 +121,17 @@ export function getSocketInstance(serverUrl) {
   return SOCKET_CONN;
 }
 export function setupSocketConnection(serverUrl, channelState, fn) {
-  const socketConn = getSocketInstance(serverUrl);
-  const key = storageKey(channelState.channelName);
-  const channelEncPrivKey = keccak256(Buffer.from(key, 'utf8'));
-  const channelPubKey = getPublic(channelEncPrivKey).toString('hex');
+  var socketConn = getSocketInstance(serverUrl);
+  var key = storageKey(channelState.channelName);
+  var channelEncPrivKey = keccak256(Buffer.from(key, 'utf8'));
+  var channelPubKey = getPublic(channelEncPrivKey).toString('hex');
   if (socketConn.connected) {
     socketConn.emit('check_auth_status', channelPubKey, {
       sameOriginCheck: true,
       sameIpCheck: true
     });
   } else {
-    socketConn.once('connect', () => {
+    socketConn.once('connect', function () {
       log.debug('connected with socket');
       socketConn.emit('check_auth_status', channelPubKey, {
         sameOriginCheck: true,
@@ -112,17 +139,25 @@ export function setupSocketConnection(serverUrl, channelState, fn) {
       });
     });
   }
-  const reconnect = () => {
-    socketConn.once('connect', async () => {
-      if (runningChannels.has(channelState.channelName)) {
-        socketConn.emit('check_auth_status', channelPubKey, {
-          sameOriginCheck: true,
-          sameIpCheck: true
-        });
-      }
-    });
+  var reconnect = function reconnect() {
+    socketConn.once('connect', /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/_regeneratorRuntime.mark(function _callee3() {
+      return _regeneratorRuntime.wrap(function _callee3$(_context3) {
+        while (1) switch (_context3.prev = _context3.next) {
+          case 0:
+            if (runningChannels.has(channelState.channelName)) {
+              socketConn.emit('check_auth_status', channelPubKey, {
+                sameOriginCheck: true,
+                sameIpCheck: true
+              });
+            }
+          case 1:
+          case "end":
+            return _context3.stop();
+        }
+      }, _callee3);
+    })));
   };
-  const visibilityListener = () => {
+  var visibilityListener = function visibilityListener() {
     // if channel is closed, then remove the listener.
     if (!socketConn || !runningChannels.has(channelState.channelName)) {
       document.removeEventListener('visibilitychange', visibilityListener);
@@ -133,23 +168,43 @@ export function setupSocketConnection(serverUrl, channelState, fn) {
       reconnect();
     }
   };
-  const listener = async ev => {
-    try {
-      const decData = await decryptData(channelEncPrivKey.toString('hex'), ev);
-      log.info(decData);
-      fn(decData);
-    } catch (error) {
-      log.error(error);
-    }
-  };
-  socketConn.on('disconnect', () => {
+  var listener = /*#__PURE__*/function () {
+    var _ref4 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime.mark(function _callee4(ev) {
+      var decData;
+      return _regeneratorRuntime.wrap(function _callee4$(_context4) {
+        while (1) switch (_context4.prev = _context4.next) {
+          case 0:
+            _context4.prev = 0;
+            _context4.next = 3;
+            return decryptData(channelEncPrivKey.toString('hex'), ev);
+          case 3:
+            decData = _context4.sent;
+            log.info(decData);
+            fn(decData);
+            _context4.next = 11;
+            break;
+          case 8:
+            _context4.prev = 8;
+            _context4.t0 = _context4["catch"](0);
+            log.error(_context4.t0);
+          case 11:
+          case "end":
+            return _context4.stop();
+        }
+      }, _callee4, null, [[0, 8]]);
+    }));
+    return function listener(_x) {
+      return _ref4.apply(this, arguments);
+    };
+  }();
+  socketConn.on('disconnect', function () {
     log.debug('socket disconnected');
     if (runningChannels.has(channelState.channelName)) {
       log.error('socket disconnected unexpectedly, reconnecting socket');
       reconnect();
     }
   });
-  socketConn.on(`${channelPubKey}_success`, listener);
+  socketConn.on("".concat(channelPubKey, "_success"), listener);
   if (typeof document !== 'undefined') document.addEventListener('visibilitychange', visibilityListener);
   return socketConn;
 }
@@ -163,24 +218,24 @@ export function create(channelName, options) {
   if (!canBeUsed(options)) {
     throw new Error('BroadcastChannel: server cannot be used');
   }
-  const uuid = randomToken();
+  var uuid = randomToken();
 
   /**
    * eMIs
    * contains all messages that have been emitted before
    * @type {ObliviousSet}
    */
-  const eMIs = new ObliviousSet(options.server.removeTimeout);
-  const state = {
-    channelName,
-    uuid,
-    eMIs,
+  var eMIs = new ObliviousSet(options.server.removeTimeout);
+  var state = {
+    channelName: channelName,
+    uuid: uuid,
+    eMIs: eMIs,
     // emittedMessagesIds
     serverUrl: options.server.url,
     time: micro()
   };
   if (options.server.timeout) state.timeout = options.server.timeout;
-  setupSocketConnection(options.server.url, state, msgObj => {
+  setupSocketConnection(options.server.url, state, function (msgObj) {
     if (!state.messagesCallback) return; // no listener
     if (msgObj.uuid === state.uuid) return; // own message
     if (!msgObj.token || state.eMIs.has(msgObj.token)) return; // already emitted
@@ -193,7 +248,7 @@ export function create(channelName, options) {
   return state;
 }
 export function close(channelState) {
-  runningChannels.delete(channelState.channelName);
+  runningChannels["delete"](channelState.channelName);
   // give 2 sec for all msgs which are in transit to be consumed
   // by receiver.
   // window.setTimeout(() => {
@@ -209,7 +264,7 @@ export function canBeUsed() {
   return true;
 }
 export function averageResponseTime() {
-  const defaultTime = 500;
+  var defaultTime = 500;
   // TODO: Maybe increase it based on operation
   return defaultTime;
 }

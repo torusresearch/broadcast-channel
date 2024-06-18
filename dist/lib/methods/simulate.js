@@ -1,10 +1,10 @@
 import { microSeconds as micro } from '../util';
-export const microSeconds = micro;
-export const type = 'simulate';
-const SIMULATE_CHANNELS = new Set();
-export const SIMULATE_DELAY_TIME = 5;
+export var microSeconds = micro;
+export var type = 'simulate';
+var SIMULATE_CHANNELS = new Set();
+export var SIMULATE_DELAY_TIME = 5;
 export function create(channelName) {
-  const state = {
+  var state = {
     time: micro(),
     name: channelName,
     messagesCallback: null
@@ -13,25 +13,27 @@ export function create(channelName) {
   return state;
 }
 export function close(channelState) {
-  SIMULATE_CHANNELS.delete(channelState);
+  SIMULATE_CHANNELS["delete"](channelState);
 }
 export function postMessage(channelState, messageJson) {
-  return new Promise(res => setTimeout(() => {
-    const channelArray = Array.from(SIMULATE_CHANNELS);
-    channelArray.forEach(channel => {
-      if (channel.name === channelState.name &&
-      // has same name
-      channel !== channelState &&
-      // not own channel
-      !!channel.messagesCallback &&
-      // has subscribers
-      channel.time < messageJson.time // channel not created after postMessage() call
-      ) {
-        channel.messagesCallback(messageJson);
-      }
-    });
-    res();
-  }, SIMULATE_DELAY_TIME));
+  return new Promise(function (res) {
+    return setTimeout(function () {
+      var channelArray = Array.from(SIMULATE_CHANNELS);
+      channelArray.forEach(function (channel) {
+        if (channel.name === channelState.name &&
+        // has same name
+        channel !== channelState &&
+        // not own channel
+        !!channel.messagesCallback &&
+        // has subscribers
+        channel.time < messageJson.time // channel not created after postMessage() call
+        ) {
+          channel.messagesCallback(messageJson);
+        }
+      });
+      res();
+    }, SIMULATE_DELAY_TIME);
+  });
 }
 export function onMessage(channelState, fn) {
   channelState.messagesCallback = fn;

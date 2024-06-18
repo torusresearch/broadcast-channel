@@ -11,12 +11,16 @@ export function isPromise(obj) {
     return false;
   }
 }
-export const PROMISE_RESOLVED_FALSE = Promise.resolve(false);
-export const PROMISE_RESOLVED_TRUE = Promise.resolve(true);
-export const PROMISE_RESOLVED_VOID = Promise.resolve();
+export var PROMISE_RESOLVED_FALSE = Promise.resolve(false);
+export var PROMISE_RESOLVED_TRUE = Promise.resolve(true);
+export var PROMISE_RESOLVED_VOID = Promise.resolve();
 export function sleep(time, resolveWith) {
   if (!time) time = 0;
-  return new Promise(res => setTimeout(() => res(resolveWith), time));
+  return new Promise(function (res) {
+    return setTimeout(function () {
+      return res(resolveWith);
+    }, time);
+  });
 }
 export function randomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1) + min);
@@ -28,7 +32,7 @@ export function randomInt(min, max) {
 export function randomToken() {
   return Math.random().toString(36).substring(2);
 }
-let lastMs = 0;
+var lastMs = 0;
 
 /**
  * returns the current time in micro-seconds,
@@ -38,7 +42,7 @@ let lastMs = 0;
  * The main reason for this hack is to ensure that BroadcastChannel behaves equal to production when it is used in fast-running unit tests.
  */
 export function microSeconds() {
-  let ret = Date.now() * 1000; // milliseconds to microseconds
+  var ret = Date.now() * 1000; // milliseconds to microseconds
   if (ret <= lastMs) {
     ret = lastMs + 1;
   }
@@ -70,8 +74,8 @@ export function microSeconds() {
 //     return thirdPartyCookieSupport;
 // }
 
-export const log = loglevel.getLogger('broadcast-channel');
+export var log = loglevel.getLogger('broadcast-channel');
 log.setLevel('error');
-export const setLogLevel = level => {
+export var setLogLevel = function setLogLevel(level) {
   log.setLevel(level);
 };

@@ -1,5 +1,6 @@
-export function fillOptionsWithDefaults(originalOptions = {}) {
-  const options = JSON.parse(JSON.stringify(originalOptions));
+export function fillOptionsWithDefaults() {
+  var originalOptions = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+  var options = JSON.parse(JSON.stringify(originalOptions));
 
   // main
   if (typeof options.webWorkerSupport === 'undefined') options.webWorkerSupport = true;

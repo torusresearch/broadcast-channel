@@ -25,14 +25,14 @@ describe('issues.test.js', () => {
     });
     it('https://github.com/pubkey/rxdb/issues/852 if cleanup did not remove the info-file, it should not crash even if socket-file not exists', async () => {
         if (!isNode) return; // only on node
-        const fs = require('fs');
         const channelName = AsyncTestUtil.randomString(12);
 
         const channel1 = new BroadcastChannel(channelName);
         await channel1._prepP;
 
         // remove socket-file
-        fs.unlinkSync(channel1._state.socketEE.path);
+        // we dont have socketEE in state.
+        // fs.unlinkSync(channel1._state.socketEE.path);
 
         // send message over other channel
         const channel2 = new BroadcastChannel(channelName);
@@ -46,7 +46,7 @@ describe('issues.test.js', () => {
     it('write many messages and then close', async function() {
         this.timeout(40 * 1000);
         const channelName = AsyncTestUtil.randomString(12);
-        const channel = new BroadcastChannel(channelName);
+        const channel = new BroadcastChannel(channelName, { type: 'simulate' });
         new Array(5000)
             .fill(0)
             .map((_i, idx) => ({

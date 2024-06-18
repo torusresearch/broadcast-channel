@@ -1,7 +1,7 @@
 import * as native from './methods/native.js';
 export { native as NativeMethod };
 import * as indexedDb from './methods/indexed-db.js';
-export { indexedDb as IndexeDbMethod };
+export { indexedDb as IndexedDbMethod };
 import * as localstorage from './methods/localstorage.js';
 export { localstorage as LocalstorageMethod };
 import * as server from './methods/server.js';

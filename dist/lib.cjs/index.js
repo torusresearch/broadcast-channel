@@ -10,7 +10,7 @@ var methodChooser = require('./method-chooser.js');
 
 
 exports.NativeMethod = native;
-exports.IndexeDbMethod = indexedDb;
+exports.IndexedDbMethod = indexedDb;
 exports.LocalstorageMethod = localstorage;
 exports.ServerMethod = server;
 exports.BroadcastChannel = broadcastChannel.BroadcastChannel;

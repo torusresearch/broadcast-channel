@@ -1,14 +1,14 @@
 import { microSeconds as micro, PROMISE_RESOLVED_VOID } from '../util';
-export const microSeconds = micro;
-export const type = 'native';
+export var microSeconds = micro;
+export var type = 'native';
 export function create(channelName) {
-  const state = {
+  var state = {
     time: micro(),
     messagesCallback: null,
     bc: new BroadcastChannel(channelName),
     subFns: [] // subscriberFunctions
   };
-  state.bc.onmessage = msg => {
+  state.bc.onmessage = function (msg) {
     if (state.messagesCallback) {
       state.messagesCallback(msg.data);
     }

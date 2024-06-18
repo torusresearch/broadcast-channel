@@ -9,16 +9,16 @@
 import { ObliviousSet } from 'oblivious-set';
 import { fillOptionsWithDefaults } from '../options';
 import { sleep, randomToken, microSeconds as micro } from '../util';
-export const microSeconds = micro;
-const KEY_PREFIX = 'pubkey.broadcastChannel-';
-export const type = 'localstorage';
+export var microSeconds = micro;
+var KEY_PREFIX = 'pubkey.broadcastChannel-';
+export var type = 'localstorage';
 
 /**
  * copied from crosstab
  * @link https://github.com/tejacques/crosstab/blob/master/src/crosstab.js#L32
  */
 export function getLocalStorage() {
-  let localStorage;
+  var localStorage;
   if (typeof window === 'undefined') return null;
   try {
     localStorage = window.localStorage;
@@ -39,16 +39,16 @@ export function storageKey(channelName) {
  * and fires the storage-event so other readers can find it
  */
 export function postMessage(channelState, messageJson) {
-  return new Promise(res => {
-    sleep().then(() => {
-      const key = storageKey(channelState.channelName);
-      const writeObj = {
+  return new Promise(function (res) {
+    sleep().then(function () {
+      var key = storageKey(channelState.channelName);
+      var writeObj = {
         token: randomToken(),
         time: Date.now(),
         data: messageJson,
         uuid: channelState.uuid
       };
-      const value = JSON.stringify(writeObj);
+      var value = JSON.stringify(writeObj);
       getLocalStorage().setItem(key, value);
 
       /**
@@ -56,7 +56,7 @@ export function postMessage(channelState, messageJson) {
        * in the window that changes the state of the local storage.
        * So we fire it manually
        */
-      const ev = document.createEvent('Event');
+      var ev = document.createEvent('Event');
       ev.initEvent('storage', true, true);
       ev.key = key;
       ev.newValue = value;
@@ -66,8 +66,8 @@ export function postMessage(channelState, messageJson) {
   });
 }
 export function addStorageEventListener(channelName, fn) {
-  const key = storageKey(channelName);
-  const listener = ev => {
+  var key = storageKey(channelName);
+  var listener = function listener(ev) {
     if (ev.key === key) {
       fn(JSON.parse(ev.newValue));
     }
@@ -83,21 +83,21 @@ export function create(channelName, options) {
   if (!canBeUsed(options)) {
     throw new Error('BroadcastChannel: localstorage cannot be used');
   }
-  const uuid = randomToken();
+  var uuid = randomToken();
 
   /**
    * eMIs
    * contains all messages that have been emitted before
    * @type {ObliviousSet}
    */
-  const eMIs = new ObliviousSet(options.localstorage.removeTimeout);
-  const state = {
-    channelName,
-    uuid,
+  var eMIs = new ObliviousSet(options.localstorage.removeTimeout);
+  var state = {
+    channelName: channelName,
+    uuid: uuid,
     time: micro(),
-    eMIs // emittedMessagesIds
+    eMIs: eMIs // emittedMessagesIds
   };
-  state.listener = addStorageEventListener(channelName, msgObj => {
+  state.listener = addStorageEventListener(channelName, function (msgObj) {
     if (!state.messagesCallback) return; // no listener
     if (msgObj.uuid === uuid) return; // own message
     if (!msgObj.token || eMIs.has(msgObj.token)) return; // already emitted
@@ -116,10 +116,10 @@ export function onMessage(channelState, fn, time) {
   channelState.messagesCallback = fn;
 }
 export function canBeUsed() {
-  const ls = getLocalStorage();
+  var ls = getLocalStorage();
   if (!ls) return false;
   try {
-    const key = '__broadcastchannel_check';
+    var key = '__broadcastchannel_check';
     ls.setItem(key, 'works');
     ls.removeItem(key);
   } catch (e) {
@@ -131,8 +131,8 @@ export function canBeUsed() {
   return true;
 }
 export function averageResponseTime() {
-  const defaultTime = 120;
-  const userAgent = navigator.userAgent.toLowerCase();
+  var defaultTime = 120;
+  var userAgent = navigator.userAgent.toLowerCase();
   if (userAgent.includes('safari') && !userAgent.includes('chrome')) {
     // safari is much slower so this time is higher
     return defaultTime * 2;

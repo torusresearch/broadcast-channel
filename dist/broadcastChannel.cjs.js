@@ -52,7 +52,7 @@ __webpack_require__.r(__webpack_exports__);
 // EXPORTS
 __webpack_require__.d(__webpack_exports__, {
   BroadcastChannel: () => (/* reexport */ broadcast_channel_BroadcastChannel),
-  IndexeDbMethod: () => (/* reexport */ indexed_db_namespaceObject),
+  IndexedDbMethod: () => (/* reexport */ indexed_db_namespaceObject),
   LocalstorageMethod: () => (/* reexport */ localstorage_namespaceObject),
   NativeMethod: () => (/* reexport */ native_namespaceObject),
   OPEN_BROADCAST_CHANNELS: () => (/* reexport */ OPEN_BROADCAST_CHANNELS),

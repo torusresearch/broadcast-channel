@@ -5,11 +5,11 @@ import * as ServerMethod from './methods/server.js';
 import * as SimulateMethod from './methods/simulate.js';
 
 // order is important
-const METHODS = [NativeMethod,
+var METHODS = [NativeMethod,
 // fastest
 IndexeDbMethod, LocalstorageMethod, ServerMethod];
 export function chooseMethod(options) {
-  let chooseMethods = [].concat(options.methods, METHODS).filter(Boolean);
+  var chooseMethods = [].concat(options.methods, METHODS).filter(Boolean);
 
   // directly chosen
   if (options.type) {
@@ -17,7 +17,9 @@ export function chooseMethod(options) {
       // only use simulate-method if directly chosen
       return SimulateMethod;
     }
-    const ret = chooseMethods.find(m => m.type === options.type);
+    var ret = chooseMethods.find(function (m) {
+      return m.type === options.type;
+    });
     if (!ret) throw new Error('method-type ' + options.type + ' not found');else return ret;
   }
 
@@ -26,8 +28,14 @@ export function chooseMethod(options) {
    * remove idb from the list so that localstorage is been chosen
    */
   if (!options.webWorkerSupport) {
-    chooseMethods = chooseMethods.filter(m => m.type !== 'idb');
+    chooseMethods = chooseMethods.filter(function (m) {
+      return m.type !== 'idb';
+    });
   }
-  const useMethod = chooseMethods.find(method => method.canBeUsed(options));
-  if (!useMethod) throw new Error(`No useable method found in ${JSON.stringify(METHODS.map(m => m.type))}`);else return useMethod;
+  var useMethod = chooseMethods.find(function (method) {
+    return method.canBeUsed(options);
+  });
+  if (!useMethod) throw new Error("No useable method found in ".concat(JSON.stringify(METHODS.map(function (m) {
+    return m.type;
+  }))));else return useMethod;
 }
