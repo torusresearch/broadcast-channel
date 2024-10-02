@@ -470,7 +470,7 @@ if (!isNode) {
 
 useOptions.forEach((o) => runTest(o));
 
-describe.only('AdaptiveBroadcastChannel', () => {
+describe('AdaptiveBroadcastChannel', () => {
     describe('.constructor()', () => {
         it('log options', () => {
             console.log('Started: ' + JSON.stringify({}));
