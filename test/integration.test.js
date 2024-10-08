@@ -3,7 +3,7 @@ const assert = require('assert');
 const isNode = require('detect-node');
 const clone = require('clone');
 const unload = require('unload');
-const { AdaptiveBroadcastChannel, BroadcastChannel, OPEN_BROADCAST_CHANNELS, enforceOptions } = require('../');
+const { AdaptiveBroadcastChannel, BroadcastChannel, RedundantAdaptiveBroadcastChannel, OPEN_BROADCAST_CHANNELS, enforceOptions } = require('../');
 
 if (isNode) {
     process.on('uncaughtException', (err, origin) => {
@@ -13,6 +13,9 @@ if (isNode) {
         process.exit(1);
     });
 }
+
+// eslint-disable-next-line no-undef
+const sandbox = sinon.createSandbox();
 
 /**
  * we run this test once per method
@@ -469,6 +472,240 @@ if (!isNode) {
 }
 
 useOptions.forEach((o) => runTest(o));
+
+describe('RedundantAdaptiveBroadcastChannel', () => {
+    afterEach(function () {
+        sandbox.restore();
+    });
+
+    describe('.constructor()', () => {
+        it('log options', () => {
+            console.log('Started: ' + JSON.stringify({}));
+        });
+        it('should create a channel', async () => {
+            const channelName = AsyncTestUtil.randomString(12);
+            const channel = new RedundantAdaptiveBroadcastChannel(channelName);
+            await channel.close();
+        });
+    });
+
+    describe('.postMessage()', () => {
+        it('should post a message', async () => {
+            const channelName = AsyncTestUtil.randomString(12);
+            const channel = new RedundantAdaptiveBroadcastChannel(channelName);
+            await channel.postMessage('foobar');
+            await channel.close();
+        });
+        it('should throw if channel is already closed', async () => {
+            const channelName = AsyncTestUtil.randomString(12);
+            const channel = new RedundantAdaptiveBroadcastChannel(channelName);
+            await channel.close();
+            await AsyncTestUtil.assertThrows(() => channel.postMessage('foobar'), Error, 'closed');
+        });
+    });
+
+    describe('adaptive post message', () => {
+        it('should still receive message if 1 channel post fail with error', async () => {
+            const channelName = AsyncTestUtil.randomString(12);
+            const channel = new RedundantAdaptiveBroadcastChannel(channelName);
+            const otherChannel = new RedundantAdaptiveBroadcastChannel(channelName);
+
+            // native channel post message fail
+            const nativeChannel = channel.channels.get('native');
+            sandbox.stub(nativeChannel, 'postMessage').rejects(new Error('test'));
+
+            const emitted = [];
+            otherChannel.onmessage = (msg) => emitted.push(msg);
+            await channel.postMessage({
+                foo: 'bar',
+            });
+            await AsyncTestUtil.waitUntil(() => emitted.length === 1);
+            assert.equal(emitted[0].foo, 'bar');
+            await channel.close();
+            await otherChannel.close();
+        });
+
+        it('should still receive message if multiple channels post fail with error', async () => {
+            const channelName = AsyncTestUtil.randomString(12);
+            const channel = new RedundantAdaptiveBroadcastChannel(channelName);
+            const otherChannel = new RedundantAdaptiveBroadcastChannel(channelName);
+
+            // fail these channels
+            const failChannels = ['native', 'idb', 'localstorage'];
+            for (const [type, c] of channel.channels.entries()) {
+                if (failChannels.includes(type)) {
+                    sandbox.stub(c, 'postMessage').rejects(new Error('test'));
+                }
+            }
+
+            const emitted = [];
+            otherChannel.onmessage = (msg) => emitted.push(msg);
+            await channel.postMessage({
+                foo: 'bar',
+            });
+            await AsyncTestUtil.waitUntil(() => emitted.length === 1);
+            assert.equal(emitted[0].foo, 'bar');
+            await channel.close();
+            await otherChannel.close();
+        });
+
+        it('should still receive message if 1 channel post fail silently', async () => {
+            const channelName = AsyncTestUtil.randomString(12);
+            const channel = new RedundantAdaptiveBroadcastChannel(channelName);
+            const otherChannel = new RedundantAdaptiveBroadcastChannel(channelName);
+
+            // native channel post message fail
+            const nativeChannel = channel.channels.get('native');
+            sandbox.stub(nativeChannel, 'postMessage').resolves(null);
+
+            const emitted = [];
+            otherChannel.onmessage = (msg) => emitted.push(msg);
+            await channel.postMessage({
+                foo: 'bar',
+            });
+            await AsyncTestUtil.waitUntil(() => emitted.length === 1);
+            assert.equal(emitted[0].foo, 'bar');
+            await channel.close();
+            await otherChannel.close();
+        });
+
+        it('should still receive message if multiple channels post fail silently', async () => {
+            const channelName = AsyncTestUtil.randomString(12);
+            const channel = new RedundantAdaptiveBroadcastChannel(channelName);
+            const otherChannel = new RedundantAdaptiveBroadcastChannel(channelName);
+
+            // fail these channels
+            const failChannels = ['native', 'idb', 'localstorage'];
+            for (const [type, c] of channel.channels.entries()) {
+                if (failChannels.includes(type)) {
+                    sandbox.stub(c, 'postMessage').resolves(null);
+                }
+            }
+
+            const emitted = [];
+            otherChannel.onmessage = (msg) => emitted.push(msg);
+            await channel.postMessage({
+                foo: 'bar',
+            });
+            await AsyncTestUtil.waitUntil(() => emitted.length === 1);
+            assert.equal(emitted[0].foo, 'bar');
+            await channel.close();
+            await otherChannel.close();
+        });
+    });
+
+    describe('.onmessage', () => {
+        /**
+         * the window.BroadcastChannel
+         * does not emit postMessage to own subscribers,
+         * if you want to do that, you have to create another channel
+         */
+        it('should NOT receive the message on own', async () => {
+            const channelName = AsyncTestUtil.randomString(12);
+            const channel = new RedundantAdaptiveBroadcastChannel(channelName);
+
+            const emitted = [];
+            channel.onmessage = (msg) => emitted.push(msg);
+            await channel.postMessage({
+                foo: 'bar',
+            });
+
+            await AsyncTestUtil.wait(100);
+            assert.equal(emitted.length, 0);
+
+            await channel.close();
+        });
+        it('should receive the message on other channel', async () => {
+            const channelName = AsyncTestUtil.randomString(12);
+            const channel = new RedundantAdaptiveBroadcastChannel(channelName);
+            const otherChannel = new RedundantAdaptiveBroadcastChannel(channelName);
+
+            const emitted = [];
+            otherChannel.onmessage = (msg) => emitted.push(msg);
+            await channel.postMessage({
+                foo: 'bar',
+            });
+            await AsyncTestUtil.waitUntil(() => emitted.length === 1);
+            assert.equal(emitted[0].foo, 'bar');
+            await channel.close();
+            await otherChannel.close();
+        });
+    });
+
+    describe('.close()', () => {
+        it('should have resolved all processed message promises when close() resolves', async () => {
+            const channelName = AsyncTestUtil.randomString(12);
+            const channel = new RedundantAdaptiveBroadcastChannel(channelName);
+
+            channel.postMessage({});
+            channel.postMessage({});
+            channel.postMessage({});
+
+            await channel.close();
+            for (const c in channel.channels.values()) {
+                assert.strictEqual(c.isClosed, true);
+                assert.strictEqual(c._uMP.size, 0);
+            }
+        });
+    });
+
+    describe('.addEventListener()', () => {
+        it('should emit events to all subscribers', async () => {
+            const channelName = AsyncTestUtil.randomString(12);
+            const channel = new RedundantAdaptiveBroadcastChannel(channelName);
+            const otherChannel = new RedundantAdaptiveBroadcastChannel(channelName);
+
+            const emitted1 = [];
+            const emitted2 = [];
+
+            otherChannel.addEventListener('message', (msg) => emitted1.push(msg));
+            otherChannel.addEventListener('message', (msg) => emitted2.push(msg));
+
+            const msg = {
+                foo: 'bar',
+            };
+            await channel.postMessage(msg);
+
+            await AsyncTestUtil.waitUntil(() => emitted1.length === 1);
+            await AsyncTestUtil.waitUntil(() => emitted2.length === 1);
+
+            assert.deepEqual(msg, emitted1[0]);
+            assert.deepEqual(msg, emitted2[0]);
+
+            await channel.close();
+            await otherChannel.close();
+        });
+    });
+
+    describe('.removeEventListener()', () => {
+        it('should no longer emit the message', async () => {
+            const channelName = AsyncTestUtil.randomString(12);
+            const channel = new RedundantAdaptiveBroadcastChannel(channelName);
+            const otherChannel = new RedundantAdaptiveBroadcastChannel(channelName);
+
+            const emitted = [];
+            const fn = (msg) => emitted.push(msg);
+            otherChannel.addEventListener('message', fn);
+
+            const msg = {
+                foo: 'bar',
+            };
+            await channel.postMessage(msg);
+
+            await AsyncTestUtil.waitUntil(() => emitted.length === 1);
+
+            otherChannel.removeEventListener('message', fn);
+
+            await channel.postMessage(msg);
+            await AsyncTestUtil.wait(100);
+
+            assert.equal(emitted.length, 1);
+
+            await channel.close();
+            await otherChannel.close();
+        });
+    });
+});
 
 describe('AdaptiveBroadcastChannel', () => {
     describe('.constructor()', () => {

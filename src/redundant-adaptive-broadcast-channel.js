@@ -53,13 +53,13 @@ export class RedundantAdaptiveBroadcastChannel {
         }
     }
 
-    handleMessage(event, method) {
-        if (event.data && event.data.nonce) {
-            if (this.processedNonces.has(event.data.nonce)) {
-                console.log(`Duplicate message received via ${method}, nonce: ${event.data.nonce}`);
+    handleMessage(event) {
+        if (event && event.nonce) {
+            if (this.processedNonces.has(event.nonce)) {
+                // console.log(`Duplicate message received via ${method}, nonce: ${event.nonce}`);
                 return;
             }
-            this.processedNonces.add(event.data.nonce);
+            this.processedNonces.add(event.nonce);
 
             // Cleanup old nonces (keeping last 1000 to prevent memory issues)
             if (this.processedNonces.size > 1000) {
@@ -67,7 +67,7 @@ export class RedundantAdaptiveBroadcastChannel {
                 this.processedNonces.delete(oldestNonce);
             }
 
-            this.listeners.forEach(listener => listener(event.data.message));
+            this.listeners.forEach(listener => listener(event.message));
         }
     }
 
@@ -91,13 +91,14 @@ export class RedundantAdaptiveBroadcastChannel {
         const postPromises = Array.from(this.channels.entries()).map(([method, channel]) =>
             channel.postMessage(wrappedMessage).catch(error => {
                 console.warn(`Failed to send via ${method}: ${error.message}`);
+                throw error;
             })
         );
 
-        await Promise.allSettled(postPromises);
+        const result = await Promise.allSettled(postPromises);
 
         // Check if at least one promise resolved successfully
-        const anySuccessful = postPromises.some(p => p.status === 'fulfilled');
+        const anySuccessful = result.some(p => p.status === 'fulfilled');
         if (!anySuccessful) {
             throw new Error('Failed to send message through any method');
         }

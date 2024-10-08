@@ -6,4 +6,5 @@ import * as ServerMethod from './methods/server';
 export { BroadcastChannel, enforceOptions, OPEN_BROADCAST_CHANNELS } from './broadcast-channel';
 export * from './method-chooser';
 export { AdaptiveBroadcastChannel } from './adaptive-broadcast-channel';
+export { RedundantAdaptiveBroadcastChannel } from './redundant-adaptive-broadcast-channel';
 export { NativeMethod, IndexedDbMethod, LocalstorageMethod, ServerMethod };
