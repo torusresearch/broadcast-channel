@@ -12,7 +12,7 @@ import * as SimulateMethod from './methods/simulate.js';
  * Implementing adaptive listening, where all instances listen on all channels but primarily use the current active method for sending.
  * Enabling seamless method switching, allowing receivers to automatically adapt to the sender's method changes without manual intervention.
  */
-export class RedudndantAdaptiveBroadcastChannel {
+export class RedundantAdaptiveBroadcastChannel {
     constructor(name, options = {}) {
         this.name = name;
         this.options = options;
