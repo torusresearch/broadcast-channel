@@ -6,7 +6,7 @@ class Foo {
         this.bc.addEventListener('message', this.cb);
     }
 
-    cb() {}
+    cb() { }
 }
 
 describe('Broadcast Channel', () => {

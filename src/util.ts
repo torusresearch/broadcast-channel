@@ -1,35 +1,37 @@
 // import Bowser from 'bowser';
-import loglevel from 'loglevel';
+import loglevel from "loglevel";
 
 /**
  * returns true if the given object is a promise
  */
-export function isPromise(obj) {
-    if (obj && typeof obj.then === 'function') {
-        return true;
-    } else {
-        return false;
-    }
+export function isPromise(obj: unknown): boolean {
+  if (obj && typeof (obj as { then: unknown }).then === "function") {
+    return true;
+  }
+
+  return false;
 }
 
 export const PROMISE_RESOLVED_FALSE = Promise.resolve(false);
 export const PROMISE_RESOLVED_TRUE = Promise.resolve(true);
 export const PROMISE_RESOLVED_VOID = Promise.resolve();
 
-export function sleep(time, resolveWith) {
-    if (!time) time = 0;
-    return new Promise((res) => setTimeout(() => res(resolveWith), time));
+export function sleep<T>(time?: number, resolveWith?: T): Promise<T> {
+  if (!time) time = 0;
+  return new Promise((resolve) => {
+    setTimeout(() => resolve(resolveWith), time);
+  });
 }
 
-export function randomInt(min, max) {
-    return Math.floor(Math.random() * (max - min + 1) + min);
+export function randomInt(min: number, max: number): number {
+  return Math.floor(Math.random() * (max - min + 1) + min);
 }
 
 /**
  * https://stackoverflow.com/a/8084248
  */
-export function randomToken() {
-    return Math.random().toString(36).substring(2);
+export function randomToken(): string {
+  return Math.random().toString(36).substring(2);
 }
 
 let lastMs = 0;
@@ -41,13 +43,13 @@ let lastMs = 0;
  * This is enough in browsers, and this function will not be used in nodejs.
  * The main reason for this hack is to ensure that BroadcastChannel behaves equal to production when it is used in fast-running unit tests.
  */
-export function microSeconds() {
-    let ret = Date.now() * 1000; // milliseconds to microseconds
-    if (ret <= lastMs) {
-        ret = lastMs + 1;
-    }
-    lastMs = ret;
-    return ret;
+export function microSeconds(): number {
+  let ret = Date.now() * 1000; // milliseconds to microseconds
+  if (ret <= lastMs) {
+    ret = lastMs + 1;
+  }
+  lastMs = ret;
+  return ret;
 }
 
 // the problem is only in iframes. we should default to server in case of iframes.
@@ -74,10 +76,10 @@ export function microSeconds() {
 //     return thirdPartyCookieSupport;
 // }
 
-export const log = loglevel.getLogger('broadcast-channel');
+export const log = loglevel.getLogger("broadcast-channel");
 
-log.setLevel('error');
+log.setLevel("error");
 
-export const setLogLevel = (level) => {
-    log.setLevel(level);
+export const setLogLevel = (level: loglevel.LogLevelDesc): void => {
+  log.setLevel(level);
 };
