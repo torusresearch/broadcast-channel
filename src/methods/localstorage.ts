@@ -9,6 +9,7 @@
 import { ObliviousSet } from "oblivious-set";
 
 import { fillOptionsWithDefaults } from "../options";
+import { MessageObject } from "../types";
 import { microSeconds as micro, randomToken, sleep } from "../util";
 
 export const microSeconds = micro;
@@ -19,7 +20,7 @@ export const type = "localstorage";
 interface StorageMessage {
   token: string;
   time: number;
-  data: unknown;
+  data: MessageObject;
   uuid: string;
 }
 
@@ -29,7 +30,7 @@ interface ChannelState {
   time: number;
   eMIs: ObliviousSet<string>;
   listener?: (ev: StorageEvent) => void;
-  messagesCallback?: (data: unknown) => void;
+  messagesCallback?: (data: MessageObject) => void;
   messagesCallbackTime?: number;
 }
 
@@ -66,7 +67,7 @@ export function storageKey(channelName: string): string {
  * writes the new message to the storage
  * and fires the storage-event so other readers can find it
  */
-export function postMessage(channelState: ChannelState, messageJson: unknown): Promise<void> {
+export function postMessage(channelState: ChannelState, messageJson: MessageObject): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     sleep()
       .then(() => {
@@ -156,8 +157,7 @@ export function create(channelName: string, options: LocalStorageOptions): Chann
     if (msgObj.uuid === uuid) return; // own message
     if (!msgObj.token || eMIs.has(msgObj.token)) return; // already emitted
 
-    const data = msgObj.data as { time?: number };
-    if (data.time && data.time < (state.messagesCallbackTime || 0)) return; // too old
+    if (msgObj.data.time && msgObj.data.time < (state.messagesCallbackTime || 0)) return; // too old
 
     eMIs.add(msgObj.token);
     state.messagesCallback(msgObj.data);
@@ -172,7 +172,7 @@ export function close(channelState: ChannelState): void {
   }
 }
 
-export function onMessage(channelState: ChannelState, fn: (msg: unknown) => void, time: number): void {
+export function onMessage(channelState: ChannelState, fn: (msg: MessageObject) => void, time: number): void {
   channelState.messagesCallbackTime = time;
   channelState.messagesCallback = fn;
 }

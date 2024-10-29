@@ -1,3 +1,4 @@
+import { MessageObject } from "../types";
 import { microSeconds as micro, PROMISE_RESOLVED_VOID } from "../util";
 
 export const microSeconds = micro;
@@ -6,7 +7,7 @@ export const type = "native";
 
 interface ChannelState {
   time: number;
-  messagesCallback: ((data: unknown) => void) | null;
+  messagesCallback: ((data: MessageObject) => void) | null;
   bc: BroadcastChannel;
   subFns: Array<() => void>;
 }
@@ -33,7 +34,7 @@ export function close(channelState: ChannelState): void {
   channelState.subFns = [];
 }
 
-export function postMessage(channelState: ChannelState, messageJson: unknown): Promise<void> {
+export function postMessage(channelState: ChannelState, messageJson: MessageObject): Promise<void> {
   try {
     channelState.bc.postMessage(messageJson);
     return PROMISE_RESOLVED_VOID;
@@ -42,7 +43,7 @@ export function postMessage(channelState: ChannelState, messageJson: unknown): P
   }
 }
 
-export function onMessage(channelState: ChannelState, fn: (data: unknown) => void): void {
+export function onMessage(channelState: ChannelState, fn: (data: MessageObject) => void): void {
   channelState.messagesCallback = fn;
 }
 

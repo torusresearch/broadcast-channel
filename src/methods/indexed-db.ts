@@ -14,7 +14,7 @@ export const microSeconds = micro;
 import { ObliviousSet } from "oblivious-set";
 
 import { fillOptionsWithDefaults } from "../options";
-import { Options } from "../types";
+import { MessageObject, Options } from "../types";
 
 const DB_PREFIX = "pubkey.broadcast-channel-0-";
 const OBJECT_STORE_ID = "messages";
@@ -60,7 +60,7 @@ interface Message {
   id: number;
   uuid: string;
   time: number;
-  data: unknown;
+  data: MessageObject;
 }
 
 export function createDatabase(channelName: string): Promise<IDBDatabase> {
@@ -98,7 +98,7 @@ export function createDatabase(channelName: string): Promise<IDBDatabase> {
  * writes the new message to the database
  * so other readers can find it
  */
-export function writeMessage(db: IDBDatabase, readerUuid: string, messageJson: unknown): Promise<void> {
+export function writeMessage(db: IDBDatabase, readerUuid: string, messageJson: MessageObject): Promise<void> {
   const time = Date.now();
   const writeObject = {
     uuid: readerUuid,
@@ -246,7 +246,7 @@ interface ChannelState {
   uuid: string;
   eMIs: ObliviousSet;
   writeBlockPromise: Promise<void>;
-  messagesCallback: ((data: unknown) => void) | null;
+  messagesCallback: ((data: MessageObject) => void) | null;
   messagesCallbackTime?: number;
   readQueuePromises: Promise<unknown>[];
   db: IDBDatabase;
@@ -314,7 +314,7 @@ function _readLoop(state: ChannelState): void {
 function _filterMessage(msgObj: Message, state: ChannelState): boolean {
   if (msgObj.uuid === state.uuid) return false; // send by own
   if (state.eMIs.has(msgObj.id)) return false; // already emitted
-  if ((msgObj.data as { time: number }).time < state.messagesCallbackTime!) return false; // older then onMessageCallback
+  if (msgObj.data.time < state.messagesCallbackTime!) return false; // older then onMessageCallback
   return true;
 }
 
@@ -360,7 +360,7 @@ export function close(channelState: ChannelState): void {
   channelState.db.close();
 }
 
-export function postMessage(channelState: ChannelState, messageJson: unknown): Promise<void> {
+export function postMessage(channelState: ChannelState, messageJson: MessageObject): Promise<void> {
   channelState.writeBlockPromise = channelState.writeBlockPromise
     .then(() => writeMessage(channelState.db, channelState.uuid, messageJson))
     .then(() => {
@@ -375,7 +375,7 @@ export function postMessage(channelState: ChannelState, messageJson: unknown): P
   return channelState.writeBlockPromise;
 }
 
-export function onMessage(channelState: ChannelState, fn: (data: unknown) => void, time: number): void {
+export function onMessage(channelState: ChannelState, fn: (data: MessageObject) => void, time: number): void {
   channelState.messagesCallbackTime = time;
   channelState.messagesCallback = fn;
   readNewMessages(channelState);

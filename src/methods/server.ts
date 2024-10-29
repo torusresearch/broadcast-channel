@@ -12,7 +12,7 @@ import { ObliviousSet } from "oblivious-set";
 import { io, Socket } from "socket.io-client";
 
 import { fillOptionsWithDefaults } from "../options";
-import { Options } from "../types";
+import { MessageObject, Options } from "../types";
 import { log, microSeconds as micro, randomToken, sleep } from "../util";
 
 export const microSeconds = micro;
@@ -31,14 +31,14 @@ interface ChannelState {
   serverUrl: string;
   time: number;
   timeout?: number;
-  messagesCallback?: (data: unknown) => void;
+  messagesCallback?: (data: MessageObject) => void;
   messagesCallbackTime?: number;
 }
 
 interface Message {
   token: string;
   time: number;
-  data: unknown;
+  data: MessageObject;
   uuid: string;
 }
 
@@ -59,7 +59,7 @@ export function storageKey(channelName: string): string {
  * writes the new message to the storage
  * and fires the storage-event so other readers can find it
  */
-export function postMessage(channelState: ChannelState, messageJson: unknown): Promise<Response> {
+export function postMessage(channelState: ChannelState, messageJson: MessageObject): Promise<Response> {
   return new Promise((resolve, reject) => {
     sleep()
       .then(async () => {
@@ -253,7 +253,7 @@ export function close(channelState: ChannelState): void {
   // }, 1000);
 }
 
-export function onMessage(channelState: ChannelState, fn: (data: unknown) => void, time?: number): void {
+export function onMessage(channelState: ChannelState, fn: (data: MessageObject) => void, time?: number): void {
   channelState.messagesCallbackTime = time;
   channelState.messagesCallback = fn;
 }
