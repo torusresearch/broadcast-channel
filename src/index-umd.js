@@ -1,11 +1,11 @@
 import { BroadcastChannel } from './broadcast-channel';
-import { AdaptiveBroadcastChannel } from './adaptive-broadcast-channel';
+import { RedundantAdaptiveBroadcastChannel } from './redundant-adaptive-broadcast-channel';
 import { encode, decode, toBase64, fromBase64, toBuffer } from 'base64url';
 
 if (typeof window !== 'undefined') {
     window.broadcastChannelLib = {};
     window.broadcastChannelLib.BroadcastChannel = BroadcastChannel;
-    window.broadcastChannelLib.AdaptiveBroadcastChannel = AdaptiveBroadcastChannel;
+    window.broadcastChannelLib.RedundantAdaptiveBroadcastChannel = RedundantAdaptiveBroadcastChannel;
     window.base64urlLib = {};
     window.base64urlLib.encode = encode;
     window.base64urlLib.decode = decode;

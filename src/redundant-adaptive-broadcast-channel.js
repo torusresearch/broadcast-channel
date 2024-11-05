@@ -7,10 +7,10 @@ import * as SimulateMethod from './methods/simulate.js';
 
 
 /**
- * The AdaptiveBroadcastChannel class is designed to add fallback to during channel post message and synchronization issues between senders and receivers in a broadcast communication scenario. It achieves this by:
+ * The RedundantAdaptiveBroadcastChannel class is designed to add fallback to during channel post message and synchronization issues between senders and receivers in a broadcast communication scenario. It achieves this by:
  * Creating a separate channel for each communication method, allowing all methods to listen simultaneously.
- * Implementing adaptive listening, where all instances listen on all channels but primarily use the current active method for sending.
- * Enabling seamless method switching, allowing receivers to automatically adapt to the sender's method changes without manual intervention.
+ * Implementing redundant message delivery by attempting to send messages through multiple channels when the primary channel fails.
+ * Ensuring message delivery by using multiple communication methods simultaneously while preventing duplicate message processing.
  */
 export class RedundantAdaptiveBroadcastChannel {
     constructor(name, options = {}) {
