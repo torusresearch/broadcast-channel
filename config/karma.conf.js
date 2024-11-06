@@ -2,6 +2,7 @@ const configuration = {
     basePath: '',
     frameworks: [
         'mocha',
+        'sinon',
         'browserify',
         'detectBrowsers'
     ],
@@ -38,6 +39,7 @@ const configuration = {
     // Karma plugins loaded
     plugins: [
         'karma-mocha',
+        'karma-sinon',
         'karma-browserify',
         'karma-chrome-launcher',
         'karma-edge-launcher',
