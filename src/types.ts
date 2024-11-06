@@ -53,3 +53,16 @@ export interface Options {
   localstorage?: LocalStorageOptions;
   server?: ServerOptions;
 }
+
+export interface IBroadcastChannel {
+  name: string;
+  options: Options;
+  closed: boolean;
+
+  onmessage: ((data: unknown) => void) | null;
+
+  postMessage(message: unknown): Promise<unknown>;
+  addEventListener(type: EventType, listener: (data: unknown) => void): void;
+  removeEventListener(type: EventType, listener: (data: unknown) => void): void;
+  close(): Promise<void>;
+}

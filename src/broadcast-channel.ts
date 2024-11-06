@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 import { chooseMethod } from "./method-chooser";
 import { fillOptionsWithDefaults } from "./options";
-import { AddEventListeners, EventType, ListenerObject, MessageObject, Method, Options as BroadcastChannelOptions } from "./types";
+import { AddEventListeners, EventType, IBroadcastChannel, ListenerObject, MessageObject, Method, Options as BroadcastChannelOptions } from "./types";
 import { isPromise, PROMISE_RESOLVED_VOID } from "./util";
 
 let ENFORCED_OPTIONS: BroadcastChannelOptions | undefined;
@@ -18,7 +18,7 @@ export function enforceOptions(options: BroadcastChannelOptions): void {
 export const OPEN_BROADCAST_CHANNELS = new Set<BroadcastChannel>();
 let lastId = 0;
 
-export class BroadcastChannel {
+export class BroadcastChannel implements IBroadcastChannel {
   static _pubkey = true;
 
   public id: number;
