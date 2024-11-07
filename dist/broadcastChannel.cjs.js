@@ -282,7 +282,10 @@ function averageResponseTime() {
 }
 ;// CONCATENATED MODULE: external "oblivious-set"
 const external_oblivious_set_namespaceObject = require("oblivious-set");
+;// CONCATENATED MODULE: external "@toruslabs/constants"
+const constants_namespaceObject = require("@toruslabs/constants");
 ;// CONCATENATED MODULE: ./src/options.js
+
 function fillOptionsWithDefaults(originalOptions = {}) {
   const options = JSON.parse(JSON.stringify(originalOptions));
 
@@ -303,7 +306,8 @@ function fillOptionsWithDefaults(originalOptions = {}) {
 
   // server
   if (!options.server) options.server = {};
-  if (!options.server.url) options.server.url = 'https://session.web3auth.io';
+  if (!options.server.api_url) options.server.api_url = constants_namespaceObject.SESSION_SERVER_API_URL;
+  if (!options.server.socket_url) options.server.socket_url = constants_namespaceObject.SESSION_SERVER_SOCKET_URL;
   if (!options.server.removeTimeout) options.server.removeTimeout = 1000 * 60 * 5; // 5 minutes
 
   // custom methods
@@ -819,7 +823,7 @@ function server_postMessage(channelState, messageJson) {
         signature: (await (0,eccrypto_namespaceObject.sign)(channelEncPrivKey, (0,metadata_helpers_namespaceObject.keccak256)(Buffer.from(encData, 'utf8')))).toString('hex')
       };
       if (channelState.timeout) body.timeout = channelState.timeout;
-      return fetch(channelState.serverUrl + '/channel/set', {
+      return fetch(channelState.server.api_url + '/channel/set', {
         method: 'POST',
         body: JSON.stringify(body),
         headers: {
@@ -829,11 +833,11 @@ function server_postMessage(channelState, messageJson) {
     });
   });
 }
-function getSocketInstance(serverUrl) {
+function getSocketInstance(socketUrl) {
   if (SOCKET_CONN_INSTANCE) {
     return SOCKET_CONN_INSTANCE;
   }
-  const SOCKET_CONN = (0,external_socket_io_client_namespaceObject.io)(serverUrl, {
+  const SOCKET_CONN = (0,external_socket_io_client_namespaceObject.io)(socketUrl, {
     transports: ['websocket', 'polling'],
     // use WebSocket first, if available
     withCredentials: true,
@@ -866,8 +870,8 @@ function getSocketInstance(serverUrl) {
   SOCKET_CONN_INSTANCE = SOCKET_CONN;
   return SOCKET_CONN;
 }
-function setupSocketConnection(serverUrl, channelState, fn) {
-  const socketConn = getSocketInstance(serverUrl);
+function setupSocketConnection(socketUrl, channelState, fn) {
+  const socketConn = getSocketInstance(socketUrl);
   const key = server_storageKey(channelState.channelName);
   const channelEncPrivKey = (0,metadata_helpers_namespaceObject.keccak256)(Buffer.from(key, 'utf8'));
   const channelPubKey = (0,eccrypto_namespaceObject.getPublic)(channelEncPrivKey).toString('hex');
@@ -949,11 +953,14 @@ function server_create(channelName, options) {
     uuid,
     eMIs,
     // emittedMessagesIds
-    serverUrl: options.server.url,
+    server: {
+      api_url: options.server.api_url,
+      socket_url: options.server.socket_url
+    },
     time: microSeconds()
   };
   if (options.server.timeout) state.timeout = options.server.timeout;
-  setupSocketConnection(options.server.url, state, msgObj => {
+  setupSocketConnection(options.server.socket_url, state, msgObj => {
     if (!state.messagesCallback) return; // no listener
     if (msgObj.uuid === state.uuid) return; // own message
     if (!msgObj.token || state.eMIs.has(msgObj.token)) return; // already emitted

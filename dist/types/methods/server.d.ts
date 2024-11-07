@@ -4,14 +4,17 @@ export function storageKey(channelName: any): string;
  * and fires the storage-event so other readers can find it
  */
 export function postMessage(channelState: any, messageJson: any): Promise<any>;
-export function getSocketInstance(serverUrl: any): any;
-export function setupSocketConnection(serverUrl: any, channelState: any, fn: any): any;
+export function getSocketInstance(socketUrl: any): any;
+export function setupSocketConnection(socketUrl: any, channelState: any, fn: any): any;
 export function removeStorageEventListener(): void;
 export function create(channelName: any, options: any): {
     channelName: any;
     uuid: string;
     eMIs: ObliviousSet<any>;
-    serverUrl: any;
+    server: {
+        api_url: any;
+        socket_url: any;
+    };
     time: number;
 };
 export function close(channelState: any): void;

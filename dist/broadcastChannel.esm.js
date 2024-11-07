@@ -1,5 +1,6 @@
 import loglevel from 'loglevel';
 import { ObliviousSet } from 'oblivious-set';
+import { SESSION_SERVER_API_URL, SESSION_SERVER_SOCKET_URL } from '@toruslabs/constants';
 import { io } from 'socket.io-client';
 import { getPublic, sign } from '@toruslabs/eccrypto';
 import { keccak256, encryptData, decryptData } from '@toruslabs/metadata-helpers';
@@ -158,7 +159,8 @@ function fillOptionsWithDefaults(originalOptions = {}) {
 
   // server
   if (!options.server) options.server = {};
-  if (!options.server.url) options.server.url = 'https://session.web3auth.io';
+  if (!options.server.api_url) options.server.api_url = SESSION_SERVER_API_URL;
+  if (!options.server.socket_url) options.server.socket_url = SESSION_SERVER_SOCKET_URL;
   if (!options.server.removeTimeout) options.server.removeTimeout = 1000 * 60 * 5; // 5 minutes
 
   // custom methods
@@ -693,7 +695,7 @@ function postMessage$1(channelState, messageJson) {
         signature: (await sign(channelEncPrivKey, keccak256(Buffer.from(encData, 'utf8')))).toString('hex')
       };
       if (channelState.timeout) body.timeout = channelState.timeout;
-      return fetch(channelState.serverUrl + '/channel/set', {
+      return fetch(channelState.server.api_url + '/channel/set', {
         method: 'POST',
         body: JSON.stringify(body),
         headers: {
@@ -703,11 +705,11 @@ function postMessage$1(channelState, messageJson) {
     });
   });
 }
-function getSocketInstance(serverUrl) {
+function getSocketInstance(socketUrl) {
   if (SOCKET_CONN_INSTANCE) {
     return SOCKET_CONN_INSTANCE;
   }
-  const SOCKET_CONN = io(serverUrl, {
+  const SOCKET_CONN = io(socketUrl, {
     transports: ['websocket', 'polling'],
     // use WebSocket first, if available
     withCredentials: true,
@@ -740,8 +742,8 @@ function getSocketInstance(serverUrl) {
   SOCKET_CONN_INSTANCE = SOCKET_CONN;
   return SOCKET_CONN;
 }
-function setupSocketConnection(serverUrl, channelState, fn) {
-  const socketConn = getSocketInstance(serverUrl);
+function setupSocketConnection(socketUrl, channelState, fn) {
+  const socketConn = getSocketInstance(socketUrl);
   const key = storageKey(channelState.channelName);
   const channelEncPrivKey = keccak256(Buffer.from(key, 'utf8'));
   const channelPubKey = getPublic(channelEncPrivKey).toString('hex');
@@ -820,11 +822,14 @@ function create$1(channelName, options) {
     uuid,
     eMIs,
     // emittedMessagesIds
-    serverUrl: options.server.url,
+    server: {
+      api_url: options.server.api_url,
+      socket_url: options.server.socket_url
+    },
     time: microSeconds$5()
   };
   if (options.server.timeout) state.timeout = options.server.timeout;
-  setupSocketConnection(options.server.url, state, msgObj => {
+  setupSocketConnection(options.server.socket_url, state, msgObj => {
     if (!state.messagesCallback) return; // no listener
     if (msgObj.uuid === state.uuid) return; // own message
     if (!msgObj.token || state.eMIs.has(msgObj.token)) return; // already emitted

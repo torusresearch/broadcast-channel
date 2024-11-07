@@ -52,7 +52,7 @@ export function postMessage(channelState, messageJson) {
                 signature: (await sign(channelEncPrivKey, keccak256(Buffer.from(encData, 'utf8')))).toString('hex'),
             };
             if (channelState.timeout) body.timeout = channelState.timeout;
-            return fetch(channelState.serverUrl + '/channel/set', {
+            return fetch(channelState.server.api_url + '/channel/set', {
                 method: 'POST',
                 body: JSON.stringify(body),
                 headers: {
@@ -65,11 +65,11 @@ export function postMessage(channelState, messageJson) {
     });
 }
 
-export function getSocketInstance(serverUrl) {
+export function getSocketInstance(socketUrl) {
     if (SOCKET_CONN_INSTANCE) {
         return SOCKET_CONN_INSTANCE;
     }
-    const SOCKET_CONN = io(serverUrl, {
+    const SOCKET_CONN = io(socketUrl, {
         transports: ['websocket', 'polling'], // use WebSocket first, if available
         withCredentials: true,
         reconnectionDelayMax: 10000,
@@ -102,8 +102,8 @@ export function getSocketInstance(serverUrl) {
     return SOCKET_CONN;
 }
 
-export function setupSocketConnection(serverUrl, channelState, fn) {
-    const socketConn = getSocketInstance(serverUrl);
+export function setupSocketConnection(socketUrl, channelState, fn) {
+    const socketConn = getSocketInstance(socketUrl);
 
     const key = storageKey(channelState.channelName);
     const channelEncPrivKey = keccak256(Buffer.from(key, 'utf8'));
@@ -192,12 +192,15 @@ export function create(channelName, options) {
         channelName,
         uuid,
         eMIs, // emittedMessagesIds
-        serverUrl: options.server.url,
+        server: {
+            api_url: options.server.api_url,
+            socket_url: options.server.socket_url,
+        },
         time: micro(),
     };
     if (options.server.timeout) state.timeout = options.server.timeout;
 
-    setupSocketConnection(options.server.url, state, (msgObj) => {
+    setupSocketConnection(options.server.socket_url, state, (msgObj) => {
         if (!state.messagesCallback) return; // no listener
         if (msgObj.uuid === state.uuid) return; // own message
         if (!msgObj.token || state.eMIs.has(msgObj.token)) return; // already emitted
