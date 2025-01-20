@@ -7,30 +7,30 @@
  * @link https://rxdb.info/slow-indexeddb.html
  */
 
-import { sleep, randomInt, randomToken, microSeconds as micro, PROMISE_RESOLVED_VOID } from '../util.js';
+import { microSeconds as micro, PROMISE_RESOLVED_VOID, randomInt, randomToken, sleep } from "../util.js";
 
 export const microSeconds = micro;
-import { ObliviousSet } from 'oblivious-set';
+import { ObliviousSet } from "oblivious-set";
 
-import { fillOptionsWithDefaults } from '../options';
+import { fillOptionsWithDefaults } from "../options";
 
-const DB_PREFIX = 'pubkey.broadcast-channel-0-';
-const OBJECT_STORE_ID = 'messages';
+const DB_PREFIX = "pubkey.broadcast-channel-0-";
+const OBJECT_STORE_ID = "messages";
 
 /**
  * Use relaxed durability for faster performance on all transactions.
  * @link https://nolanlawson.com/2021/08/22/speeding-up-indexeddb-reads-and-writes/
  */
-export const TRANSACTION_SETTINGS = { durability: 'relaxed' };
+export const TRANSACTION_SETTINGS = { durability: "relaxed" };
 
-export const type = 'idb';
+export const type = "idb";
 
 export function getIdb() {
-    if (typeof indexedDB !== 'undefined') return indexedDB;
-    if (typeof window !== 'undefined') {
-        if (typeof window.mozIndexedDB !== 'undefined') return window.mozIndexedDB;
-        if (typeof window.webkitIndexedDB !== 'undefined') return window.webkitIndexedDB;
-        if (typeof window.msIndexedDB !== 'undefined') return window.msIndexedDB;
+    if (typeof indexedDB !== "undefined") return indexedDB;
+    if (typeof window !== "undefined") {
+        if (typeof window.mozIndexedDB !== "undefined") return window.mozIndexedDB;
+        if (typeof window.webkitIndexedDB !== "undefined") return window.webkitIndexedDB;
+        if (typeof window.msIndexedDB !== "undefined") return window.msIndexedDB;
     }
 
     return false;
@@ -63,14 +63,14 @@ export function createDatabase(channelName) {
     openRequest.onupgradeneeded = (ev) => {
         const db = ev.target.result;
         db.createObjectStore(OBJECT_STORE_ID, {
-            keyPath: 'id',
+            keyPath: "id",
             autoIncrement: true,
         });
     };
-    const dbPromise = new Promise((res, rej) => {
-        openRequest.onerror = (ev) => rej(ev);
+    const dbPromise = new Promise((resolve, reject) => {
+        openRequest.onerror = (ev) => reject(ev);
         openRequest.onsuccess = () => {
-            res(openRequest.result);
+            resolve(openRequest.result);
         };
     });
 
@@ -89,11 +89,11 @@ export function writeMessage(db, readerUuid, messageJson) {
         data: messageJson,
     };
 
-    const tx = db.transaction([OBJECT_STORE_ID], 'readwrite', TRANSACTION_SETTINGS);
+    const tx = db.transaction([OBJECT_STORE_ID], "readwrite", TRANSACTION_SETTINGS);
 
-    return new Promise((res, rej) => {
-        tx.oncomplete = () => res();
-        tx.onerror = (ev) => rej(ev);
+    return new Promise((resolve, reject) => {
+        tx.oncomplete = () => resolve();
+        tx.onerror = (ev) => reject(ev);
 
         const objectStore = tx.objectStore(OBJECT_STORE_ID);
         objectStore.add(writeObject);
@@ -102,10 +102,10 @@ export function writeMessage(db, readerUuid, messageJson) {
 }
 
 export function getAllMessages(db) {
-    const tx = db.transaction(OBJECT_STORE_ID, 'readonly', TRANSACTION_SETTINGS);
+    const tx = db.transaction(OBJECT_STORE_ID, "readonly", TRANSACTION_SETTINGS);
     const objectStore = tx.objectStore(OBJECT_STORE_ID);
     const ret = [];
-    return new Promise((res) => {
+    return new Promise((resolve) => {
         objectStore.openCursor().onsuccess = (ev) => {
             const cursor = ev.target.result;
             if (cursor) {
@@ -114,14 +114,14 @@ export function getAllMessages(db) {
                 cursor.continue();
             } else {
                 commitIndexedDBTransaction(tx);
-                res(ret);
+                resolve(ret);
             }
         };
     });
 }
 
 export function getMessagesHigherThan(db, lastCursorId) {
-    const tx = db.transaction(OBJECT_STORE_ID, 'readonly', TRANSACTION_SETTINGS);
+    const tx = db.transaction(OBJECT_STORE_ID, "readonly", TRANSACTION_SETTINGS);
     const objectStore = tx.objectStore(OBJECT_STORE_ID);
     const ret = [];
 
@@ -134,10 +134,10 @@ export function getMessagesHigherThan(db, lastCursorId) {
      */
     if (objectStore.getAll) {
         const getAllRequest = objectStore.getAll(keyRangeValue);
-        return new Promise((res, rej) => {
-            getAllRequest.onerror = (err) => rej(err);
+        return new Promise((resolve, reject) => {
+            getAllRequest.onerror = (err) => reject(err);
             getAllRequest.onsuccess = function (e) {
-                res(e.target.result);
+                resolve(e.target.result);
             };
         });
     }
@@ -149,14 +149,14 @@ export function getMessagesHigherThan(db, lastCursorId) {
         try {
             keyRangeValue = IDBKeyRange.bound(lastCursorId + 1, Infinity);
             return objectStore.openCursor(keyRangeValue);
-        } catch (e) {
+        } catch {
             return objectStore.openCursor();
         }
     }
 
-    return new Promise((res, rej) => {
+    return new Promise((resolve, reject) => {
         const openCursorRequest = openCursor();
-        openCursorRequest.onerror = (err) => rej(err);
+        openCursorRequest.onerror = (err) => reject(err);
         openCursorRequest.onsuccess = (ev) => {
             const cursor = ev.target.result;
             if (cursor) {
@@ -168,21 +168,21 @@ export function getMessagesHigherThan(db, lastCursorId) {
                 }
             } else {
                 commitIndexedDBTransaction(tx);
-                res(ret);
+                resolve(ret);
             }
         };
     });
 }
 
 export function removeMessagesById(db, ids) {
-    const tx = db.transaction([OBJECT_STORE_ID], 'readwrite', TRANSACTION_SETTINGS);
+    const tx = db.transaction([OBJECT_STORE_ID], "readwrite", TRANSACTION_SETTINGS);
     const objectStore = tx.objectStore(OBJECT_STORE_ID);
 
     return Promise.all(
         ids.map((id) => {
             const deleteRequest = objectStore.delete(id);
-            return new Promise((res) => {
-                deleteRequest.onsuccess = () => res();
+            return new Promise((resolve) => {
+                deleteRequest.onsuccess = () => resolve();
             });
         })
     );
@@ -190,10 +190,10 @@ export function removeMessagesById(db, ids) {
 
 export function getOldMessages(db, ttl) {
     const olderThen = Date.now() - ttl;
-    const tx = db.transaction(OBJECT_STORE_ID, 'readonly', TRANSACTION_SETTINGS);
+    const tx = db.transaction(OBJECT_STORE_ID, "readonly", TRANSACTION_SETTINGS);
     const objectStore = tx.objectStore(OBJECT_STORE_ID);
     const ret = [];
-    return new Promise((res) => {
+    return new Promise((resolve) => {
         objectStore.openCursor().onsuccess = (ev) => {
             const cursor = ev.target.result;
             if (cursor) {
@@ -205,11 +205,11 @@ export function getOldMessages(db, ttl) {
                 } else {
                     // no more old messages,
                     commitIndexedDBTransaction(tx);
-                    res(ret);
+                    resolve(ret);
                     return;
                 }
             } else {
-                res(ret);
+                resolve(ret);
             }
         };
     });
@@ -274,6 +274,7 @@ export function create(channelName, options) {
 function _readLoop(state) {
     if (state.closed) return;
 
+    // eslint-disable-next-line promise/catch-or-return
     readNewMessages(state)
         .then(() => sleep(state.options.idb.fallbackInterval))
         .then(() => _readLoop(state));
@@ -332,6 +333,7 @@ export function postMessage(channelState, messageJson) {
     channelState.writeBlockPromise = channelState.writeBlockPromise
         .then(() => writeMessage(channelState.db, channelState.uuid, messageJson))
         .then(() => {
+            // eslint-disable-next-line promise/always-return
             if (randomInt(0, 10) === 0) {
                 /* await (do not await) */
                 cleanOldMessages(channelState.db, channelState.options.idb.ttl);

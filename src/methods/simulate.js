@@ -1,8 +1,8 @@
-import { microSeconds as micro } from '../util';
+import { microSeconds as micro } from "../util";
 
 export const microSeconds = micro;
 
-export const type = 'simulate';
+export const type = "simulate";
 
 const SIMULATE_CHANNELS = new Set();
 export const SIMULATE_DELAY_TIME = 5;
@@ -23,7 +23,7 @@ export function close(channelState) {
 }
 
 export function postMessage(channelState, messageJson) {
-    return new Promise((res) =>
+    return new Promise((resolve) =>
         setTimeout(() => {
             const channelArray = Array.from(SIMULATE_CHANNELS);
             channelArray.forEach((channel) => {
@@ -36,7 +36,7 @@ export function postMessage(channelState, messageJson) {
                     channel.messagesCallback(messageJson);
                 }
             });
-            res();
+            resolve();
         }, SIMULATE_DELAY_TIME)
     );
 }

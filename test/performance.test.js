@@ -1,5 +1,5 @@
-const AsyncTestUtil = require('async-test-util');
-const { BroadcastChannel } = require('../');
+const AsyncTestUtil = require("async-test-util");
+const { BroadcastChannel } = require("../");
 
 const benchmark = {
     openClose: {},
@@ -10,18 +10,18 @@ const options = {
     node: {
         useFastPath: false,
     },
-    type: 'simulate'
+    type: "simulate",
 };
 
 const elapsedTime = (before) => {
     return AsyncTestUtil.performanceNow() - before;
 };
 
-describe('performance.test.js', () => {
-    it('wait a bit for jit etc..', async () => {
+describe("performance.test.js", () => {
+    it("wait a bit for jit etc..", async () => {
         await AsyncTestUtil.wait(2000);
     });
-    it('open/close channels', async () => {
+    it("open/close channels", async () => {
         const channelName = AsyncTestUtil.randomString(10);
 
         const amount = 110;
@@ -37,7 +37,7 @@ describe('performance.test.js', () => {
         const elapsed = elapsedTime(startTime);
         benchmark.openClose = elapsed;
     });
-    it('sendRecieve.parallel', async () => {
+    it("sendRecieve.parallel", async () => {
         const channelName = AsyncTestUtil.randomString(10);
         const channelSender = new BroadcastChannel(channelName, options);
         const channelReciever = new BroadcastChannel(channelName, options);
@@ -54,7 +54,7 @@ describe('performance.test.js', () => {
 
         const startTime = AsyncTestUtil.performanceNow();
         for (let i = 0; i < msgAmount; i++) {
-            channelSender.postMessage('foobar');
+            channelSender.postMessage("foobar");
         }
         await waitPromise;
 
@@ -64,7 +64,7 @@ describe('performance.test.js', () => {
         const elapsed = elapsedTime(startTime);
         benchmark.sendRecieve.parallel = elapsed;
     });
-    it('sendRecieve.series', async () => {
+    it("sendRecieve.series", async () => {
         const channelName = AsyncTestUtil.randomString(10);
         const channelSender = new BroadcastChannel(channelName, options);
         const channelReciever = new BroadcastChannel(channelName, options);
@@ -72,7 +72,7 @@ describe('performance.test.js', () => {
         let emittedCount = 0;
 
         channelReciever.onmessage = () => {
-            channelReciever.postMessage('pong');
+            channelReciever.postMessage("pong");
         };
 
         const waitPromise = new Promise((res) => {
@@ -81,13 +81,13 @@ describe('performance.test.js', () => {
                 if (emittedCount === msgAmount) {
                     res();
                 } else {
-                    channelSender.postMessage('ping');
+                    channelSender.postMessage("ping");
                 }
             };
         });
 
         const startTime = AsyncTestUtil.performanceNow();
-        channelSender.postMessage('ping');
+        channelSender.postMessage("ping");
         await waitPromise;
 
         channelSender.close();
@@ -96,8 +96,8 @@ describe('performance.test.js', () => {
         const elapsed = elapsedTime(startTime);
         benchmark.sendRecieve.series = elapsed;
     });
-    it('show result', () => {
-        console.log('benchmark result:');
+    it("show result", () => {
+        console.log("benchmark result:");
         console.log(JSON.stringify(benchmark, null, 2));
     });
 });

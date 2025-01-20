@@ -1,8 +1,8 @@
-import * as NativeMethod from './methods/native.js';
-import * as IndexeDbMethod from './methods/indexed-db.js';
-import * as LocalstorageMethod from './methods/localstorage.js';
-import * as ServerMethod from './methods/server.js';
-import * as SimulateMethod from './methods/simulate.js';
+import * as IndexeDbMethod from "./methods/indexed-db.js";
+import * as LocalstorageMethod from "./methods/localstorage.js";
+import * as NativeMethod from "./methods/native.js";
+import * as ServerMethod from "./methods/server.js";
+import * as SimulateMethod from "./methods/simulate.js";
 
 // order is important
 const METHODS = [
@@ -17,12 +17,12 @@ export function chooseMethod(options) {
 
     // directly chosen
     if (options.type) {
-        if (options.type === 'simulate') {
+        if (options.type === "simulate") {
             // only use simulate-method if directly chosen
             return SimulateMethod;
         }
         const ret = chooseMethods.find((m) => m.type === options.type);
-        if (!ret) throw new Error('method-type ' + options.type + ' not found');
+        if (!ret) throw new Error("method-type " + options.type + " not found");
         else return ret;
     }
 
@@ -31,7 +31,7 @@ export function chooseMethod(options) {
      * remove idb from the list so that localstorage is been chosen
      */
     if (!options.webWorkerSupport) {
-        chooseMethods = chooseMethods.filter((m) => m.type !== 'idb');
+        chooseMethods = chooseMethods.filter((m) => m.type !== "idb");
     }
 
     const useMethod = chooseMethods.find((method) => method.canBeUsed(options));

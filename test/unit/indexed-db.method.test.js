@@ -1,25 +1,25 @@
-const AsyncTestUtil = require('async-test-util');
-const assert = require('assert');
-const isNode = require('detect-node');
-const { IndexedDbMethod } = require('../../');
+const AsyncTestUtil = require("async-test-util");
+const assert = require("assert");
+const isNode = require("detect-node");
+const { IndexedDbMethod } = require("../../");
 console.log(IndexedDbMethod.getIdb);
 
-describe('unit/indexed-db.method.test.js', () => {
+describe("unit/indexed-db.method.test.js", () => {
     if (isNode) return;
 
-    describe('.getIdb()', () => {
-        it('should get an object', () => {
+    describe(".getIdb()", () => {
+        it("should get an object", () => {
             const idb = IndexedDbMethod.getIdb();
             assert.ok(idb);
         });
     });
-    describe('.createDatabase()', () => {
-        it('should create a database', async () => {
+    describe(".createDatabase()", () => {
+        it("should create a database", async () => {
             const channelName = AsyncTestUtil.randomString(10);
             const db = await IndexedDbMethod.createDatabase(channelName);
             assert.ok(db);
         });
-        it('should be able to call twice', async () => {
+        it("should be able to call twice", async () => {
             const channelName = AsyncTestUtil.randomString(10);
             const db1 = await IndexedDbMethod.createDatabase(channelName);
             const db2 = await IndexedDbMethod.createDatabase(channelName);
@@ -27,51 +27,51 @@ describe('unit/indexed-db.method.test.js', () => {
             assert.ok(db2);
         });
     });
-    describe('.writeMessage()', () => {
-        it('should write the message to the db', async () => {
+    describe(".writeMessage()", () => {
+        it("should write the message to the db", async () => {
             const channelName = AsyncTestUtil.randomString(10);
             const readerUuid = AsyncTestUtil.randomString(10);
             const db = await IndexedDbMethod.createDatabase(channelName);
             await IndexedDbMethod.writeMessage(db, readerUuid, {
-                foo: 'bar',
+                foo: "bar",
             });
         });
     });
-    describe('.getAllMessages()', () => {
-        it('should get the message', async () => {
+    describe(".getAllMessages()", () => {
+        it("should get the message", async () => {
             const channelName = AsyncTestUtil.randomString(10);
             const readerUuid = AsyncTestUtil.randomString(10);
             const db = await IndexedDbMethod.createDatabase(channelName);
             await IndexedDbMethod.writeMessage(db, readerUuid, {
-                foo: 'bar',
+                foo: "bar",
             });
 
             const messages = await IndexedDbMethod.getAllMessages(db);
             assert.equal(messages.length, 1);
-            assert.equal(messages[0].data.foo, 'bar');
+            assert.equal(messages[0].data.foo, "bar");
         });
-        it('should get the messages', async () => {
+        it("should get the messages", async () => {
             const channelName = AsyncTestUtil.randomString(10);
             const readerUuid = AsyncTestUtil.randomString(10);
             const db = await IndexedDbMethod.createDatabase(channelName);
             await IndexedDbMethod.writeMessage(db, readerUuid, {
-                foo: 'bar',
+                foo: "bar",
             });
             await IndexedDbMethod.writeMessage(db, readerUuid, {
-                foo: 'bar2',
+                foo: "bar2",
             });
 
             const messages = await IndexedDbMethod.getAllMessages(db);
             assert.equal(messages.length, 2);
         });
     });
-    describe('.getOldMessages()', () => {
-        it('should only get too old messages', async () => {
+    describe(".getOldMessages()", () => {
+        it("should only get too old messages", async () => {
             const channelName = AsyncTestUtil.randomString(10);
             const readerUuid = AsyncTestUtil.randomString(10);
             const db = await IndexedDbMethod.createDatabase(channelName);
             const msgJson = {
-                foo: 'old',
+                foo: "old",
             };
 
             // write 10 messages
@@ -84,17 +84,17 @@ describe('unit/indexed-db.method.test.js', () => {
             const tooOld = await IndexedDbMethod.getOldMessages(db, 200);
             assert.equal(tooOld.length, 10);
             tooOld.forEach((msg) => {
-                assert.equal(msg.data.foo, 'old');
+                assert.equal(msg.data.foo, "old");
             });
         });
     });
-    describe('.cleanOldMessages()', () => {
-        it('should clean up old messages', async () => {
+    describe(".cleanOldMessages()", () => {
+        it("should clean up old messages", async () => {
             const channelName = AsyncTestUtil.randomString(10);
             const readerUuid = AsyncTestUtil.randomString(10);
             const db = await IndexedDbMethod.createDatabase(channelName);
             const msgJson = {
-                foo: 'bar',
+                foo: "bar",
             };
             await IndexedDbMethod.writeMessage(db, readerUuid, msgJson);
 
@@ -107,13 +107,13 @@ describe('unit/indexed-db.method.test.js', () => {
             assert.equal(messagesAfter.length, 0);
         });
     });
-    describe('.getMessagesHigherThan()', () => {
-        it('should only get messages with higher id', async () => {
+    describe(".getMessagesHigherThan()", () => {
+        it("should only get messages with higher id", async () => {
             const channelName = AsyncTestUtil.randomString(10);
             const readerUuid = AsyncTestUtil.randomString(10);
             const db = await IndexedDbMethod.createDatabase(channelName);
             const msgJson = {
-                foo: 'bar',
+                foo: "bar",
             };
 
             // write 10 messages
@@ -126,15 +126,15 @@ describe('unit/indexed-db.method.test.js', () => {
             assert.equal(lastFive[4].id, 10);
         });
     });
-    describe('core-functions', () => {
-        describe('.create()', () => {
-            it('should create a channelState', async () => {
+    describe("core-functions", () => {
+        describe(".create()", () => {
+            it("should create a channelState", async () => {
                 const channelName = AsyncTestUtil.randomString(10);
                 const channelState = await IndexedDbMethod.create(channelName);
                 assert.ok(channelState);
                 IndexedDbMethod.close(channelState);
             });
-            it('should be called twice', async () => {
+            it("should be called twice", async () => {
                 const channelName = AsyncTestUtil.randomString(12);
                 const channelState1 = await IndexedDbMethod.create(channelName);
                 const channelState2 = await IndexedDbMethod.create(channelName);
@@ -144,7 +144,7 @@ describe('unit/indexed-db.method.test.js', () => {
                 await IndexedDbMethod.close(channelState1);
                 await IndexedDbMethod.close(channelState2);
             });
-            it('should handle close events', async () => {
+            it("should handle close events", async () => {
                 let callbackCount = 0;
                 const channelName = AsyncTestUtil.randomString(10);
                 const channelState = await IndexedDbMethod.create(channelName, {
@@ -155,37 +155,37 @@ describe('unit/indexed-db.method.test.js', () => {
                 assert.ok(channelState);
 
                 // The `onclose` event is not fired if the database connection is closed normally using `IDBDatabase.close()`
-                channelState.db.dispatchEvent(new Event('close'));
+                channelState.db.dispatchEvent(new Event("close"));
                 assert.equal(callbackCount, 1);
                 IndexedDbMethod.close(channelState);
             });
         });
-        describe('.postMessage()', () => {
-            it('should not crash', async () => {
+        describe(".postMessage()", () => {
+            it("should not crash", async () => {
                 const channelName = AsyncTestUtil.randomString(10);
                 const channelState = await IndexedDbMethod.create(channelName);
                 assert.ok(channelState);
                 await IndexedDbMethod.postMessage(channelState, {
-                    foo: 'bar',
+                    foo: "bar",
                 });
                 IndexedDbMethod.close(channelState);
             });
         });
-        describe('.canBeUsed()', () => {
-            it('should be true on browsers', async () => {
+        describe(".canBeUsed()", () => {
+            it("should be true on browsers", async () => {
                 const ok = IndexedDbMethod.canBeUsed();
                 assert.ok(ok);
             });
         });
-        describe('.onMessage()', () => {
-            it('should emit the message on other', async () => {
+        describe(".onMessage()", () => {
+            it("should emit the message on other", async () => {
                 const channelName = AsyncTestUtil.randomString(12);
                 const channelStateOther = await IndexedDbMethod.create(channelName);
                 const channelStateOwn = await IndexedDbMethod.create(channelName);
 
                 const emittedOther = [];
                 const msgJson = {
-                    foo: 'bar',
+                    foo: "bar",
                 };
 
                 IndexedDbMethod.onMessage(channelStateOther, (msg) => emittedOther.push(msg), new Date().getTime());
@@ -202,13 +202,13 @@ describe('unit/indexed-db.method.test.js', () => {
              * which means this should be detected and work over interval
              * @link https://stackoverflow.com/a/6179599/3443137
              */
-            it('should also work if localstorage does not work', async () => {
+            it("should also work if localstorage does not work", async () => {
                 const channelName = AsyncTestUtil.randomString(12);
 
                 // disable localStorage
                 const localStorageBefore = window.localStorage;
                 assert.ok(localStorageBefore);
-                Object.defineProperty(window, 'localStorage', {
+                Object.defineProperty(window, "localStorage", {
                     enumerable: false,
                     configurable: false,
                     writable: true,
@@ -222,7 +222,7 @@ describe('unit/indexed-db.method.test.js', () => {
 
                 const channelStateOwn = await IndexedDbMethod.create(channelName);
                 const msgJson = {
-                    foo: 'bar',
+                    foo: "bar",
                 };
                 await IndexedDbMethod.postMessage(channelStateOwn, msgJson);
 
@@ -235,8 +235,8 @@ describe('unit/indexed-db.method.test.js', () => {
             });
         });
     });
-    describe('other', () => {
-        it('should have cleaned up the messages', async function () {
+    describe("other", () => {
+        it("should have cleaned up the messages", async function () {
             const channelOptions = {
                 idb: {
                     ttl: 500,
@@ -246,7 +246,7 @@ describe('unit/indexed-db.method.test.js', () => {
             const channelStateOther = await IndexedDbMethod.create(channelName, channelOptions);
             const channelStateOwn = await IndexedDbMethod.create(channelName, channelOptions);
             const msgJson = {
-                foo: 'bar',
+                foo: "bar",
             };
 
             // send 100 messages

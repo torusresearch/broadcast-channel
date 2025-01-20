@@ -1,13 +1,13 @@
-const AsyncTestUtil = require('async-test-util');
-const assert = require('assert');
-const isNode = require('detect-node');
-const clone = require('clone');
-const unload = require('unload');
-const { BroadcastChannel, OPEN_BROADCAST_CHANNELS, enforceOptions } = require('../');
+const AsyncTestUtil = require("async-test-util");
+const assert = require("assert");
+const isNode = require("detect-node");
+const clone = require("clone");
+const unload = require("unload");
+const { BroadcastChannel, OPEN_BROADCAST_CHANNELS, enforceOptions } = require("../");
 
 if (isNode) {
-    process.on('uncaughtException', (err, origin) => {
-        console.error('uncaughtException!');
+    process.on("uncaughtException", (err, origin) => {
+        console.error("uncaughtException!");
         console.dir(err);
         console.dir(origin);
         process.exit(1);
@@ -18,34 +18,34 @@ if (isNode) {
  * we run this test once per method
  */
 function runTest(channelOptions) {
-    describe('integration.test.js (' + JSON.stringify(channelOptions) + ')', () => {
-        describe('BroadcastChannel', () => {
-            describe('.constructor()', () => {
-                it('log options', () => {
-                    console.log('Started: ' + JSON.stringify(channelOptions));
+    describe("integration.test.js (" + JSON.stringify(channelOptions) + ")", () => {
+        describe("BroadcastChannel", () => {
+            describe(".constructor()", () => {
+                it("log options", () => {
+                    console.log("Started: " + JSON.stringify(channelOptions));
                 });
-                it('should create a channel', async () => {
+                it("should create a channel", async () => {
                     const channelName = AsyncTestUtil.randomString(12);
                     const channel = new BroadcastChannel(channelName, channelOptions);
                     channel.close();
                 });
             });
-            describe('.postMessage()', () => {
-                it('should post a message', async () => {
+            describe(".postMessage()", () => {
+                it("should post a message", async () => {
                     const channelName = AsyncTestUtil.randomString(12);
                     const channel = new BroadcastChannel(channelName, channelOptions);
-                    await channel.postMessage('foobar');
+                    await channel.postMessage("foobar");
                     channel.close();
                 });
-                it('should throw if channel is already closed', async () => {
+                it("should throw if channel is already closed", async () => {
                     const channelName = AsyncTestUtil.randomString(12);
                     const channel = new BroadcastChannel(channelName, channelOptions);
                     channel.close();
-                    await AsyncTestUtil.assertThrows(() => channel.postMessage('foobar'), Error, 'closed');
+                    await AsyncTestUtil.assertThrows(() => channel.postMessage("foobar"), Error, "closed");
                 });
             });
-            describe('.close()', () => {
-                it('should have resolved all processed message promises when close() resolves', async () => {
+            describe(".close()", () => {
+                it("should have resolved all processed message promises when close() resolves", async () => {
                     const channelName = AsyncTestUtil.randomString(12);
                     const channel = new BroadcastChannel(channelName, channelOptions);
 
@@ -58,20 +58,20 @@ function runTest(channelOptions) {
                     assert.strictEqual(channel._uMP.size, 0);
                 });
             });
-            describe('.onmessage', () => {
+            describe(".onmessage", () => {
                 /**
                  * the window.BroadcastChannel
                  * does not emit postMessage to own subscribers,
                  * if you want to do that, you have to create another channel
                  */
-                it('should NOT recieve the message on own', async () => {
+                it("should NOT recieve the message on own", async () => {
                     const channelName = AsyncTestUtil.randomString(12);
                     const channel = new BroadcastChannel(channelName, channelOptions);
 
                     const emitted = [];
                     channel.onmessage = (msg) => emitted.push(msg);
                     await channel.postMessage({
-                        foo: 'bar',
+                        foo: "bar",
                     });
 
                     await AsyncTestUtil.wait(100);
@@ -79,7 +79,7 @@ function runTest(channelOptions) {
 
                     channel.close();
                 });
-                it('should recieve the message on other channel', async () => {
+                it("should recieve the message on other channel", async () => {
                     const channelName = AsyncTestUtil.randomString(12);
                     const channel = new BroadcastChannel(channelName, channelOptions);
                     const otherChannel = new BroadcastChannel(channelName, channelOptions);
@@ -87,29 +87,29 @@ function runTest(channelOptions) {
                     const emitted = [];
                     otherChannel.onmessage = (msg) => emitted.push(msg);
                     await channel.postMessage({
-                        foo: 'bar',
+                        foo: "bar",
                     });
                     await AsyncTestUtil.waitUntil(() => emitted.length === 1);
-                    assert.equal(emitted[0].foo, 'bar');
+                    assert.equal(emitted[0].foo, "bar");
                     channel.close();
                     otherChannel.close();
                 });
-                it('should work with strange channelName', async () => {
-                    const channelName = '  asdf  / ' + AsyncTestUtil.randomString(12);
+                it("should work with strange channelName", async () => {
+                    const channelName = "  asdf  / " + AsyncTestUtil.randomString(12);
                     const channel = new BroadcastChannel(channelName, channelOptions);
                     const otherChannel = new BroadcastChannel(channelName, channelOptions);
 
                     const emitted = [];
                     otherChannel.onmessage = (msg) => emitted.push(msg);
                     await channel.postMessage({
-                        foo: 'bar',
+                        foo: "bar",
                     });
                     await AsyncTestUtil.waitUntil(() => emitted.length === 1);
-                    assert.equal(emitted[0].foo, 'bar');
+                    assert.equal(emitted[0].foo, "bar");
                     channel.close();
                     otherChannel.close();
                 });
-                it('should have the same message-data', async () => {
+                it("should have the same message-data", async () => {
                     const channelName = AsyncTestUtil.randomString(12);
                     const channel1 = new BroadcastChannel(channelName, channelOptions);
                     const channel2 = new BroadcastChannel(channelName, channelOptions);
@@ -118,7 +118,7 @@ function runTest(channelOptions) {
                     channel2.onmessage = (msg) => emitted.push(msg);
 
                     const msgJson = {
-                        foo: 'bar',
+                        foo: "bar",
                     };
                     await channel1.postMessage(msgJson);
 
@@ -128,7 +128,7 @@ function runTest(channelOptions) {
                     channel1.close();
                     channel2.close();
                 });
-                it('should work with big message-data', async () => {
+                it("should work with big message-data", async () => {
                     const channelName = AsyncTestUtil.randomString(12);
                     const channel1 = new BroadcastChannel(channelName, channelOptions);
                     const channel2 = new BroadcastChannel(channelName, channelOptions);
@@ -149,7 +149,7 @@ function runTest(channelOptions) {
                     channel1.close();
                     channel2.close();
                 });
-                it('should not loose the message if _prepare() takes a while', async () => {
+                it("should not loose the message if _prepare() takes a while", async () => {
                     const channelName = AsyncTestUtil.randomString(12);
                     const slowerOptions = clone(channelOptions);
                     slowerOptions.prepareDelay = 300;
@@ -160,7 +160,7 @@ function runTest(channelOptions) {
                     channel2.onmessage = (msg) => emitted.push(msg);
 
                     const msgJson = {
-                        foo: 'bar',
+                        foo: "bar",
                     };
                     await channel1.postMessage(msgJson);
 
@@ -170,13 +170,13 @@ function runTest(channelOptions) {
                     channel1.close();
                     channel2.close();
                 });
-                it('should NOT emit all events if subscribed directly after postMessage', async () => {
+                it("should NOT emit all events if subscribed directly after postMessage", async () => {
                     const channelName = AsyncTestUtil.randomString(12);
                     const channel1 = new BroadcastChannel(channelName, channelOptions);
                     const channel2 = new BroadcastChannel(channelName, channelOptions);
 
-                    channel1.postMessage('foo1');
-                    channel1.postMessage('foo2');
+                    channel1.postMessage("foo1");
+                    channel1.postMessage("foo2");
 
                     /**
                      * We have to wait 200ms here because only 'too old' messages should be filtered out.
@@ -188,7 +188,7 @@ function runTest(channelOptions) {
                     const emitted = [];
                     channel2.onmessage = (msg) => emitted.push(msg);
 
-                    channel1.postMessage('foo3');
+                    channel1.postMessage("foo3");
 
                     await AsyncTestUtil.waitUntil(() => emitted.length >= 1);
                     await AsyncTestUtil.wait(100);
@@ -197,14 +197,14 @@ function runTest(channelOptions) {
                     channel1.close();
                     channel2.close();
                 });
-                it('should not emit messages, send before onmessage was set, when one tick was done', async () => {
+                it("should not emit messages, send before onmessage was set, when one tick was done", async () => {
                     const channelName = AsyncTestUtil.randomString(12);
 
                     const channel1 = new BroadcastChannel(channelName, channelOptions);
                     const channel2 = new BroadcastChannel(channelName, channelOptions);
 
-                    channel1.postMessage('foo1');
-                    channel1.postMessage('foo2');
+                    channel1.postMessage("foo1");
+                    channel1.postMessage("foo2");
 
                     await AsyncTestUtil.wait(50);
 
@@ -212,7 +212,7 @@ function runTest(channelOptions) {
                     channel2.onmessage = (msg) => emitted.push(msg);
 
                     const msgJson = {
-                        foo: 'bar',
+                        foo: "bar",
                     };
                     channel1.postMessage(msgJson);
 
@@ -223,14 +223,14 @@ function runTest(channelOptions) {
                     channel1.close();
                     channel2.close();
                 });
-                it('should not confuse messages between different channels', async () => {
+                it("should not confuse messages between different channels", async () => {
                     const channel = new BroadcastChannel(AsyncTestUtil.randomString(12), channelOptions);
                     const otherChannel = new BroadcastChannel(AsyncTestUtil.randomString(12), channelOptions);
 
                     const emitted = [];
                     otherChannel.onmessage = (msg) => emitted.push(msg);
                     await channel.postMessage({
-                        foo: 'bar',
+                        foo: "bar",
                     });
                     await AsyncTestUtil.wait(100);
                     assert.equal(emitted.length, 0);
@@ -238,21 +238,21 @@ function runTest(channelOptions) {
                     channel.close();
                     otherChannel.close();
                 });
-                it('should not read messages created before the channel was created', async () => {
+                it("should not read messages created before the channel was created", async () => {
                     await AsyncTestUtil.wait(100);
 
                     const channelName = AsyncTestUtil.randomString(12);
                     const channel = new BroadcastChannel(channelName, channelOptions);
 
-                    await channel.postMessage('foo1');
+                    await channel.postMessage("foo1");
                     await AsyncTestUtil.wait(50);
 
                     const otherChannel = new BroadcastChannel(channelName, channelOptions);
                     const emittedOther = [];
                     otherChannel.onmessage = (msg) => emittedOther.push(msg);
 
-                    await channel.postMessage('foo2');
-                    await channel.postMessage('foo3');
+                    await channel.postMessage("foo2");
+                    await channel.postMessage("foo3");
 
                     await AsyncTestUtil.waitUntil(() => emittedOther.length >= 2);
                     await AsyncTestUtil.wait(100);
@@ -262,7 +262,7 @@ function runTest(channelOptions) {
                     channel.close();
                     otherChannel.close();
                 });
-                it('should only run the last onmessage-callback', async () => {
+                it("should only run the last onmessage-callback", async () => {
                     const channelName = AsyncTestUtil.randomString(12);
                     const channel = new BroadcastChannel(channelName, channelOptions);
                     const channel2 = new BroadcastChannel(channelName, channelOptions);
@@ -277,7 +277,7 @@ function runTest(channelOptions) {
                         emitted2.push(msg);
                     };
 
-                    await channel.postMessage('foobar');
+                    await channel.postMessage("foobar");
 
                     await AsyncTestUtil.waitUntil(() => emitted2.length >= 1);
                     await AsyncTestUtil.wait(100);
@@ -289,8 +289,8 @@ function runTest(channelOptions) {
                     channel2.close();
                 });
             });
-            describe('.addEventListener()', () => {
-                it('should emit events to all subscribers', async () => {
+            describe(".addEventListener()", () => {
+                it("should emit events to all subscribers", async () => {
                     const channelName = AsyncTestUtil.randomString(12);
                     const channel = new BroadcastChannel(channelName, channelOptions);
                     const otherChannel = new BroadcastChannel(channelName, channelOptions);
@@ -298,11 +298,11 @@ function runTest(channelOptions) {
                     const emitted1 = [];
                     const emitted2 = [];
 
-                    otherChannel.addEventListener('message', (msg) => emitted1.push(msg));
-                    otherChannel.addEventListener('message', (msg) => emitted2.push(msg));
+                    otherChannel.addEventListener("message", (msg) => emitted1.push(msg));
+                    otherChannel.addEventListener("message", (msg) => emitted2.push(msg));
 
                     const msg = {
-                        foo: 'bar',
+                        foo: "bar",
                     };
                     await channel.postMessage(msg);
 
@@ -316,24 +316,24 @@ function runTest(channelOptions) {
                     otherChannel.close();
                 });
             });
-            describe('.removeEventListener()', () => {
-                it('should no longer emit the message', async () => {
+            describe(".removeEventListener()", () => {
+                it("should no longer emit the message", async () => {
                     const channelName = AsyncTestUtil.randomString(12);
                     const channel = new BroadcastChannel(channelName, channelOptions);
                     const otherChannel = new BroadcastChannel(channelName, channelOptions);
 
                     const emitted = [];
                     const fn = (msg) => emitted.push(msg);
-                    otherChannel.addEventListener('message', fn);
+                    otherChannel.addEventListener("message", fn);
 
                     const msg = {
-                        foo: 'bar',
+                        foo: "bar",
                     };
                     await channel.postMessage(msg);
 
                     await AsyncTestUtil.waitUntil(() => emitted.length === 1);
 
-                    otherChannel.removeEventListener('message', fn);
+                    otherChannel.removeEventListener("message", fn);
 
                     await channel.postMessage(msg);
                     await AsyncTestUtil.wait(100);
@@ -344,29 +344,29 @@ function runTest(channelOptions) {
                     otherChannel.close();
                 });
             });
-            describe('.type', () => {
-                it('should get a type', async () => {
+            describe(".type", () => {
+                it("should get a type", async () => {
                     const channel = new BroadcastChannel(AsyncTestUtil.randomString(12), channelOptions);
                     const type = channel.type;
-                    assert.equal(typeof type, 'string');
-                    assert.notEqual(type, '');
+                    assert.equal(typeof type, "string");
+                    assert.notEqual(type, "");
                     assert.equal(channel.type, channelOptions.type);
 
                     channel.close();
                 });
             });
-            describe('.enforceOptions()', () => {
-                it('should enforce the simulate method, even when ' + channelOptions.type + ' is set', async () => {
+            describe(".enforceOptions()", () => {
+                it("should enforce the simulate method, even when " + channelOptions.type + " is set", async () => {
                     enforceOptions({
-                        type: 'simulate',
+                        type: "simulate",
                     });
                     const channel = new BroadcastChannel(AsyncTestUtil.randomString(12), channelOptions);
 
-                    assert.equal(channel.type, 'simulate');
+                    assert.equal(channel.type, "simulate");
 
                     channel.close();
                 });
-                it('should redo the enforcement when null is given', async () => {
+                it("should redo the enforcement when null is given", async () => {
                     enforceOptions(null);
                     const channel = new BroadcastChannel(AsyncTestUtil.randomString(12), channelOptions);
                     assert.equal(channel.type, channelOptions.type);
@@ -374,12 +374,12 @@ function runTest(channelOptions) {
                     channel.close();
                 });
             });
-            describe('other', () => {
-                it('should prefer localstorage if webWorkerSupport: false', async () => {
+            describe("other", () => {
+                it("should prefer localstorage if webWorkerSupport: false", async () => {
                     if (isNode) return;
                     // disable BroadcastChannel
                     const broadcastChannelBefore = window.BroadcastChannel;
-                    Object.defineProperty(window, 'BroadcastChannel', {
+                    Object.defineProperty(window, "BroadcastChannel", {
                         enumerable: false,
                         configurable: false,
                         writable: true,
@@ -390,11 +390,11 @@ function runTest(channelOptions) {
                         webWorkerSupport: false,
                     };
                     const channel = new BroadcastChannel(AsyncTestUtil.randomString(12), options);
-                    assert.equal(channel.type, 'localstorage');
+                    assert.equal(channel.type, "localstorage");
 
                     window.BroadcastChannel = broadcastChannelBefore;
                 });
-                it('should always emit in the correct order', async () => {
+                it("should always emit in the correct order", async () => {
                     const channelName = AsyncTestUtil.randomString(12);
                     const channel = new BroadcastChannel(channelName, channelOptions);
                     const otherChannel = new BroadcastChannel(channelName, channelOptions);
@@ -424,8 +424,8 @@ function runTest(channelOptions) {
                     otherChannel.close();
                 });
             });
-            describe('ISSUES', () => {
-                it('#6 premature closing of the channel should not throw', async () => {
+            describe("ISSUES", () => {
+                it("#6 premature closing of the channel should not throw", async () => {
                     const channels = [];
                     for (let i = 0; i < 10; i++) {
                         const channel = new BroadcastChannel(AsyncTestUtil.randomString(12), channelOptions);
@@ -437,8 +437,8 @@ function runTest(channelOptions) {
             });
         });
     });
-    describe('final', () => {
-        it('should have closed all channels', () => {
+    describe("final", () => {
+        it("should have closed all channels", () => {
             if (isNode) {
                 assert.strictEqual(OPEN_BROADCAST_CHANNELS.size, 0);
             }
@@ -448,23 +448,23 @@ function runTest(channelOptions) {
 
 const useOptions = [
     {
-        type: 'simulate',
+        type: "simulate",
     },
 ];
 
 if (!isNode) {
     if (window.BroadcastChannel) {
         useOptions.push({
-            type: 'native',
+            type: "native",
         });
     } else {
-        console.log('skip native option since windonw.BroadcastChannel is undefined');
+        console.log("skip native option since windonw.BroadcastChannel is undefined");
     }
     useOptions.push({
-        type: 'idb',
+        type: "idb",
     });
     useOptions.push({
-        type: 'localstorage',
+        type: "localstorage",
     });
 }
 

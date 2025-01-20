@@ -6,16 +6,15 @@
  * @link https://caniuse.com/#feat=indexeddb
  */
 
-import { ObliviousSet } from 'oblivious-set';
+import { ObliviousSet } from "oblivious-set";
 
-import { fillOptionsWithDefaults } from '../options';
-
-import { sleep, randomToken, microSeconds as micro } from '../util';
+import { fillOptionsWithDefaults } from "../options";
+import { microSeconds as micro, randomToken, sleep } from "../util";
 
 export const microSeconds = micro;
 
-const KEY_PREFIX = 'pubkey.broadcastChannel-';
-export const type = 'localstorage';
+const KEY_PREFIX = "pubkey.broadcastChannel-";
+export const type = "localstorage";
 
 /**
  * copied from crosstab
@@ -23,11 +22,11 @@ export const type = 'localstorage';
  */
 export function getLocalStorage() {
     let localStorage;
-    if (typeof window === 'undefined') return null;
+    if (typeof window === "undefined") return null;
     try {
         localStorage = window.localStorage;
-        localStorage = window['ie8-eventlistener/storage'] || window.localStorage;
-    } catch (e) {
+        localStorage = window["ie8-eventlistener/storage"] || window.localStorage;
+    } catch {
         // New versions of Firefox throw a Security exception
         // if cookies are disabled. See
         // https://bugzilla.mozilla.org/show_bug.cgi?id=1028153
@@ -44,7 +43,8 @@ export function storageKey(channelName) {
  * and fires the storage-event so other readers can find it
  */
 export function postMessage(channelState, messageJson) {
-    return new Promise((res) => {
+    return new Promise((resolve) => {
+        // eslint-disable-next-line promise/catch-or-return, promise/always-return
         sleep().then(() => {
             const key = storageKey(channelState.channelName);
             const writeObj = {
@@ -61,13 +61,13 @@ export function postMessage(channelState, messageJson) {
              * in the window that changes the state of the local storage.
              * So we fire it manually
              */
-            const ev = document.createEvent('Event');
-            ev.initEvent('storage', true, true);
+            const ev = document.createEvent("Event");
+            ev.initEvent("storage", true, true);
             ev.key = key;
             ev.newValue = value;
             window.dispatchEvent(ev);
 
-            res();
+            resolve();
         });
     });
 }
@@ -79,17 +79,17 @@ export function addStorageEventListener(channelName, fn) {
             fn(JSON.parse(ev.newValue));
         }
     };
-    window.addEventListener('storage', listener);
+    window.addEventListener("storage", listener);
     return listener;
 }
 export function removeStorageEventListener(listener) {
-    window.removeEventListener('storage', listener);
+    window.removeEventListener("storage", listener);
 }
 
 export function create(channelName, options) {
     options = fillOptionsWithDefaults(options);
     if (!canBeUsed(options)) {
-        throw new Error('BroadcastChannel: localstorage cannot be used');
+        throw new Error("BroadcastChannel: localstorage cannot be used");
     }
 
     const uuid = randomToken();
@@ -136,10 +136,10 @@ export function canBeUsed() {
     if (!ls) return false;
 
     try {
-        const key = '__broadcastchannel_check';
-        ls.setItem(key, 'works');
+        const key = "__broadcastchannel_check";
+        ls.setItem(key, "works");
         ls.removeItem(key);
-    } catch (e) {
+    } catch {
         // Safari 10 in private mode will not allow write access to local
         // storage and fail with a QuotaExceededError. See
         // https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API#Private_Browsing_Incognito_modes
@@ -152,7 +152,7 @@ export function canBeUsed() {
 export function averageResponseTime() {
     const defaultTime = 120;
     const userAgent = navigator.userAgent.toLowerCase();
-    if (userAgent.includes('safari') && !userAgent.includes('chrome')) {
+    if (userAgent.includes("safari") && !userAgent.includes("chrome")) {
         // safari is much slower so this time is higher
         return defaultTime * 2;
     }

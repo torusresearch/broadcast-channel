@@ -1,8 +1,8 @@
-import { microSeconds as micro, PROMISE_RESOLVED_VOID } from '../util';
+import { microSeconds as micro, PROMISE_RESOLVED_VOID } from "../util";
 
 export const microSeconds = micro;
 
-export const type = 'native';
+export const type = "native";
 
 export function create(channelName) {
     const state = {
@@ -44,11 +44,11 @@ export function canBeUsed() {
      * in the electron-renderer, isNode will be true even if we are in browser-context
      * so we also check if window is undefined
      */
-    if (typeof window === 'undefined') return false;
+    if (typeof window === "undefined") return false;
 
-    if (typeof BroadcastChannel === 'function') {
+    if (typeof BroadcastChannel === "function") {
         if (BroadcastChannel._pubkey) {
-            throw new Error('BroadcastChannel: Do not overwrite window.BroadcastChannel with this module, this is not a polyfill');
+            throw new Error("BroadcastChannel: Do not overwrite window.BroadcastChannel with this module, this is not a polyfill");
         }
         return true;
     } else return false;
@@ -57,4 +57,3 @@ export function canBeUsed() {
 export function averageResponseTime() {
     return 150;
 }
-
