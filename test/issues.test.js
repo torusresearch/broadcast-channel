@@ -1,6 +1,9 @@
-const isNode = require("detect-node");
-const { BroadcastChannel } = require("../");
-const AsyncTestUtil = require("async-test-util");
+/* eslint-disable vitest/expect-expect */
+import AsyncTestUtil from "async-test-util";
+import isNode from "detect-node";
+import { describe, expect, it } from "vitest";
+
+import { BroadcastChannel } from "../src/index.js";
 
 describe("issues.test.js", () => {
     it("#4 should throw when window.BroadcastChannel is overwritten", async () => {
@@ -9,13 +12,10 @@ describe("issues.test.js", () => {
         window.BroadcastChannel = BroadcastChannel;
 
         let bc;
-        await AsyncTestUtil.assertThrows(
-            () => {
-                bc = new BroadcastChannel();
-            },
-            Error,
-            "polyfill"
-        );
+        await expect(async () => {
+            bc = new BroadcastChannel();
+        }).rejects.toThrow("polyfill");
+
         if (bc) bc.close();
 
         // reset
@@ -41,8 +41,7 @@ describe("issues.test.js", () => {
         await channel1.close();
         await channel2.close();
     });
-    it("write many messages and then close", async function () {
-        this.timeout(40 * 1000);
+    it("write many messages and then close", async () => {
         const channelName = AsyncTestUtil.randomString(12);
         const channel = new BroadcastChannel(channelName, { type: "simulate" });
         new Array(5000)

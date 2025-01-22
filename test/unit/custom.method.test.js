@@ -1,6 +1,7 @@
-const AsyncTestUtil = require("async-test-util");
-const assert = require("assert");
-const { BroadcastChannel } = require("../../");
+import AsyncTestUtil from "async-test-util";
+import { describe, expect, it } from "vitest";
+
+import { BroadcastChannel } from "../../src/index.js";
 
 describe("unit/custom.method.test.js", () => {
     describe("custom methods", () => {
@@ -12,7 +13,7 @@ describe("unit/custom.method.test.js", () => {
                 create: () => ({}),
             };
             const channel = new BroadcastChannel(channelName, { methods: method });
-            assert.equal(channel.method, method);
+            expect(channel.method).toBe(method);
             channel.close();
         });
         it("should select one of the provided methods", () => {
@@ -23,7 +24,7 @@ describe("unit/custom.method.test.js", () => {
                 create: () => ({}),
             };
             const channel = new BroadcastChannel(channelName, { methods: [method] });
-            assert.equal(channel.method, method);
+            expect(channel.method).toBe(method);
             channel.close();
         });
     });

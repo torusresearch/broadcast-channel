@@ -1,9 +1,11 @@
-const AsyncTestUtil = require("async-test-util");
-const assert = require("assert");
-const isNode = require("detect-node");
-const clone = require("clone");
-const unload = require("unload");
-const { BroadcastChannel, OPEN_BROADCAST_CHANNELS, enforceOptions } = require("../");
+/* eslint-disable vitest/expect-expect */
+import AsyncTestUtil from "async-test-util";
+import clone from "clone";
+import isNode from "detect-node";
+import unload from "unload";
+import { describe, expect, it } from "vitest";
+
+import { BroadcastChannel, enforceOptions, OPEN_BROADCAST_CHANNELS } from "../src/index.js";
 
 if (isNode) {
     process.on("uncaughtException", (err, origin) => {
@@ -41,7 +43,7 @@ function runTest(channelOptions) {
                     const channelName = AsyncTestUtil.randomString(12);
                     const channel = new BroadcastChannel(channelName, channelOptions);
                     channel.close();
-                    await AsyncTestUtil.assertThrows(() => channel.postMessage("foobar"), Error, "closed");
+                    await expect(() => channel.postMessage("foobar")).toThrowError("closed");
                 });
             });
             describe(".close()", () => {
@@ -54,8 +56,8 @@ function runTest(channelOptions) {
                     channel.postMessage({});
 
                     await channel.close();
-                    assert.strictEqual(channel.isClosed, true);
-                    assert.strictEqual(channel._uMP.size, 0);
+                    expect(channel.isClosed).toBe(true);
+                    expect(channel._uMP.size).toBe(0);
                 });
             });
             describe(".onmessage", () => {
@@ -75,7 +77,7 @@ function runTest(channelOptions) {
                     });
 
                     await AsyncTestUtil.wait(100);
-                    assert.equal(emitted.length, 0);
+                    expect(emitted).toHaveLength(0);
 
                     channel.close();
                 });
@@ -90,7 +92,7 @@ function runTest(channelOptions) {
                         foo: "bar",
                     });
                     await AsyncTestUtil.waitUntil(() => emitted.length === 1);
-                    assert.equal(emitted[0].foo, "bar");
+                    expect(emitted[0].foo).toBe("bar");
                     channel.close();
                     otherChannel.close();
                 });
@@ -105,7 +107,7 @@ function runTest(channelOptions) {
                         foo: "bar",
                     });
                     await AsyncTestUtil.waitUntil(() => emitted.length === 1);
-                    assert.equal(emitted[0].foo, "bar");
+                    expect(emitted[0].foo).toBe("bar");
                     channel.close();
                     otherChannel.close();
                 });
@@ -123,7 +125,7 @@ function runTest(channelOptions) {
                     await channel1.postMessage(msgJson);
 
                     await AsyncTestUtil.waitUntil(() => emitted.length === 1);
-                    assert.deepEqual(emitted[0], msgJson);
+                    expect(emitted[0]).toEqual(msgJson);
 
                     channel1.close();
                     channel2.close();
@@ -144,7 +146,7 @@ function runTest(channelOptions) {
                     await channel1.postMessage(msgJson);
 
                     await AsyncTestUtil.waitUntil(() => emitted.length === 1);
-                    assert.deepEqual(emitted[0], msgJson);
+                    expect(emitted[0]).toEqual(msgJson);
 
                     channel1.close();
                     channel2.close();
@@ -165,7 +167,7 @@ function runTest(channelOptions) {
                     await channel1.postMessage(msgJson);
 
                     await AsyncTestUtil.waitUntil(() => emitted.length === 1);
-                    assert.deepEqual(emitted[0], msgJson);
+                    expect(emitted[0]).toEqual(msgJson);
 
                     channel1.close();
                     channel2.close();
@@ -192,7 +194,7 @@ function runTest(channelOptions) {
 
                     await AsyncTestUtil.waitUntil(() => emitted.length >= 1);
                     await AsyncTestUtil.wait(100);
-                    assert.equal(emitted.length, 1);
+                    expect(emitted).toHaveLength(1);
 
                     channel1.close();
                     channel2.close();
@@ -217,8 +219,8 @@ function runTest(channelOptions) {
                     channel1.postMessage(msgJson);
 
                     await AsyncTestUtil.waitUntil(() => emitted.length >= 1);
-                    assert.equal(emitted.length, 1);
-                    assert.deepEqual(emitted[0], msgJson);
+                    expect(emitted).toHaveLength(1);
+                    expect(emitted[0]).toEqual(msgJson);
 
                     channel1.close();
                     channel2.close();
@@ -233,7 +235,7 @@ function runTest(channelOptions) {
                         foo: "bar",
                     });
                     await AsyncTestUtil.wait(100);
-                    assert.equal(emitted.length, 0);
+                    expect(emitted).toHaveLength(0);
 
                     channel.close();
                     otherChannel.close();
@@ -257,7 +259,7 @@ function runTest(channelOptions) {
                     await AsyncTestUtil.waitUntil(() => emittedOther.length >= 2);
                     await AsyncTestUtil.wait(100);
 
-                    assert.equal(emittedOther.length, 2);
+                    expect(emittedOther).toHaveLength(2);
 
                     channel.close();
                     otherChannel.close();
@@ -282,8 +284,8 @@ function runTest(channelOptions) {
                     await AsyncTestUtil.waitUntil(() => emitted2.length >= 1);
                     await AsyncTestUtil.wait(100);
 
-                    assert.equal(emitted1.length, 0);
-                    assert.equal(emitted2.length, 1);
+                    expect(emitted1).toHaveLength(0);
+                    expect(emitted2).toHaveLength(1);
 
                     channel.close();
                     channel2.close();
@@ -309,8 +311,8 @@ function runTest(channelOptions) {
                     await AsyncTestUtil.waitUntil(() => emitted1.length === 1);
                     await AsyncTestUtil.waitUntil(() => emitted2.length === 1);
 
-                    assert.deepEqual(msg, emitted1[0]);
-                    assert.deepEqual(msg, emitted2[0]);
+                    expect(emitted1[0]).toEqual(msg);
+                    expect(emitted2[0]).toEqual(msg);
 
                     channel.close();
                     otherChannel.close();
@@ -338,7 +340,7 @@ function runTest(channelOptions) {
                     await channel.postMessage(msg);
                     await AsyncTestUtil.wait(100);
 
-                    assert.equal(emitted.length, 1);
+                    expect(emitted).toHaveLength(1);
 
                     channel.close();
                     otherChannel.close();
@@ -348,9 +350,9 @@ function runTest(channelOptions) {
                 it("should get a type", async () => {
                     const channel = new BroadcastChannel(AsyncTestUtil.randomString(12), channelOptions);
                     const type = channel.type;
-                    assert.equal(typeof type, "string");
-                    assert.notEqual(type, "");
-                    assert.equal(channel.type, channelOptions.type);
+                    expect(typeof type).toBe("string");
+                    expect(type).not.toBe("");
+                    expect(channel.type).toBe(channelOptions.type);
 
                     channel.close();
                 });
@@ -362,14 +364,14 @@ function runTest(channelOptions) {
                     });
                     const channel = new BroadcastChannel(AsyncTestUtil.randomString(12), channelOptions);
 
-                    assert.equal(channel.type, "simulate");
+                    expect(channel.type).toBe("simulate");
 
                     channel.close();
                 });
                 it("should redo the enforcement when null is given", async () => {
                     enforceOptions(null);
                     const channel = new BroadcastChannel(AsyncTestUtil.randomString(12), channelOptions);
-                    assert.equal(channel.type, channelOptions.type);
+                    expect(channel.type).toBe(channelOptions.type);
 
                     channel.close();
                 });
@@ -390,7 +392,7 @@ function runTest(channelOptions) {
                         webWorkerSupport: false,
                     };
                     const channel = new BroadcastChannel(AsyncTestUtil.randomString(12), options);
-                    assert.equal(channel.type, "localstorage");
+                    expect(channel.type).toBe("localstorage");
 
                     window.BroadcastChannel = broadcastChannelBefore;
                 });
@@ -416,7 +418,7 @@ function runTest(channelOptions) {
 
                     let checkNr = 0;
                     emitted.forEach((msg) => {
-                        assert.equal(checkNr, msg.nr);
+                        expect(checkNr).toBe(msg.nr);
                         checkNr++;
                     });
 
@@ -440,7 +442,7 @@ function runTest(channelOptions) {
     describe("final", () => {
         it("should have closed all channels", () => {
             if (isNode) {
-                assert.strictEqual(OPEN_BROADCAST_CHANNELS.size, 0);
+                expect(OPEN_BROADCAST_CHANNELS.size).toBe(0);
             }
         });
     });
