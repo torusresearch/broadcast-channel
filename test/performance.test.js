@@ -1,5 +1,7 @@
-const AsyncTestUtil = require("async-test-util");
-const { BroadcastChannel } = require("../");
+import AsyncTestUtil from "async-test-util";
+import { describe, it } from "vitest";
+
+import { BroadcastChannel } from "../src/index.js";
 
 const benchmark = {
     openClose: {},
@@ -18,9 +20,12 @@ const elapsedTime = (before) => {
 };
 
 describe("performance.test.js", () => {
+    // eslint-disable-next-line vitest/expect-expect
     it("wait a bit for jit etc..", async () => {
         await AsyncTestUtil.wait(2000);
     });
+
+    // eslint-disable-next-line vitest/expect-expect
     it("open/close channels", async () => {
         const channelName = AsyncTestUtil.randomString(10);
 
@@ -37,17 +42,19 @@ describe("performance.test.js", () => {
         const elapsed = elapsedTime(startTime);
         benchmark.openClose = elapsed;
     });
+
+    // eslint-disable-next-line vitest/expect-expect
     it("sendRecieve.parallel", async () => {
         const channelName = AsyncTestUtil.randomString(10);
         const channelSender = new BroadcastChannel(channelName, options);
         const channelReciever = new BroadcastChannel(channelName, options);
         const msgAmount = 2000;
         let emittedCount = 0;
-        const waitPromise = new Promise((res) => {
+        const waitPromise = new Promise((resolve) => {
             channelReciever.onmessage = () => {
                 emittedCount++;
                 if (emittedCount === msgAmount) {
-                    res();
+                    resolve();
                 }
             };
         });
@@ -64,7 +71,9 @@ describe("performance.test.js", () => {
         const elapsed = elapsedTime(startTime);
         benchmark.sendRecieve.parallel = elapsed;
     });
-    it("sendRecieve.series", async () => {
+
+    // eslint-disable-next-line vitest/expect-expect
+    it("sendRecieve.series", { timeout: 10000 }, async () => {
         const channelName = AsyncTestUtil.randomString(10);
         const channelSender = new BroadcastChannel(channelName, options);
         const channelReciever = new BroadcastChannel(channelName, options);
@@ -75,11 +84,11 @@ describe("performance.test.js", () => {
             channelReciever.postMessage("pong");
         };
 
-        const waitPromise = new Promise((res) => {
+        const waitPromise = new Promise((resolve) => {
             channelSender.onmessage = () => {
                 emittedCount++;
                 if (emittedCount === msgAmount) {
-                    res();
+                    resolve();
                 } else {
                     channelSender.postMessage("ping");
                 }
@@ -96,6 +105,8 @@ describe("performance.test.js", () => {
         const elapsed = elapsedTime(startTime);
         benchmark.sendRecieve.series = elapsed;
     });
+
+    // eslint-disable-next-line vitest/expect-expect
     it("show result", () => {
         console.log("benchmark result:");
         console.log(JSON.stringify(benchmark, null, 2));

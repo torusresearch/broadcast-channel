@@ -1,4 +1,6 @@
-import BroadcastChannel from "broadcast-channel";
+import { describe, expect, it } from "vitest";
+
+import * as BroadcastChannel from "../src/index.js";
 
 class Foo {
     constructor() {
@@ -10,12 +12,12 @@ class Foo {
 }
 
 describe("Broadcast Channel", () => {
-    test("local", async () => {
+    it("should handle local channel operations", async () => {
         const foo = new Foo();
 
-        const result = await new Promise((a) => {
+        const result = await new Promise((resolve) => {
             setTimeout(() => {
-                a(true);
+                resolve(true);
             }, 1000);
         });
 

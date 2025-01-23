@@ -1,10 +1,12 @@
+/* eslint-disable vitest/expect-expect */
 /**
  * checks if the typings are correct
  * run via 'npm run test:typings'
  */
-const assert = require("assert");
-const path = require("path");
-const AsyncTestUtil = require("async-test-util");
+// import AsyncTestUtil from "async-test-util";
+import { spawn } from "child-process-promise";
+import path from "path";
+import { describe, expect, it } from "vitest";
 
 describe("typings.test.ts", () => {
     const mainPath = path.join(__dirname, "../");
@@ -16,8 +18,8 @@ describe("typings.test.ts", () => {
             foo: string;
         };
     `;
+
     const transpileCode = async (code) => {
-        const spawn = require("child-process-promise").spawn;
         const stdout = [];
         const stderr = [];
 
@@ -28,17 +30,17 @@ describe("typings.test.ts", () => {
             isolatedModules: false,
             noUnusedLocals: false,
         };
+
         const promise = spawn("ts-node", ["--compiler-options", JSON.stringify(tsConfig), "-e", codeBase + "\n" + code]);
         const childProcess = promise.childProcess;
+
         childProcess.stdout.on("data", (data) => {
-            // console.dir(data.toString());
             stdout.push(data.toString());
         });
         childProcess.stderr.on("data", (data) => {
-            // console.log('err:');
-            // console.dir(data.toString());
             stderr.push(data.toString());
         });
+
         try {
             await promise;
         } catch (err) {
@@ -49,24 +51,22 @@ describe("typings.test.ts", () => {
                 `);
         }
     };
+
     describe("basic", () => {
         it("should sucess on basic test", async () => {
-            await transpileCode('console.log("Hello, world!")');
+            // eslint-disable-next-line prettier/prettier
+            await transpileCode("console.log(\"Hello, world!\")");
         });
+
         it("should fail on broken code", async () => {
             const brokenCode = `
                 let x: string = 'foo';
                 x = 1337;
             `;
-            let thrown = false;
-            try {
-                await transpileCode(brokenCode);
-            } catch (err) {
-                thrown = true;
-            }
-            assert.ok(thrown);
+            await expect(transpileCode(brokenCode)).rejects.toThrow();
         });
     });
+
     describe("non-typed channel", () => {
         it("should be ok to create post and recieve", async () => {
             const code = `
@@ -80,6 +80,7 @@ describe("typings.test.ts", () => {
             `;
             await transpileCode(code);
         });
+
         it("should not allow to set wrong onmessage", async () => {
             const code = `
                 (async() => {
@@ -91,9 +92,10 @@ describe("typings.test.ts", () => {
                     channel.close();
                 })();
             `;
-            await AsyncTestUtil.assertThrows(() => transpileCode(code));
+            await expect(transpileCode(code)).rejects.toThrow();
         });
     });
+
     describe("typed channel", () => {
         it("should be ok to create and post", async () => {
             const code = `
@@ -105,6 +107,7 @@ describe("typings.test.ts", () => {
             `;
             await transpileCode(code);
         });
+
         it("should be ok to recieve", async () => {
             const code = `
                 (async() => {
@@ -119,6 +122,7 @@ describe("typings.test.ts", () => {
             `;
             await transpileCode(code);
         });
+
         it("should not allow to post wrong message", async () => {
             const code = `
                 (async() => {
@@ -127,7 +131,7 @@ describe("typings.test.ts", () => {
                     channel.close();
                 })();
             `;
-            await AsyncTestUtil.assertThrows(() => transpileCode(code));
+            await expect(transpileCode(code)).rejects.toThrow();
         });
     });
 });

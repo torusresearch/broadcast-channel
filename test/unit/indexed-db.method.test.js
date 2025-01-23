@@ -1,7 +1,9 @@
-const AsyncTestUtil = require("async-test-util");
-const assert = require("assert");
-const isNode = require("detect-node");
-const { IndexedDbMethod } = require("../../");
+import AsyncTestUtil from "async-test-util";
+import isNode from "detect-node";
+import { describe, expect, it } from "vitest";
+
+import { IndexedDbMethod } from "../../src/index.js";
+
 console.log(IndexedDbMethod.getIdb);
 
 describe("unit/indexed-db.method.test.js", () => {
@@ -10,24 +12,28 @@ describe("unit/indexed-db.method.test.js", () => {
     describe(".getIdb()", () => {
         it("should get an object", () => {
             const idb = IndexedDbMethod.getIdb();
-            assert.ok(idb);
+            expect(idb).toBeTruthy();
         });
     });
+
     describe(".createDatabase()", () => {
         it("should create a database", async () => {
             const channelName = AsyncTestUtil.randomString(10);
             const db = await IndexedDbMethod.createDatabase(channelName);
-            assert.ok(db);
+            expect(db).toBeTruthy();
         });
+
         it("should be able to call twice", async () => {
             const channelName = AsyncTestUtil.randomString(10);
             const db1 = await IndexedDbMethod.createDatabase(channelName);
             const db2 = await IndexedDbMethod.createDatabase(channelName);
-            assert.ok(db1);
-            assert.ok(db2);
+            expect(db1).toBeTruthy();
+            expect(db2).toBeTruthy();
         });
     });
+
     describe(".writeMessage()", () => {
+        // eslint-disable-next-line vitest/expect-expect
         it("should write the message to the db", async () => {
             const channelName = AsyncTestUtil.randomString(10);
             const readerUuid = AsyncTestUtil.randomString(10);
@@ -37,6 +43,7 @@ describe("unit/indexed-db.method.test.js", () => {
             });
         });
     });
+
     describe(".getAllMessages()", () => {
         it("should get the message", async () => {
             const channelName = AsyncTestUtil.randomString(10);
@@ -47,9 +54,10 @@ describe("unit/indexed-db.method.test.js", () => {
             });
 
             const messages = await IndexedDbMethod.getAllMessages(db);
-            assert.equal(messages.length, 1);
-            assert.equal(messages[0].data.foo, "bar");
+            expect(messages).toHaveLength(1);
+            expect(messages[0].data.foo).toBe("bar");
         });
+
         it("should get the messages", async () => {
             const channelName = AsyncTestUtil.randomString(10);
             const readerUuid = AsyncTestUtil.randomString(10);
@@ -62,9 +70,10 @@ describe("unit/indexed-db.method.test.js", () => {
             });
 
             const messages = await IndexedDbMethod.getAllMessages(db);
-            assert.equal(messages.length, 2);
+            expect(messages).toHaveLength(2);
         });
     });
+
     describe(".getOldMessages()", () => {
         it("should only get too old messages", async () => {
             const channelName = AsyncTestUtil.randomString(10);
@@ -82,12 +91,13 @@ describe("unit/indexed-db.method.test.js", () => {
             await Promise.all(new Array(10).fill().map(() => IndexedDbMethod.writeMessage(db, readerUuid, msgJson)));
 
             const tooOld = await IndexedDbMethod.getOldMessages(db, 200);
-            assert.equal(tooOld.length, 10);
+            expect(tooOld).toHaveLength(10);
             tooOld.forEach((msg) => {
-                assert.equal(msg.data.foo, "old");
+                expect(msg.data.foo).toBe("old");
             });
         });
     });
+
     describe(".cleanOldMessages()", () => {
         it("should clean up old messages", async () => {
             const channelName = AsyncTestUtil.randomString(10);
@@ -104,9 +114,10 @@ describe("unit/indexed-db.method.test.js", () => {
 
             IndexedDbMethod.getAllMessages(db); // call parallel
             const messagesAfter = await IndexedDbMethod.getAllMessages(db);
-            assert.equal(messagesAfter.length, 0);
+            expect(messagesAfter).toHaveLength(0);
         });
     });
+
     describe(".getMessagesHigherThan()", () => {
         it("should only get messages with higher id", async () => {
             const channelName = AsyncTestUtil.randomString(10);
@@ -121,29 +132,32 @@ describe("unit/indexed-db.method.test.js", () => {
 
             // get last 5 messages
             const lastFive = await IndexedDbMethod.getMessagesHigherThan(db, 5);
-            assert.equal(lastFive.length, 5);
-            assert.equal(lastFive[0].id, 6);
-            assert.equal(lastFive[4].id, 10);
+            expect(lastFive).toHaveLength(5);
+            expect(lastFive[0].id).toBe(6);
+            expect(lastFive[4].id).toBe(10);
         });
     });
+
     describe("core-functions", () => {
         describe(".create()", () => {
             it("should create a channelState", async () => {
                 const channelName = AsyncTestUtil.randomString(10);
                 const channelState = await IndexedDbMethod.create(channelName);
-                assert.ok(channelState);
+                expect(channelState).toBeTruthy();
                 IndexedDbMethod.close(channelState);
             });
+
             it("should be called twice", async () => {
                 const channelName = AsyncTestUtil.randomString(12);
                 const channelState1 = await IndexedDbMethod.create(channelName);
                 const channelState2 = await IndexedDbMethod.create(channelName);
-                assert.ok(channelState1);
-                assert.ok(channelState2);
+                expect(channelState1).toBeTruthy();
+                expect(channelState2).toBeTruthy();
 
                 await IndexedDbMethod.close(channelState1);
                 await IndexedDbMethod.close(channelState2);
             });
+
             it("should handle close events", async () => {
                 let callbackCount = 0;
                 const channelName = AsyncTestUtil.randomString(10);
@@ -152,31 +166,34 @@ describe("unit/indexed-db.method.test.js", () => {
                         onclose: () => callbackCount++,
                     },
                 });
-                assert.ok(channelState);
+                expect(channelState).toBeTruthy();
 
                 // The `onclose` event is not fired if the database connection is closed normally using `IDBDatabase.close()`
                 channelState.db.dispatchEvent(new Event("close"));
-                assert.equal(callbackCount, 1);
+                expect(callbackCount).toBe(1);
                 IndexedDbMethod.close(channelState);
             });
         });
+
         describe(".postMessage()", () => {
             it("should not crash", async () => {
                 const channelName = AsyncTestUtil.randomString(10);
                 const channelState = await IndexedDbMethod.create(channelName);
-                assert.ok(channelState);
+                expect(channelState).toBeTruthy();
                 await IndexedDbMethod.postMessage(channelState, {
                     foo: "bar",
                 });
                 IndexedDbMethod.close(channelState);
             });
         });
+
         describe(".canBeUsed()", () => {
             it("should be true on browsers", async () => {
                 const ok = IndexedDbMethod.canBeUsed();
-                assert.ok(ok);
+                expect(ok).toBeTruthy();
             });
         });
+
         describe(".onMessage()", () => {
             it("should emit the message on other", async () => {
                 const channelName = AsyncTestUtil.randomString(12);
@@ -192,22 +209,18 @@ describe("unit/indexed-db.method.test.js", () => {
                 await IndexedDbMethod.postMessage(channelStateOwn, msgJson);
 
                 await AsyncTestUtil.waitUntil(() => emittedOther.length === 1);
-                assert.deepEqual(emittedOther[0], msgJson);
+                expect(emittedOther[0]).toEqual(msgJson);
 
                 await IndexedDbMethod.close(channelStateOther);
                 await IndexedDbMethod.close(channelStateOwn);
             });
-            /**
-             * localstorage-pings do not work in a web-workers,
-             * which means this should be detected and work over interval
-             * @link https://stackoverflow.com/a/6179599/3443137
-             */
+
             it("should also work if localstorage does not work", async () => {
                 const channelName = AsyncTestUtil.randomString(12);
 
                 // disable localStorage
                 const localStorageBefore = window.localStorage;
-                assert.ok(localStorageBefore);
+                expect(localStorageBefore).toBeTruthy();
                 Object.defineProperty(window, "localStorage", {
                     enumerable: false,
                     configurable: false,
@@ -227,7 +240,7 @@ describe("unit/indexed-db.method.test.js", () => {
                 await IndexedDbMethod.postMessage(channelStateOwn, msgJson);
 
                 await AsyncTestUtil.waitUntil(() => emittedOther.length === 1);
-                assert.deepEqual(emittedOther[0], msgJson);
+                expect(emittedOther[0]).toEqual(msgJson);
 
                 await IndexedDbMethod.close(channelStateOther);
                 await IndexedDbMethod.close(channelStateOwn);
@@ -235,8 +248,10 @@ describe("unit/indexed-db.method.test.js", () => {
             });
         });
     });
+
     describe("other", () => {
-        it("should have cleaned up the messages", async function () {
+        // eslint-disable-next-line vitest/expect-expect
+        it("should have cleaned up the messages", async () => {
             const channelOptions = {
                 idb: {
                     ttl: 500,

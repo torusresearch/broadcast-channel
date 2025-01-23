@@ -2,19 +2,10 @@
 import AsyncTestUtil from "async-test-util";
 import clone from "clone";
 import isNode from "detect-node";
-import unload from "unload";
+import * as unload from "unload";
 import { describe, expect, it } from "vitest";
 
 import { BroadcastChannel, enforceOptions, OPEN_BROADCAST_CHANNELS } from "../src/index.js";
-
-if (isNode) {
-    process.on("uncaughtException", (err, origin) => {
-        console.error("uncaughtException!");
-        console.dir(err);
-        console.dir(origin);
-        process.exit(1);
-    });
-}
 
 /**
  * we run this test once per method
@@ -79,7 +70,7 @@ function runTest(channelOptions) {
                     await AsyncTestUtil.wait(100);
                     expect(emitted).toHaveLength(0);
 
-                    channel.close();
+                    await channel.close();
                 });
                 it("should recieve the message on other channel", async () => {
                     const channelName = AsyncTestUtil.randomString(12);

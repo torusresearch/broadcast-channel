@@ -6,7 +6,7 @@ export default defineConfig({
         coverage: {
             reporter: ["text"],
             provider: "istanbul",
-            include: ["src/**/*.ts"],
+            include: ["src/**/*.js"],
         },
         include: [
             // integration tests

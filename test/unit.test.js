@@ -1,4 +1,4 @@
-require("./unit/custom.method.test");
-require("./unit/native.method.test.js");
-require("./unit/indexed-db.method.test.js");
-require("./unit/localstorage.method.test.js");
+import "./unit/custom.method.test.js";
+import "./unit/native.method.test.js";
+import "./unit/indexed-db.method.test.js";
+import "./unit/localstorage.method.test.js";
