@@ -11,4 +11,4 @@ export function averageResponseTime(): number;
 export const microSeconds: typeof micro;
 export const type: "simulate";
 export const SIMULATE_DELAY_TIME: 5;
-import { microSeconds as micro } from "../util";
+import { microSeconds as micro } from '../util';

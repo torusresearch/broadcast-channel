@@ -4,7 +4,7 @@ function fillOptionsWithDefaults(originalOptions = {}) {
   const options = JSON.parse(JSON.stringify(originalOptions));
 
   // main
-  if (typeof options.webWorkerSupport === "undefined") options.webWorkerSupport = true;
+  if (typeof options.webWorkerSupport === 'undefined') options.webWorkerSupport = true;
 
   // indexed-db
   if (!options.idb) options.idb = {};
@@ -12,7 +12,7 @@ function fillOptionsWithDefaults(originalOptions = {}) {
   if (!options.idb.ttl) options.idb.ttl = 1000 * 45;
   if (!options.idb.fallbackInterval) options.idb.fallbackInterval = 150;
   //  handles abrupt db onclose events.
-  if (originalOptions.idb && typeof originalOptions.idb.onclose === "function") options.idb.onclose = originalOptions.idb.onclose;
+  if (originalOptions.idb && typeof originalOptions.idb.onclose === 'function') options.idb.onclose = originalOptions.idb.onclose;
 
   // localstorage
   if (!options.localstorage) options.localstorage = {};
@@ -20,7 +20,7 @@ function fillOptionsWithDefaults(originalOptions = {}) {
 
   // server
   if (!options.server) options.server = {};
-  if (!options.server.url) options.server.url = "https://session.web3auth.io";
+  if (!options.server.url) options.server.url = 'https://session.web3auth.io';
   if (!options.server.removeTimeout) options.server.removeTimeout = 1000 * 60 * 5; // 5 minutes
 
   // custom methods

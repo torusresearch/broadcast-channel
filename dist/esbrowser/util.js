@@ -1,11 +1,11 @@
 // import Bowser from 'bowser';
-import loglevel from "loglevel";
+import loglevel from 'loglevel';
 
 /**
  * returns true if the given object is a promise
  */
 export function isPromise(obj) {
-  if (obj && typeof obj.then === "function") {
+  if (obj && typeof obj.then === 'function') {
     return true;
   } else {
     return false;
@@ -16,9 +16,9 @@ export var PROMISE_RESOLVED_TRUE = Promise.resolve(true);
 export var PROMISE_RESOLVED_VOID = Promise.resolve();
 export function sleep(time, resolveWith) {
   if (!time) time = 0;
-  return new Promise(function (resolve) {
+  return new Promise(function (res) {
     return setTimeout(function () {
-      return resolve(resolveWith);
+      return res(resolveWith);
     }, time);
   });
 }
@@ -74,8 +74,8 @@ export function microSeconds() {
 //     return thirdPartyCookieSupport;
 // }
 
-export var log = loglevel.getLogger("broadcast-channel");
-log.setLevel("error");
+export var log = loglevel.getLogger('broadcast-channel');
+log.setLevel('error');
 export var setLogLevel = function setLogLevel(level) {
   log.setLevel(level);
 };
