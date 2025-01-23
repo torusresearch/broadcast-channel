@@ -129,7 +129,10 @@
         "webpack-cli": "6.0.1"
     },
     "engines": {
-        "node": ">=18.x",
+        "node": ">=20.x",
         "npm": ">=9.x"
+    },
+    "optionalDependencies": {
+        "@rollup/rollup-linux-x64-gnu": "*"
     }
 }
