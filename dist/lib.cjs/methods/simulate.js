@@ -3,7 +3,7 @@
 var util = require('../util.js');
 
 const microSeconds = util.microSeconds;
-const type = "simulate";
+const type = 'simulate';
 const SIMULATE_CHANNELS = new Set();
 const SIMULATE_DELAY_TIME = 5;
 function create(channelName) {
@@ -19,7 +19,7 @@ function close(channelState) {
   SIMULATE_CHANNELS.delete(channelState);
 }
 function postMessage(channelState, messageJson) {
-  return new Promise(resolve => setTimeout(() => {
+  return new Promise(res => setTimeout(() => {
     const channelArray = Array.from(SIMULATE_CHANNELS);
     channelArray.forEach(channel => {
       if (channel.name === channelState.name &&
@@ -33,7 +33,7 @@ function postMessage(channelState, messageJson) {
         channel.messagesCallback(messageJson);
       }
     });
-    resolve();
+    res();
   }, SIMULATE_DELAY_TIME));
 }
 function onMessage(channelState, fn) {

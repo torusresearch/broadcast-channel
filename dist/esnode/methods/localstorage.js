@@ -6,12 +6,12 @@
  * @link https://caniuse.com/#feat=indexeddb
  */
 
-import { ObliviousSet } from "oblivious-set";
-import { fillOptionsWithDefaults } from "../options";
-import { microSeconds as micro, randomToken, sleep } from "../util";
+import { ObliviousSet } from 'oblivious-set';
+import { fillOptionsWithDefaults } from '../options';
+import { sleep, randomToken, microSeconds as micro } from '../util';
 export var microSeconds = micro;
-var KEY_PREFIX = "pubkey.broadcastChannel-";
-export var type = "localstorage";
+var KEY_PREFIX = 'pubkey.broadcastChannel-';
+export var type = 'localstorage';
 
 /**
  * copied from crosstab
@@ -19,11 +19,11 @@ export var type = "localstorage";
  */
 export function getLocalStorage() {
   var localStorage;
-  if (typeof window === "undefined") return null;
+  if (typeof window === 'undefined') return null;
   try {
     localStorage = window.localStorage;
-    localStorage = window["ie8-eventlistener/storage"] || window.localStorage;
-  } catch (_unused) {
+    localStorage = window['ie8-eventlistener/storage'] || window.localStorage;
+  } catch (e) {
     // New versions of Firefox throw a Security exception
     // if cookies are disabled. See
     // https://bugzilla.mozilla.org/show_bug.cgi?id=1028153
@@ -39,8 +39,7 @@ export function storageKey(channelName) {
  * and fires the storage-event so other readers can find it
  */
 export function postMessage(channelState, messageJson) {
-  return new Promise(function (resolve) {
-    // eslint-disable-next-line promise/catch-or-return, promise/always-return
+  return new Promise(function (res) {
     sleep().then(function () {
       var key = storageKey(channelState.channelName);
       var writeObj = {
@@ -57,12 +56,12 @@ export function postMessage(channelState, messageJson) {
        * in the window that changes the state of the local storage.
        * So we fire it manually
        */
-      var ev = document.createEvent("Event");
-      ev.initEvent("storage", true, true);
+      var ev = document.createEvent('Event');
+      ev.initEvent('storage', true, true);
       ev.key = key;
       ev.newValue = value;
       window.dispatchEvent(ev);
-      resolve();
+      res();
     });
   });
 }
@@ -73,16 +72,16 @@ export function addStorageEventListener(channelName, fn) {
       fn(JSON.parse(ev.newValue));
     }
   };
-  window.addEventListener("storage", listener);
+  window.addEventListener('storage', listener);
   return listener;
 }
 export function removeStorageEventListener(listener) {
-  window.removeEventListener("storage", listener);
+  window.removeEventListener('storage', listener);
 }
 export function create(channelName, options) {
   options = fillOptionsWithDefaults(options);
   if (!canBeUsed(options)) {
-    throw new Error("BroadcastChannel: localstorage cannot be used");
+    throw new Error('BroadcastChannel: localstorage cannot be used');
   }
   var uuid = randomToken();
 
@@ -120,10 +119,10 @@ export function canBeUsed() {
   var ls = getLocalStorage();
   if (!ls) return false;
   try {
-    var key = "__broadcastchannel_check";
-    ls.setItem(key, "works");
+    var key = '__broadcastchannel_check';
+    ls.setItem(key, 'works');
     ls.removeItem(key);
-  } catch (_unused2) {
+  } catch (e) {
     // Safari 10 in private mode will not allow write access to local
     // storage and fail with a QuotaExceededError. See
     // https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API#Private_Browsing_Incognito_modes
@@ -134,7 +133,7 @@ export function canBeUsed() {
 export function averageResponseTime() {
   var defaultTime = 120;
   var userAgent = navigator.userAgent.toLowerCase();
-  if (userAgent.includes("safari") && !userAgent.includes("chrome")) {
+  if (userAgent.includes('safari') && !userAgent.includes('chrome')) {
     // safari is much slower so this time is higher
     return defaultTime * 2;
   }

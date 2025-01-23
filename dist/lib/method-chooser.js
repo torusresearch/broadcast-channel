@@ -1,8 +1,8 @@
-import * as IndexeDbMethod from "./methods/indexed-db.js";
-import * as LocalstorageMethod from "./methods/localstorage.js";
-import * as NativeMethod from "./methods/native.js";
-import * as ServerMethod from "./methods/server.js";
-import * as SimulateMethod from "./methods/simulate.js";
+import * as NativeMethod from './methods/native.js';
+import * as IndexeDbMethod from './methods/indexed-db.js';
+import * as LocalstorageMethod from './methods/localstorage.js';
+import * as ServerMethod from './methods/server.js';
+import * as SimulateMethod from './methods/simulate.js';
 
 // order is important
 var METHODS = [NativeMethod,
@@ -13,14 +13,14 @@ export function chooseMethod(options) {
 
   // directly chosen
   if (options.type) {
-    if (options.type === "simulate") {
+    if (options.type === 'simulate') {
       // only use simulate-method if directly chosen
       return SimulateMethod;
     }
     var ret = chooseMethods.find(function (m) {
       return m.type === options.type;
     });
-    if (!ret) throw new Error("method-type " + options.type + " not found");else return ret;
+    if (!ret) throw new Error('method-type ' + options.type + ' not found');else return ret;
   }
 
   /**
@@ -29,7 +29,7 @@ export function chooseMethod(options) {
    */
   if (!options.webWorkerSupport) {
     chooseMethods = chooseMethods.filter(function (m) {
-      return m.type !== "idb";
+      return m.type !== 'idb';
     });
   }
   var useMethod = chooseMethods.find(function (method) {

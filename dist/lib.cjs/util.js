@@ -8,7 +8,7 @@ var loglevel = require('loglevel');
  * returns true if the given object is a promise
  */
 function isPromise(obj) {
-  if (obj && typeof obj.then === "function") {
+  if (obj && typeof obj.then === 'function') {
     return true;
   } else {
     return false;
@@ -19,7 +19,7 @@ Promise.resolve(true);
 const PROMISE_RESOLVED_VOID = Promise.resolve();
 function sleep(time, resolveWith) {
   if (!time) time = 0;
-  return new Promise(resolve => setTimeout(() => resolve(resolveWith), time));
+  return new Promise(res => setTimeout(() => res(resolveWith), time));
 }
 function randomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1) + min);
@@ -73,8 +73,8 @@ function microSeconds() {
 //     return thirdPartyCookieSupport;
 // }
 
-const log = loglevel.getLogger("broadcast-channel");
-log.setLevel("error");
+const log = loglevel.getLogger('broadcast-channel');
+log.setLevel('error');
 
 exports.PROMISE_RESOLVED_VOID = PROMISE_RESOLVED_VOID;
 exports.isPromise = isPromise;

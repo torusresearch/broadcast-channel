@@ -11,4 +11,4 @@ export function canBeUsed(): boolean;
 export function averageResponseTime(): number;
 export const microSeconds: typeof micro;
 export const type: "native";
-import { microSeconds as micro } from "../util";
+import { microSeconds as micro } from '../util';

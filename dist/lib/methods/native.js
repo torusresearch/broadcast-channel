@@ -1,6 +1,6 @@
-import { microSeconds as micro, PROMISE_RESOLVED_VOID } from "../util";
+import { microSeconds as micro, PROMISE_RESOLVED_VOID } from '../util';
 export var microSeconds = micro;
-export var type = "native";
+export var type = 'native';
 export function create(channelName) {
   var state = {
     time: micro(),
@@ -35,10 +35,10 @@ export function canBeUsed() {
    * in the electron-renderer, isNode will be true even if we are in browser-context
    * so we also check if window is undefined
    */
-  if (typeof window === "undefined") return false;
-  if (typeof BroadcastChannel === "function") {
+  if (typeof window === 'undefined') return false;
+  if (typeof BroadcastChannel === 'function') {
     if (BroadcastChannel._pubkey) {
-      throw new Error("BroadcastChannel: Do not overwrite window.BroadcastChannel with this module, this is not a polyfill");
+      throw new Error('BroadcastChannel: Do not overwrite window.BroadcastChannel with this module, this is not a polyfill');
     }
     return true;
   } else return false;

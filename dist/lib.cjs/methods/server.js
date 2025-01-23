@@ -1,11 +1,11 @@
 'use strict';
 
-var eccrypto = require('@toruslabs/eccrypto');
-var metadataHelpers = require('@toruslabs/metadata-helpers');
 var obliviousSet = require('oblivious-set');
 var socket_ioClient = require('socket.io-client');
-var options = require('../options.js');
+var eccrypto = require('@toruslabs/eccrypto');
+var metadataHelpers = require('@toruslabs/metadata-helpers');
 var util = require('../util.js');
+var options = require('../options.js');
 
 /**
  * A localStorage-only method which uses localstorage and its 'storage'-event
@@ -16,8 +16,8 @@ var util = require('../util.js');
  */
 
 const microSeconds = util.microSeconds;
-const KEY_PREFIX = "pubkey.broadcastChannel-";
-const type = "server";
+const KEY_PREFIX = 'pubkey.broadcastChannel-';
+const type = 'server';
 let SOCKET_CONN_INSTANCE = null;
 // used to decide to reconnect socket e.g. when socket connection is disconnected unexpectedly
 const runningChannels = new Set();
@@ -30,12 +30,11 @@ function storageKey(channelName) {
  * and fires the storage-event so other readers can find it
  */
 function postMessage(channelState, messageJson) {
-  return new Promise((resolve, reject) => {
-    // eslint-disable-next-line promise/catch-or-return
+  return new Promise((res, rej) => {
     util.sleep().then(async () => {
       const key = storageKey(channelState.channelName);
-      const channelEncPrivKey = metadataHelpers.keccak256(Buffer.from(key, "utf8"));
-      const encData = await metadataHelpers.encryptData(channelEncPrivKey.toString("hex"), {
+      const channelEncPrivKey = metadataHelpers.keccak256(Buffer.from(key, 'utf8'));
+      const encData = await metadataHelpers.encryptData(channelEncPrivKey.toString('hex'), {
         token: util.randomToken(),
         time: Date.now(),
         data: messageJson,
@@ -44,18 +43,18 @@ function postMessage(channelState, messageJson) {
       const body = {
         sameOriginCheck: true,
         sameIpCheck: true,
-        key: eccrypto.getPublic(channelEncPrivKey).toString("hex"),
+        key: eccrypto.getPublic(channelEncPrivKey).toString('hex'),
         data: encData,
-        signature: (await eccrypto.sign(channelEncPrivKey, metadataHelpers.keccak256(Buffer.from(encData, "utf8")))).toString("hex")
+        signature: (await eccrypto.sign(channelEncPrivKey, metadataHelpers.keccak256(Buffer.from(encData, 'utf8')))).toString('hex')
       };
       if (channelState.timeout) body.timeout = channelState.timeout;
-      return fetch(channelState.serverUrl + "/channel/set", {
-        method: "POST",
+      return fetch(channelState.serverUrl + '/channel/set', {
+        method: 'POST',
         body: JSON.stringify(body),
         headers: {
-          "Content-Type": "application/json; charset=utf-8"
+          'Content-Type': 'application/json; charset=utf-8'
         }
-      }).then(resolve).catch(reject);
+      }).then(res).catch(rej);
     });
   });
 }
@@ -64,33 +63,33 @@ function getSocketInstance(serverUrl) {
     return SOCKET_CONN_INSTANCE;
   }
   const SOCKET_CONN = socket_ioClient.io(serverUrl, {
-    transports: ["websocket", "polling"],
+    transports: ['websocket', 'polling'],
     // use WebSocket first, if available
     withCredentials: true,
     reconnectionDelayMax: 10000,
     reconnectionAttempts: 10
   });
-  SOCKET_CONN.on("connect_error", err => {
+  SOCKET_CONN.on('connect_error', err => {
     // revert to classic upgrade
-    SOCKET_CONN.io.opts.transports = ["polling", "websocket"];
-    util.log.error("connect error", err);
+    SOCKET_CONN.io.opts.transports = ['polling', 'websocket'];
+    util.log.error('connect error', err);
   });
-  SOCKET_CONN.on("connect", async () => {
+  SOCKET_CONN.on('connect', async () => {
     const {
       engine
     } = SOCKET_CONN.io;
-    util.log.debug("initially connected to", engine.transport.name); // in most cases, prints "polling"
-    engine.once("upgrade", () => {
+    util.log.debug('initially connected to', engine.transport.name); // in most cases, prints "polling"
+    engine.once('upgrade', () => {
       // called when the transport is upgraded (i.e. from HTTP long-polling to WebSocket)
-      util.log.debug("upgraded", engine.transport.name); // in most cases, prints "websocket"
+      util.log.debug('upgraded', engine.transport.name); // in most cases, prints "websocket"
     });
-    engine.once("close", reason => {
+    engine.once('close', reason => {
       // called when the underlying connection is closed
-      util.log.debug("connection closed", reason);
+      util.log.debug('connection closed', reason);
     });
   });
-  SOCKET_CONN.on("error", err => {
-    util.log.error("socket errored", err);
+  SOCKET_CONN.on('error', err => {
+    util.log.error('socket errored', err);
     SOCKET_CONN.disconnect();
   });
   SOCKET_CONN_INSTANCE = SOCKET_CONN;
@@ -99,26 +98,26 @@ function getSocketInstance(serverUrl) {
 function setupSocketConnection(serverUrl, channelState, fn) {
   const socketConn = getSocketInstance(serverUrl);
   const key = storageKey(channelState.channelName);
-  const channelEncPrivKey = metadataHelpers.keccak256(Buffer.from(key, "utf8"));
-  const channelPubKey = eccrypto.getPublic(channelEncPrivKey).toString("hex");
+  const channelEncPrivKey = metadataHelpers.keccak256(Buffer.from(key, 'utf8'));
+  const channelPubKey = eccrypto.getPublic(channelEncPrivKey).toString('hex');
   if (socketConn.connected) {
-    socketConn.emit("check_auth_status", channelPubKey, {
+    socketConn.emit('check_auth_status', channelPubKey, {
       sameOriginCheck: true,
       sameIpCheck: true
     });
   } else {
-    socketConn.once("connect", () => {
-      util.log.debug("connected with socket");
-      socketConn.emit("check_auth_status", channelPubKey, {
+    socketConn.once('connect', () => {
+      util.log.debug('connected with socket');
+      socketConn.emit('check_auth_status', channelPubKey, {
         sameOriginCheck: true,
         sameIpCheck: true
       });
     });
   }
   const reconnect = () => {
-    socketConn.once("connect", async () => {
+    socketConn.once('connect', async () => {
       if (runningChannels.has(channelState.channelName)) {
-        socketConn.emit("check_auth_status", channelPubKey, {
+        socketConn.emit('check_auth_status', channelPubKey, {
           sameOriginCheck: true,
           sameIpCheck: true
         });
@@ -128,32 +127,32 @@ function setupSocketConnection(serverUrl, channelState, fn) {
   const visibilityListener = () => {
     // if channel is closed, then remove the listener.
     if (!socketConn || !runningChannels.has(channelState.channelName)) {
-      document.removeEventListener("visibilitychange", visibilityListener);
+      document.removeEventListener('visibilitychange', visibilityListener);
       return;
     }
     // if not connected, then wait for connection and ping server for latest msg.
-    if (!socketConn.connected && document.visibilityState === "visible") {
+    if (!socketConn.connected && document.visibilityState === 'visible') {
       reconnect();
     }
   };
   const listener = async ev => {
     try {
-      const decData = await metadataHelpers.decryptData(channelEncPrivKey.toString("hex"), ev);
+      const decData = await metadataHelpers.decryptData(channelEncPrivKey.toString('hex'), ev);
       util.log.info(decData);
       fn(decData);
     } catch (error) {
       util.log.error(error);
     }
   };
-  socketConn.on("disconnect", () => {
-    util.log.debug("socket disconnected");
+  socketConn.on('disconnect', () => {
+    util.log.debug('socket disconnected');
     if (runningChannels.has(channelState.channelName)) {
-      util.log.error("socket disconnected unexpectedly, reconnecting socket");
+      util.log.error('socket disconnected unexpectedly, reconnecting socket');
       reconnect();
     }
   });
   socketConn.on(`${channelPubKey}_success`, listener);
-  if (typeof document !== "undefined") document.addEventListener("visibilitychange", visibilityListener);
+  if (typeof document !== 'undefined') document.addEventListener('visibilitychange', visibilityListener);
   return socketConn;
 }
 function removeStorageEventListener() {

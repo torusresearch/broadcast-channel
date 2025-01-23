@@ -21,4 +21,4 @@ export const PROMISE_RESOLVED_TRUE: Promise<boolean>;
 export const PROMISE_RESOLVED_VOID: Promise<void>;
 export const log: loglevel.Logger;
 export function setLogLevel(level: any): void;
-import loglevel from "loglevel";
+import loglevel from 'loglevel';
