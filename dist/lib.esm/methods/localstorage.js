@@ -11,8 +11,8 @@ import { microSeconds as microSeconds$1, sleep, randomToken } from '../util.js';
  */
 
 const microSeconds = microSeconds$1;
-const KEY_PREFIX = 'pubkey.broadcastChannel-';
-const type = 'localstorage';
+const KEY_PREFIX = "pubkey.broadcastChannel-";
+const type = "localstorage";
 
 /**
  * copied from crosstab
@@ -20,11 +20,11 @@ const type = 'localstorage';
  */
 function getLocalStorage() {
   let localStorage;
-  if (typeof window === 'undefined') return null;
+  if (typeof window === "undefined") return null;
   try {
     localStorage = window.localStorage;
-    localStorage = window['ie8-eventlistener/storage'] || window.localStorage;
-  } catch (e) {
+    localStorage = window["ie8-eventlistener/storage"] || window.localStorage;
+  } catch {
     // New versions of Firefox throw a Security exception
     // if cookies are disabled. See
     // https://bugzilla.mozilla.org/show_bug.cgi?id=1028153
@@ -40,7 +40,8 @@ function storageKey(channelName) {
  * and fires the storage-event so other readers can find it
  */
 function postMessage(channelState, messageJson) {
-  return new Promise(res => {
+  return new Promise(resolve => {
+    // eslint-disable-next-line promise/catch-or-return, promise/always-return
     sleep().then(() => {
       const key = storageKey(channelState.channelName);
       const writeObj = {
@@ -57,12 +58,12 @@ function postMessage(channelState, messageJson) {
        * in the window that changes the state of the local storage.
        * So we fire it manually
        */
-      const ev = document.createEvent('Event');
-      ev.initEvent('storage', true, true);
+      const ev = document.createEvent("Event");
+      ev.initEvent("storage", true, true);
       ev.key = key;
       ev.newValue = value;
       window.dispatchEvent(ev);
-      res();
+      resolve();
     });
   });
 }
@@ -73,16 +74,16 @@ function addStorageEventListener(channelName, fn) {
       fn(JSON.parse(ev.newValue));
     }
   };
-  window.addEventListener('storage', listener);
+  window.addEventListener("storage", listener);
   return listener;
 }
 function removeStorageEventListener(listener) {
-  window.removeEventListener('storage', listener);
+  window.removeEventListener("storage", listener);
 }
 function create(channelName, options) {
   options = fillOptionsWithDefaults(options);
   if (!canBeUsed()) {
-    throw new Error('BroadcastChannel: localstorage cannot be used');
+    throw new Error("BroadcastChannel: localstorage cannot be used");
   }
   const uuid = randomToken();
 
@@ -120,10 +121,10 @@ function canBeUsed() {
   const ls = getLocalStorage();
   if (!ls) return false;
   try {
-    const key = '__broadcastchannel_check';
-    ls.setItem(key, 'works');
+    const key = "__broadcastchannel_check";
+    ls.setItem(key, "works");
     ls.removeItem(key);
-  } catch (e) {
+  } catch {
     // Safari 10 in private mode will not allow write access to local
     // storage and fail with a QuotaExceededError. See
     // https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API#Private_Browsing_Incognito_modes
@@ -134,7 +135,7 @@ function canBeUsed() {
 function averageResponseTime() {
   const defaultTime = 120;
   const userAgent = navigator.userAgent.toLowerCase();
-  if (userAgent.includes('safari') && !userAgent.includes('chrome')) {
+  if (userAgent.includes("safari") && !userAgent.includes("chrome")) {
     // safari is much slower so this time is higher
     return defaultTime * 2;
   }

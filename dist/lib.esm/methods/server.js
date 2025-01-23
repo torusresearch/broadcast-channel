@@ -1,9 +1,9 @@
-import { ObliviousSet } from 'oblivious-set';
-import { io } from 'socket.io-client';
 import { getPublic, sign } from '@toruslabs/eccrypto';
 import { keccak256, encryptData, decryptData } from '@toruslabs/metadata-helpers';
-import { microSeconds as microSeconds$1, sleep, randomToken, log } from '../util.js';
+import { ObliviousSet } from 'oblivious-set';
+import { io } from 'socket.io-client';
 import { fillOptionsWithDefaults } from '../options.js';
+import { microSeconds as microSeconds$1, sleep, randomToken, log } from '../util.js';
 
 /**
  * A localStorage-only method which uses localstorage and its 'storage'-event
@@ -14,8 +14,8 @@ import { fillOptionsWithDefaults } from '../options.js';
  */
 
 const microSeconds = microSeconds$1;
-const KEY_PREFIX = 'pubkey.broadcastChannel-';
-const type = 'server';
+const KEY_PREFIX = "pubkey.broadcastChannel-";
+const type = "server";
 let SOCKET_CONN_INSTANCE = null;
 // used to decide to reconnect socket e.g. when socket connection is disconnected unexpectedly
 const runningChannels = new Set();
@@ -28,11 +28,12 @@ function storageKey(channelName) {
  * and fires the storage-event so other readers can find it
  */
 function postMessage(channelState, messageJson) {
-  return new Promise((res, rej) => {
+  return new Promise((resolve, reject) => {
+    // eslint-disable-next-line promise/catch-or-return
     sleep().then(async () => {
       const key = storageKey(channelState.channelName);
-      const channelEncPrivKey = keccak256(Buffer.from(key, 'utf8'));
-      const encData = await encryptData(channelEncPrivKey.toString('hex'), {
+      const channelEncPrivKey = keccak256(Buffer.from(key, "utf8"));
+      const encData = await encryptData(channelEncPrivKey.toString("hex"), {
         token: randomToken(),
         time: Date.now(),
         data: messageJson,
@@ -41,18 +42,18 @@ function postMessage(channelState, messageJson) {
       const body = {
         sameOriginCheck: true,
         sameIpCheck: true,
-        key: getPublic(channelEncPrivKey).toString('hex'),
+        key: getPublic(channelEncPrivKey).toString("hex"),
         data: encData,
-        signature: (await sign(channelEncPrivKey, keccak256(Buffer.from(encData, 'utf8')))).toString('hex')
+        signature: (await sign(channelEncPrivKey, keccak256(Buffer.from(encData, "utf8")))).toString("hex")
       };
       if (channelState.timeout) body.timeout = channelState.timeout;
-      return fetch(channelState.serverUrl + '/channel/set', {
-        method: 'POST',
+      return fetch(channelState.serverUrl + "/channel/set", {
+        method: "POST",
         body: JSON.stringify(body),
         headers: {
-          'Content-Type': 'application/json; charset=utf-8'
+          "Content-Type": "application/json; charset=utf-8"
         }
-      }).then(res).catch(rej);
+      }).then(resolve).catch(reject);
     });
   });
 }
@@ -61,33 +62,33 @@ function getSocketInstance(serverUrl) {
     return SOCKET_CONN_INSTANCE;
   }
   const SOCKET_CONN = io(serverUrl, {
-    transports: ['websocket', 'polling'],
+    transports: ["websocket", "polling"],
     // use WebSocket first, if available
     withCredentials: true,
     reconnectionDelayMax: 10000,
     reconnectionAttempts: 10
   });
-  SOCKET_CONN.on('connect_error', err => {
+  SOCKET_CONN.on("connect_error", err => {
     // revert to classic upgrade
-    SOCKET_CONN.io.opts.transports = ['polling', 'websocket'];
-    log.error('connect error', err);
+    SOCKET_CONN.io.opts.transports = ["polling", "websocket"];
+    log.error("connect error", err);
   });
-  SOCKET_CONN.on('connect', async () => {
+  SOCKET_CONN.on("connect", async () => {
     const {
       engine
     } = SOCKET_CONN.io;
-    log.debug('initially connected to', engine.transport.name); // in most cases, prints "polling"
-    engine.once('upgrade', () => {
+    log.debug("initially connected to", engine.transport.name); // in most cases, prints "polling"
+    engine.once("upgrade", () => {
       // called when the transport is upgraded (i.e. from HTTP long-polling to WebSocket)
-      log.debug('upgraded', engine.transport.name); // in most cases, prints "websocket"
+      log.debug("upgraded", engine.transport.name); // in most cases, prints "websocket"
     });
-    engine.once('close', reason => {
+    engine.once("close", reason => {
       // called when the underlying connection is closed
-      log.debug('connection closed', reason);
+      log.debug("connection closed", reason);
     });
   });
-  SOCKET_CONN.on('error', err => {
-    log.error('socket errored', err);
+  SOCKET_CONN.on("error", err => {
+    log.error("socket errored", err);
     SOCKET_CONN.disconnect();
   });
   SOCKET_CONN_INSTANCE = SOCKET_CONN;
@@ -96,26 +97,26 @@ function getSocketInstance(serverUrl) {
 function setupSocketConnection(serverUrl, channelState, fn) {
   const socketConn = getSocketInstance(serverUrl);
   const key = storageKey(channelState.channelName);
-  const channelEncPrivKey = keccak256(Buffer.from(key, 'utf8'));
-  const channelPubKey = getPublic(channelEncPrivKey).toString('hex');
+  const channelEncPrivKey = keccak256(Buffer.from(key, "utf8"));
+  const channelPubKey = getPublic(channelEncPrivKey).toString("hex");
   if (socketConn.connected) {
-    socketConn.emit('check_auth_status', channelPubKey, {
+    socketConn.emit("check_auth_status", channelPubKey, {
       sameOriginCheck: true,
       sameIpCheck: true
     });
   } else {
-    socketConn.once('connect', () => {
-      log.debug('connected with socket');
-      socketConn.emit('check_auth_status', channelPubKey, {
+    socketConn.once("connect", () => {
+      log.debug("connected with socket");
+      socketConn.emit("check_auth_status", channelPubKey, {
         sameOriginCheck: true,
         sameIpCheck: true
       });
     });
   }
   const reconnect = () => {
-    socketConn.once('connect', async () => {
+    socketConn.once("connect", async () => {
       if (runningChannels.has(channelState.channelName)) {
-        socketConn.emit('check_auth_status', channelPubKey, {
+        socketConn.emit("check_auth_status", channelPubKey, {
           sameOriginCheck: true,
           sameIpCheck: true
         });
@@ -125,32 +126,32 @@ function setupSocketConnection(serverUrl, channelState, fn) {
   const visibilityListener = () => {
     // if channel is closed, then remove the listener.
     if (!socketConn || !runningChannels.has(channelState.channelName)) {
-      document.removeEventListener('visibilitychange', visibilityListener);
+      document.removeEventListener("visibilitychange", visibilityListener);
       return;
     }
     // if not connected, then wait for connection and ping server for latest msg.
-    if (!socketConn.connected && document.visibilityState === 'visible') {
+    if (!socketConn.connected && document.visibilityState === "visible") {
       reconnect();
     }
   };
   const listener = async ev => {
     try {
-      const decData = await decryptData(channelEncPrivKey.toString('hex'), ev);
+      const decData = await decryptData(channelEncPrivKey.toString("hex"), ev);
       log.info(decData);
       fn(decData);
     } catch (error) {
       log.error(error);
     }
   };
-  socketConn.on('disconnect', () => {
-    log.debug('socket disconnected');
+  socketConn.on("disconnect", () => {
+    log.debug("socket disconnected");
     if (runningChannels.has(channelState.channelName)) {
-      log.error('socket disconnected unexpectedly, reconnecting socket');
+      log.error("socket disconnected unexpectedly, reconnecting socket");
       reconnect();
     }
   });
   socketConn.on(`${channelPubKey}_success`, listener);
-  if (typeof document !== 'undefined') document.addEventListener('visibilitychange', visibilityListener);
+  if (typeof document !== "undefined") document.addEventListener("visibilitychange", visibilityListener);
   return socketConn;
 }
 function removeStorageEventListener() {

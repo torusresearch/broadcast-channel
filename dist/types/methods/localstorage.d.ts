@@ -23,5 +23,5 @@ export function canBeUsed(): boolean;
 export function averageResponseTime(): number;
 export const microSeconds: typeof micro;
 export const type: "localstorage";
-import { ObliviousSet } from 'oblivious-set';
-import { microSeconds as micro } from '../util';
+import { ObliviousSet } from "oblivious-set";
+import { microSeconds as micro } from "../util";
