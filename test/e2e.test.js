@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unused-expressions */
+/* eslint-disable no-undef */
+/* eslint-disable no-console */
 import AsyncTestUtil from "async-test-util";
 import { Selector } from "testcafe";
 

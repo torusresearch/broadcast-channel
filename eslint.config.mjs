@@ -288,5 +288,11 @@ export default [
             yoda: "off",
             "object-property-newline": "off",
         },
+
+        // ignore files
+        ignores: [
+            // ignore eslint for testcafe, since relative plugin is not working
+            "test/e2e.test.js"
+        ],
     },
 ];
