@@ -44,5 +44,5 @@ export namespace TRANSACTION_SETTINGS {
     let durability: string;
 }
 export const type: "idb";
-import { ObliviousSet } from 'oblivious-set';
-import { microSeconds as micro } from '../util.js';
+import { ObliviousSet } from "oblivious-set";
+import { microSeconds as micro } from "../util.js";

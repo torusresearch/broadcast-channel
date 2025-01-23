@@ -1,8 +1,8 @@
 'use strict';
 
-var native = require('./methods/native.js');
 var indexedDb = require('./methods/indexed-db.js');
 var localstorage = require('./methods/localstorage.js');
+var native = require('./methods/native.js');
 var server = require('./methods/server.js');
 var simulate = require('./methods/simulate.js');
 
@@ -15,12 +15,12 @@ function chooseMethod(options) {
 
   // directly chosen
   if (options.type) {
-    if (options.type === 'simulate') {
+    if (options.type === "simulate") {
       // only use simulate-method if directly chosen
       return simulate;
     }
     const ret = chooseMethods.find(m => m.type === options.type);
-    if (!ret) throw new Error('method-type ' + options.type + ' not found');else return ret;
+    if (!ret) throw new Error("method-type " + options.type + " not found");else return ret;
   }
 
   /**
@@ -28,7 +28,7 @@ function chooseMethod(options) {
    * remove idb from the list so that localstorage is been chosen
    */
   if (!options.webWorkerSupport) {
-    chooseMethods = chooseMethods.filter(m => m.type !== 'idb');
+    chooseMethods = chooseMethods.filter(m => m.type !== "idb");
   }
   const useMethod = chooseMethods.find(method => method.canBeUsed(options));
   if (!useMethod) throw new Error(`No useable method found in ${JSON.stringify(METHODS.map(m => m.type))}`);else return useMethod;

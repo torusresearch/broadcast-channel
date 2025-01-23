@@ -1,6 +1,6 @@
-import { BroadcastChannel } from './broadcast-channel';
-import { encode, decode, toBase64, fromBase64, toBuffer } from 'base64url';
-if (typeof window !== 'undefined') {
+import { decode, encode, fromBase64, toBase64, toBuffer } from "base64url";
+import { BroadcastChannel } from "./broadcast-channel";
+if (typeof window !== "undefined") {
   window.broadcastChannelLib = {};
   window.broadcastChannelLib.BroadcastChannel = BroadcastChannel;
   window.base64urlLib = {};

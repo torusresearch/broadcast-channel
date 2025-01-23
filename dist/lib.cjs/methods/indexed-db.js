@@ -14,23 +14,23 @@ var options = require('../options.js');
  */
 
 const microSeconds = util.microSeconds;
-const DB_PREFIX = 'pubkey.broadcast-channel-0-';
-const OBJECT_STORE_ID = 'messages';
+const DB_PREFIX = "pubkey.broadcast-channel-0-";
+const OBJECT_STORE_ID = "messages";
 
 /**
  * Use relaxed durability for faster performance on all transactions.
  * @link https://nolanlawson.com/2021/08/22/speeding-up-indexeddb-reads-and-writes/
  */
 const TRANSACTION_SETTINGS = {
-  durability: 'relaxed'
+  durability: "relaxed"
 };
-const type = 'idb';
+const type = "idb";
 function getIdb() {
-  if (typeof indexedDB !== 'undefined') return indexedDB;
-  if (typeof window !== 'undefined') {
-    if (typeof window.mozIndexedDB !== 'undefined') return window.mozIndexedDB;
-    if (typeof window.webkitIndexedDB !== 'undefined') return window.webkitIndexedDB;
-    if (typeof window.msIndexedDB !== 'undefined') return window.msIndexedDB;
+  if (typeof indexedDB !== "undefined") return indexedDB;
+  if (typeof window !== "undefined") {
+    if (typeof window.mozIndexedDB !== "undefined") return window.mozIndexedDB;
+    if (typeof window.webkitIndexedDB !== "undefined") return window.webkitIndexedDB;
+    if (typeof window.msIndexedDB !== "undefined") return window.msIndexedDB;
   }
   return false;
 }
@@ -60,14 +60,14 @@ function createDatabase(channelName) {
   openRequest.onupgradeneeded = ev => {
     const db = ev.target.result;
     db.createObjectStore(OBJECT_STORE_ID, {
-      keyPath: 'id',
+      keyPath: "id",
       autoIncrement: true
     });
   };
-  const dbPromise = new Promise((res, rej) => {
-    openRequest.onerror = ev => rej(ev);
+  const dbPromise = new Promise((resolve, reject) => {
+    openRequest.onerror = ev => reject(ev);
     openRequest.onsuccess = () => {
-      res(openRequest.result);
+      resolve(openRequest.result);
     };
   });
   return dbPromise;
@@ -84,20 +84,20 @@ function writeMessage(db, readerUuid, messageJson) {
     time,
     data: messageJson
   };
-  const tx = db.transaction([OBJECT_STORE_ID], 'readwrite', TRANSACTION_SETTINGS);
-  return new Promise((res, rej) => {
-    tx.oncomplete = () => res();
-    tx.onerror = ev => rej(ev);
+  const tx = db.transaction([OBJECT_STORE_ID], "readwrite", TRANSACTION_SETTINGS);
+  return new Promise((resolve, reject) => {
+    tx.oncomplete = () => resolve();
+    tx.onerror = ev => reject(ev);
     const objectStore = tx.objectStore(OBJECT_STORE_ID);
     objectStore.add(writeObject);
     commitIndexedDBTransaction(tx);
   });
 }
 function getAllMessages(db) {
-  const tx = db.transaction(OBJECT_STORE_ID, 'readonly', TRANSACTION_SETTINGS);
+  const tx = db.transaction(OBJECT_STORE_ID, "readonly", TRANSACTION_SETTINGS);
   const objectStore = tx.objectStore(OBJECT_STORE_ID);
   const ret = [];
-  return new Promise(res => {
+  return new Promise(resolve => {
     objectStore.openCursor().onsuccess = ev => {
       const cursor = ev.target.result;
       if (cursor) {
@@ -106,13 +106,13 @@ function getAllMessages(db) {
         cursor.continue();
       } else {
         commitIndexedDBTransaction(tx);
-        res(ret);
+        resolve(ret);
       }
     };
   });
 }
 function getMessagesHigherThan(db, lastCursorId) {
-  const tx = db.transaction(OBJECT_STORE_ID, 'readonly', TRANSACTION_SETTINGS);
+  const tx = db.transaction(OBJECT_STORE_ID, "readonly", TRANSACTION_SETTINGS);
   const objectStore = tx.objectStore(OBJECT_STORE_ID);
   const ret = [];
   let keyRangeValue = IDBKeyRange.bound(lastCursorId + 1, Infinity);
@@ -124,10 +124,10 @@ function getMessagesHigherThan(db, lastCursorId) {
    */
   if (objectStore.getAll) {
     const getAllRequest = objectStore.getAll(keyRangeValue);
-    return new Promise((res, rej) => {
-      getAllRequest.onerror = err => rej(err);
+    return new Promise((resolve, reject) => {
+      getAllRequest.onerror = err => reject(err);
       getAllRequest.onsuccess = function (e) {
-        res(e.target.result);
+        resolve(e.target.result);
       };
     });
   }
@@ -138,13 +138,13 @@ function getMessagesHigherThan(db, lastCursorId) {
     try {
       keyRangeValue = IDBKeyRange.bound(lastCursorId + 1, Infinity);
       return objectStore.openCursor(keyRangeValue);
-    } catch (e) {
+    } catch {
       return objectStore.openCursor();
     }
   }
-  return new Promise((res, rej) => {
+  return new Promise((resolve, reject) => {
     const openCursorRequest = openCursor();
-    openCursorRequest.onerror = err => rej(err);
+    openCursorRequest.onerror = err => reject(err);
     openCursorRequest.onsuccess = ev => {
       const cursor = ev.target.result;
       if (cursor) {
@@ -156,27 +156,27 @@ function getMessagesHigherThan(db, lastCursorId) {
         }
       } else {
         commitIndexedDBTransaction(tx);
-        res(ret);
+        resolve(ret);
       }
     };
   });
 }
 function removeMessagesById(db, ids) {
-  const tx = db.transaction([OBJECT_STORE_ID], 'readwrite', TRANSACTION_SETTINGS);
+  const tx = db.transaction([OBJECT_STORE_ID], "readwrite", TRANSACTION_SETTINGS);
   const objectStore = tx.objectStore(OBJECT_STORE_ID);
   return Promise.all(ids.map(id => {
     const deleteRequest = objectStore.delete(id);
-    return new Promise(res => {
-      deleteRequest.onsuccess = () => res();
+    return new Promise(resolve => {
+      deleteRequest.onsuccess = () => resolve();
     });
   }));
 }
 function getOldMessages(db, ttl) {
   const olderThen = Date.now() - ttl;
-  const tx = db.transaction(OBJECT_STORE_ID, 'readonly', TRANSACTION_SETTINGS);
+  const tx = db.transaction(OBJECT_STORE_ID, "readonly", TRANSACTION_SETTINGS);
   const objectStore = tx.objectStore(OBJECT_STORE_ID);
   const ret = [];
-  return new Promise(res => {
+  return new Promise(resolve => {
     objectStore.openCursor().onsuccess = ev => {
       const cursor = ev.target.result;
       if (cursor) {
@@ -188,11 +188,11 @@ function getOldMessages(db, ttl) {
         } else {
           // no more old messages,
           commitIndexedDBTransaction(tx);
-          res(ret);
+          resolve(ret);
           return;
         }
       } else {
-        res(ret);
+        resolve(ret);
       }
     };
   });
@@ -247,6 +247,8 @@ function create(channelName, options$1) {
 }
 function _readLoop(state) {
   if (state.closed) return;
+
+  // eslint-disable-next-line promise/catch-or-return
   readNewMessages(state).then(() => util.sleep(state.options.idb.fallbackInterval)).then(() => _readLoop(state));
 }
 function _filterMessage(msgObj, state) {
@@ -292,6 +294,7 @@ function close(channelState) {
 }
 function postMessage(channelState, messageJson) {
   channelState.writeBlockPromise = channelState.writeBlockPromise.then(() => writeMessage(channelState.db, channelState.uuid, messageJson)).then(() => {
+    // eslint-disable-next-line promise/always-return
     if (util.randomInt(0, 10) === 0) {
       /* await (do not await) */
       cleanOldMessages(channelState.db, channelState.options.idb.ttl);

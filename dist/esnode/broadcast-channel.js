@@ -1,6 +1,7 @@
-import { isPromise, PROMISE_RESOLVED_VOID } from './util.js';
-import { chooseMethod } from './method-chooser.js';
-import { fillOptionsWithDefaults } from './options.js';
+/* eslint-disable promise/catch-or-return */
+import { chooseMethod } from "./method-chooser.js";
+import { fillOptionsWithDefaults } from "./options.js";
+import { isPromise, PROMISE_RESOLVED_VOID } from "./util.js";
 
 /**
  * Contains all open channels,
@@ -80,7 +81,7 @@ export function enforceOptions(options) {
 BroadcastChannel.prototype = {
   postMessage: function postMessage(msg) {
     if (this.closed) {
-      throw new Error('BroadcastChannel.postMessage(): ' + 'Cannot post message after channel has closed ' +
+      throw new Error("BroadcastChannel.postMessage(): " + "Cannot post message after channel has closed " +
       /**
        * In the past when this error appeared, it was realy hard to debug.
        * So now we log the msg together with the error so it at least
@@ -88,10 +89,10 @@ BroadcastChannel.prototype = {
        */
       JSON.stringify(msg));
     }
-    return _post(this, 'message', msg);
+    return _post(this, "message", msg);
   },
   postInternal: function postInternal(msg) {
-    return _post(this, 'internal', msg);
+    return _post(this, "internal", msg);
   },
   set onmessage(fn) {
     var time = this.method.microSeconds();
@@ -99,10 +100,10 @@ BroadcastChannel.prototype = {
       time: time,
       fn: fn
     };
-    _removeListenerObject(this, 'message', this._onML);
-    if (fn && typeof fn === 'function') {
+    _removeListenerObject(this, "message", this._onML);
+    if (fn && typeof fn === "function") {
       this._onML = listenObj;
-      _addListenerObject(this, 'message', listenObj);
+      _addListenerObject(this, "message", listenObj);
     } else {
       this._onML = null;
     }
@@ -144,7 +145,7 @@ BroadcastChannel.prototype = {
     })
     // close the channel
     .then(function () {
-      return _this.method.close(_this._state);
+      return _this.method.close ? _this.method.close(_this._state) : Promise.resolve();
     });
   },
   get type() {
@@ -172,6 +173,7 @@ function _post(broadcastChannel, type, msg) {
 
     // add/remove to unsend messages list
     broadcastChannel._uMP.add(sendPromise);
+    // eslint-disable-next-line promise/valid-params
     sendPromise["catch"]().then(function () {
       return broadcastChannel._uMP["delete"](sendPromise);
     });
@@ -188,6 +190,7 @@ function _prepareChannel(channel) {
            await new Promise(res => setTimeout(res, this.options.prepareDelay));
       }*/
       channel._state = s;
+      return;
     });
   } else {
     channel._state = maybePromise;
@@ -228,7 +231,7 @@ function _startListening(channel) {
 
         if (msgObj.time >= listenerObject.time) {
           listenerObject.fn(msgObj.data);
-        } else if (channel.method.type === 'server') {
+        } else if (channel.method.type === "server") {
           // server msg might lag based on connection.
           listenerObject.fn(msgObj.data);
         }
@@ -239,6 +242,7 @@ function _startListening(channel) {
       channel._prepP.then(function () {
         channel._iL = true;
         channel.method.onMessage(channel._state, listenerFn, time);
+        return;
       });
     } else {
       channel._iL = true;

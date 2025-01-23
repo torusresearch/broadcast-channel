@@ -9,3 +9,5 @@ test_tmp/
 tmp/
 .eslintcache
 toruslabs-*.tgz
+dist/
+docs/
