@@ -147,7 +147,7 @@ BroadcastChannel.prototype = {
                 // run before-close hooks
                 .then(() => Promise.all(this._befC.map((fn) => fn())))
                 // close the channel
-                .then(() => this.method.close(this._state))
+                .then(() => (this.method.close ? this.method.close(this._state) : Promise.resolve()))
         );
     },
     get type() {
