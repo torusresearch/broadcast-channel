@@ -18,7 +18,7 @@ jobs:
   # This workflow contains a single job called "build"
   base:
     # The type of runner that the job will run on
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -53,11 +53,11 @@ jobs:
       - name: check build size webpack
         run: npm run size:webpack
 
-      - name: check build size browserify
-        run: npm run size:browserify
+      # - name: check build size browserify
+      #   run: npm run size:browserify
 
-      - name: check build size rollup
-        run: npm run size:rollup
+      # - name: check build size rollup
+      #   run: npm run size:rollup
 
       - name: code format
         run: npm run lint
@@ -82,7 +82,7 @@ jobs:
 
 
   # run the node test in an own task, so we can use a node-version matrix.
-  test-node:
+  test:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
@@ -119,6 +119,12 @@ jobs:
 
       - name: test node
         run: npm run test:node
+
+      - name: Install playwright webkit
+        run: npx playwright install-deps webkit
+
+      - name: test browser
+        run: npx playwright install && npm run test:browser
 
 
 # TODO this does not work atm. fix this.

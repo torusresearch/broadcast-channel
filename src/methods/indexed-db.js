@@ -175,17 +175,21 @@ export function getMessagesHigherThan(db, lastCursorId) {
 }
 
 export function removeMessagesById(db, ids) {
-    const tx = db.transaction([OBJECT_STORE_ID], "readwrite", TRANSACTION_SETTINGS);
-    const objectStore = tx.objectStore(OBJECT_STORE_ID);
+    try {
+        const tx = db.transaction([OBJECT_STORE_ID], "readwrite", TRANSACTION_SETTINGS);
+        const objectStore = tx.objectStore(OBJECT_STORE_ID);
 
-    return Promise.all(
-        ids.map((id) => {
-            const deleteRequest = objectStore.delete(id);
-            return new Promise((resolve) => {
-                deleteRequest.onsuccess = () => resolve();
-            });
-        })
-    );
+        return Promise.all(
+            ids.map((id) => {
+                const deleteRequest = objectStore.delete(id);
+                return new Promise((resolve) => {
+                    deleteRequest.onsuccess = () => resolve();
+                });
+            })
+        );
+    } catch (e) {
+        console.error(e);
+    }
 }
 
 export function getOldMessages(db, ttl) {

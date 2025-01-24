@@ -226,7 +226,11 @@ function run() {
     };
 
     if (autoStart && autoStart !== '') {
-        window[autoStart]();
+        if (window !== undefined && window.hasOwnProperty(autoStart)) {
+            window[autoStart]();
+        } else {
+            console.log('window is undefined');
+        }
     }
 }
 

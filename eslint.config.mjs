@@ -292,7 +292,13 @@ export default [
         // ignore files
         ignores: [
             // ignore eslint for testcafe, since relative plugin is not working
-            "test/e2e.test.js"
+            "test/e2e.test.js",
+
+            // disable eslint for config files
+            "config/**/*.js",
+
+            // dist
+            "dist/**/*.js",
         ],
     },
 ];
