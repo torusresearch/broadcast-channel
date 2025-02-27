@@ -48,7 +48,7 @@ function postMessage(channelState, messageJson) {
         signature: (await eccrypto.sign(channelEncPrivKey, metadataHelpers.keccak256(Buffer.from(encData, 'utf8')))).toString('hex')
       };
       if (channelState.timeout) body.timeout = channelState.timeout;
-      return fetch(channelState.serverUrl + '/channel/set', {
+      return fetch(channelState.server.api_url + '/channel/set', {
         method: 'POST',
         body: JSON.stringify(body),
         headers: {
@@ -58,11 +58,11 @@ function postMessage(channelState, messageJson) {
     });
   });
 }
-function getSocketInstance(serverUrl) {
+function getSocketInstance(socketUrl) {
   if (SOCKET_CONN_INSTANCE) {
     return SOCKET_CONN_INSTANCE;
   }
-  const SOCKET_CONN = socket_ioClient.io(serverUrl, {
+  const SOCKET_CONN = socket_ioClient.io(socketUrl, {
     transports: ['websocket', 'polling'],
     // use WebSocket first, if available
     withCredentials: true,
@@ -95,8 +95,8 @@ function getSocketInstance(serverUrl) {
   SOCKET_CONN_INSTANCE = SOCKET_CONN;
   return SOCKET_CONN;
 }
-function setupSocketConnection(serverUrl, channelState, fn) {
-  const socketConn = getSocketInstance(serverUrl);
+function setupSocketConnection(socketUrl, channelState, fn) {
+  const socketConn = getSocketInstance(socketUrl);
   const key = storageKey(channelState.channelName);
   const channelEncPrivKey = metadataHelpers.keccak256(Buffer.from(key, 'utf8'));
   const channelPubKey = eccrypto.getPublic(channelEncPrivKey).toString('hex');
@@ -175,11 +175,14 @@ function create(channelName, options$1) {
     uuid,
     eMIs,
     // emittedMessagesIds
-    serverUrl: options$1.server.url,
+    server: {
+      api_url: options$1.server.api_url,
+      socket_url: options$1.server.socket_url
+    },
     time: util.microSeconds()
   };
   if (options$1.server.timeout) state.timeout = options$1.server.timeout;
-  setupSocketConnection(options$1.server.url, state, msgObj => {
+  setupSocketConnection(options$1.server.socket_url, state, msgObj => {
     if (!state.messagesCallback) return; // no listener
     if (msgObj.uuid === state.uuid) return; // own message
     if (!msgObj.token || state.eMIs.has(msgObj.token)) return; // already emitted

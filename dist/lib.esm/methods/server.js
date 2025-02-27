@@ -46,7 +46,7 @@ function postMessage(channelState, messageJson) {
         signature: (await sign(channelEncPrivKey, keccak256(Buffer.from(encData, 'utf8')))).toString('hex')
       };
       if (channelState.timeout) body.timeout = channelState.timeout;
-      return fetch(channelState.serverUrl + '/channel/set', {
+      return fetch(channelState.server.api_url + '/channel/set', {
         method: 'POST',
         body: JSON.stringify(body),
         headers: {
@@ -56,11 +56,11 @@ function postMessage(channelState, messageJson) {
     });
   });
 }
-function getSocketInstance(serverUrl) {
+function getSocketInstance(socketUrl) {
   if (SOCKET_CONN_INSTANCE) {
     return SOCKET_CONN_INSTANCE;
   }
-  const SOCKET_CONN = io(serverUrl, {
+  const SOCKET_CONN = io(socketUrl, {
     transports: ['websocket', 'polling'],
     // use WebSocket first, if available
     withCredentials: true,
@@ -93,8 +93,8 @@ function getSocketInstance(serverUrl) {
   SOCKET_CONN_INSTANCE = SOCKET_CONN;
   return SOCKET_CONN;
 }
-function setupSocketConnection(serverUrl, channelState, fn) {
-  const socketConn = getSocketInstance(serverUrl);
+function setupSocketConnection(socketUrl, channelState, fn) {
+  const socketConn = getSocketInstance(socketUrl);
   const key = storageKey(channelState.channelName);
   const channelEncPrivKey = keccak256(Buffer.from(key, 'utf8'));
   const channelPubKey = getPublic(channelEncPrivKey).toString('hex');
@@ -173,11 +173,14 @@ function create(channelName, options) {
     uuid,
     eMIs,
     // emittedMessagesIds
-    serverUrl: options.server.url,
+    server: {
+      api_url: options.server.api_url,
+      socket_url: options.server.socket_url
+    },
     time: microSeconds$1()
   };
   if (options.server.timeout) state.timeout = options.server.timeout;
-  setupSocketConnection(options.server.url, state, msgObj => {
+  setupSocketConnection(options.server.socket_url, state, msgObj => {
     if (!state.messagesCallback) return; // no listener
     if (msgObj.uuid === state.uuid) return; // own message
     if (!msgObj.token || state.eMIs.has(msgObj.token)) return; // already emitted

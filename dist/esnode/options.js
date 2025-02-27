@@ -1,3 +1,4 @@
+import { SESSION_SERVER_API_URL, SESSION_SERVER_SOCKET_URL } from '@toruslabs/constants';
 export function fillOptionsWithDefaults() {
   var originalOptions = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
   var options = JSON.parse(JSON.stringify(originalOptions));
@@ -19,7 +20,8 @@ export function fillOptionsWithDefaults() {
 
   // server
   if (!options.server) options.server = {};
-  if (!options.server.url) options.server.url = 'https://session.web3auth.io';
+  if (!options.server.api_url) options.server.api_url = SESSION_SERVER_API_URL;
+  if (!options.server.socket_url) options.server.socket_url = SESSION_SERVER_SOCKET_URL;
   if (!options.server.removeTimeout) options.server.removeTimeout = 1000 * 60 * 5; // 5 minutes
 
   // custom methods

@@ -1,5 +1,7 @@
 'use strict';
 
+var constants = require('@toruslabs/constants');
+
 function fillOptionsWithDefaults(originalOptions = {}) {
   const options = JSON.parse(JSON.stringify(originalOptions));
 
@@ -20,7 +22,8 @@ function fillOptionsWithDefaults(originalOptions = {}) {
 
   // server
   if (!options.server) options.server = {};
-  if (!options.server.url) options.server.url = 'https://session.web3auth.io';
+  if (!options.server.api_url) options.server.api_url = constants.SESSION_SERVER_API_URL;
+  if (!options.server.socket_url) options.server.socket_url = constants.SESSION_SERVER_SOCKET_URL;
   if (!options.server.removeTimeout) options.server.removeTimeout = 1000 * 60 * 5; // 5 minutes
 
   // custom methods
