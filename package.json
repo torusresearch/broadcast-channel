@@ -57,7 +57,7 @@
         "build:browser": "browserify test_tmp/scripts/e2e.js > docs/e2e.js",
         "build:worker": "browserify test_tmp/scripts/worker.js > docs/worker.js",
         "build:iframe": "browserify test_tmp/scripts/iframe.js > docs/iframe.js",
-        "build:lib-browser": "browserify dist/lib/index.js -p esmify > dist/lib/browser.js",
+        "build:lib-browser": "browserify dist/lib.cjs/index.js -p esmify > dist/lib/browser.js",
         "build:lib-browser:min": "uglifyjs --compress --mangle --output dist/lib/browser.min.js -- dist/lib/browser.js",
         "build": "npm run clear && npm run build:publish && concurrently \"npm run build:es6node\" \"npm run build:es6browser\" \"npm run build:es5browser\" \"npm run build:test\" && concurrently \"npm run build:index\" \"npm run build:browser\" \"npm run build:worker\" \"npm run build:iframe\" && npm run build:lib-browser && npm run build:lib-browser:min",
         "build:min": "uglifyjs --compress --mangle --output dist/lib/browserify.min.js -- dist/lib/browser.js",
