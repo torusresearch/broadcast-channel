@@ -14,6 +14,11 @@ if (isNode) {
     console.dir(origin);
     process.exit(1);
   });
+} else {
+  window.addEventListener("unhandledrejection", (event) => {
+    console.error("unhandledRejection!");
+    console.dir(event);
+  });
 }
 
 /**
@@ -56,8 +61,11 @@ function runTest(channelOptions) {
           channel.postMessage({});
           channel.postMessage({});
           channel.postMessage({});
-
-          await channel.close();
+          try {
+            await channel.close();
+          } catch (error) {
+            console.error(error);
+          }
           expect(channel.isClosed).toBe(true);
           expect(channel._uMP.size).toBe(0);
         });
@@ -474,7 +482,7 @@ if (!isNode) {
 
 useOptions.forEach((o) => runTest(o));
 
-describe.skip("RedundantAdaptiveBroadcastChannel", () => {
+describe("RedundantAdaptiveBroadcastChannel", () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
