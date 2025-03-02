@@ -5,6 +5,19 @@ import { describe, expect, it } from "vitest";
 import { IndexedDbMethod } from "../../src/index.js";
 
 console.log(IndexedDbMethod.getIdb);
+if (isNode) {
+  process.on("uncaughtException", (err, origin) => {
+    console.error("uncaughtException!");
+    console.dir(err);
+    console.dir(origin);
+    process.exit(1);
+  });
+} else {
+  window.addEventListener("unhandledrejection", (event) => {
+    console.error("unhandledRejection!");
+    console.dir(event);
+  });
+}
 
 describe("unit/indexed-db.method.test.js", () => {
   if (isNode) return;
