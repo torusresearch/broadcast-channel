@@ -28,7 +28,10 @@ interface ChannelState {
   channelName: string;
   uuid: string;
   eMIs: ObliviousSet<string>;
-  serverUrl: string;
+  server: {
+    api_url: string;
+    socket_url: string;
+  };
   time: number;
   timeout?: number;
   messagesCallback?: (data: MessageObject) => void;
@@ -79,7 +82,7 @@ export function postMessage(channelState: ChannelState, messageJson: MessageObje
           signature: (await sign(channelEncPrivKey, keccak256(Buffer.from(encData, "utf8")))).toString("hex"),
         };
         if (channelState.timeout) body.timeout = channelState.timeout;
-        return fetch(`${channelState.serverUrl}/channel/set`, {
+        return fetch(`${channelState.server.api_url}/channel/set`, {
           method: "POST",
           body: JSON.stringify(body),
           headers: {
@@ -93,11 +96,11 @@ export function postMessage(channelState: ChannelState, messageJson: MessageObje
   });
 }
 
-export function getSocketInstance(serverUrl: string): Socket {
+export function getSocketInstance(socketUrl: string): Socket {
   if (SOCKET_CONN_INSTANCE) {
     return SOCKET_CONN_INSTANCE;
   }
-  const SOCKET_CONN = io(serverUrl, {
+  const SOCKET_CONN = io(socketUrl, {
     transports: ["websocket", "polling"], // use WebSocket first, if available
     withCredentials: true,
     reconnectionDelayMax: 10000,
@@ -130,8 +133,8 @@ export function getSocketInstance(serverUrl: string): Socket {
   return SOCKET_CONN;
 }
 
-export function setupSocketConnection(serverUrl: string, channelState: ChannelState, fn: (data: Message) => void): Socket {
-  const socketConn = getSocketInstance(serverUrl);
+export function setupSocketConnection(socketUrl: string, channelState: ChannelState, fn: (data: Message) => void): Socket {
+  const socketConn = getSocketInstance(socketUrl);
 
   const key = storageKey(channelState.channelName);
   const channelEncPrivKey = keccak256(Buffer.from(key, "utf8"));
@@ -224,12 +227,15 @@ export function create(channelName: string, options: Options): ChannelState {
     channelName,
     uuid,
     eMIs, // emittedMessagesIds
-    serverUrl: options.server.url,
+    server: {
+      api_url: options.server.api_url,
+      socket_url: options.server.socket_url,
+    },
     time: micro(),
   };
   if (options.server.timeout) state.timeout = options.server.timeout;
 
-  setupSocketConnection(options.server.url, state, (msgObj: Message) => {
+  setupSocketConnection(options.server.socket_url, state, (msgObj: Message) => {
     if (!state.messagesCallback) return; // no listener
     if (msgObj.uuid === state.uuid) return; // own message
     if (!msgObj.token || state.eMIs.has(msgObj.token)) return; // already emitted

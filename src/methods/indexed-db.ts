@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-use-before-define */
 /**
  * this method uses indexeddb to store the messages
  * There is currently no observerAPI for idb
@@ -165,7 +164,7 @@ export function getMessagesHigherThan(db: IDBDatabase, lastCursorId: number): Pr
     try {
       keyRangeValue = IDBKeyRange.bound(lastCursorId + 1, Infinity);
       return objectStore.openCursor(keyRangeValue);
-    } catch (e) {
+    } catch {
       return objectStore.openCursor();
     }
   }

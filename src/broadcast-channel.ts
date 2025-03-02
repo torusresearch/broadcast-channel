@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-use-before-define */
 import { chooseMethod } from "./method-chooser";
 import { fillOptionsWithDefaults } from "./options";
 import { AddEventListeners, EventType, IBroadcastChannel, ListenerObject, MessageObject, Method, Options as BroadcastChannelOptions } from "./types";
@@ -14,7 +13,7 @@ export function enforceOptions(options: BroadcastChannelOptions): void {
  * Contains all open channels,
  * used in tests to ensure everything is closed.
  */
-// eslint-disable-next-line no-use-before-define
+
 export const OPEN_BROADCAST_CHANNELS = new Set<BroadcastChannel>();
 let lastId = 0;
 
@@ -77,7 +76,6 @@ export class BroadcastChannel implements IBroadcastChannel {
     return this.closed;
   }
 
-  // eslint-disable-next-line accessor-pairs
   set onmessage(fn: ((data: unknown) => void) | null) {
     const time = this.method.microSeconds();
     const listenObj: ListenerObject = {
@@ -95,7 +93,7 @@ export class BroadcastChannel implements IBroadcastChannel {
 
   postMessage(msg: unknown): Promise<unknown> {
     if (this.closed) {
-      throw new Error(`BroadcastChannel.postMessage(): ` + `Cannot post message after channel has closed ${JSON.stringify(msg)}`);
+      throw new Error(`BroadcastChannel.postMessage(): Cannot post message after channel has closed ${JSON.stringify(msg)}`);
     }
     return _post(this, "message", msg);
   }
@@ -132,7 +130,7 @@ export class BroadcastChannel implements IBroadcastChannel {
     return awaitPrepare
       .then(() => Promise.all(Array.from(this._uMP)))
       .then(() => Promise.all(this._befC.map((fn) => fn())))
-      .then(() => this.method.close(this._state));
+      .then(() => (this.method.close ? this.method.close(this._state) : PROMISE_RESOLVED_VOID));
   }
 }
 
@@ -148,7 +146,7 @@ function _post(broadcastChannel: BroadcastChannel, type: EventType, msg: unknown
   return awaitPrepare.then(() => {
     const sendPromise = broadcastChannel.method.postMessage(broadcastChannel._state, msgObj);
     broadcastChannel._uMP.add(sendPromise);
-    // eslint-disable-next-line promise/catch-or-return, promise/no-nesting
+    // eslint-disable-next-line promise/catch-or-return
     sendPromise.catch(() => {}).then(() => broadcastChannel._uMP.delete(sendPromise));
     return sendPromise;
   });

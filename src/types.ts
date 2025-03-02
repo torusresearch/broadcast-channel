@@ -1,4 +1,3 @@
-/* eslint-disable no-use-before-define */
 export interface ListenerObject {
   time: number;
   fn: (data: unknown) => void;
@@ -39,7 +38,8 @@ interface LocalStorageOptions {
 }
 
 interface ServerOptions {
-  url?: string;
+  api_url?: string;
+  socket_url?: string;
   removeTimeout?: number;
   timeout?: number;
 }

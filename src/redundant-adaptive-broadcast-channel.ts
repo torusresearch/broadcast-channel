@@ -52,7 +52,6 @@ export class RedundantAdaptiveBroadcastChannel implements IBroadcastChannel {
     this.initChannels();
   }
 
-  // eslint-disable-next-line accessor-pairs
   set onmessage(fn: ((data: unknown) => void) | null) {
     this.removeEventListener("message", this.onML);
     if (fn && typeof fn === "function") {
@@ -80,7 +79,6 @@ export class RedundantAdaptiveBroadcastChannel implements IBroadcastChannel {
         // listening on every method
         channel.onmessage = (event) => this.handleMessage(event as WrappedMessage);
       } catch (error) {
-        // eslint-disable-next-line no-console
         console.warn(`Failed to initialize ${method} method: ${error instanceof Error ? error.message : String(error)}`);
       }
     });
@@ -114,7 +112,7 @@ export class RedundantAdaptiveBroadcastChannel implements IBroadcastChannel {
   async postMessage(message: unknown) {
     if (this.closed) {
       throw new Error(
-        `AdaptiveBroadcastChannel.postMessage(): ` +
+        "AdaptiveBroadcastChannel.postMessage(): " +
           `Cannot post message after channel has closed ${
             /**
              * In the past when this error appeared, it was realy hard to debug.
@@ -131,7 +129,6 @@ export class RedundantAdaptiveBroadcastChannel implements IBroadcastChannel {
 
     const postPromises = Array.from(this.channels.entries()).map(([method, channel]) =>
       channel.postMessage(wrappedMessage).catch((error) => {
-        // eslint-disable-next-line no-console
         console.warn(`Failed to send via ${method}: ${error.message}`);
         throw error;
       })

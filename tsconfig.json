@@ -3,6 +3,7 @@
   "compilerOptions": {
     "rootDir": ".",
     "allowJs": true,
-    "declaration": false
+    "declaration": false,
+    "outDir": "./dist"
   }
 }

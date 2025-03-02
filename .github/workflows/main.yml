@@ -18,7 +18,7 @@ jobs:
   # This workflow contains a single job called "build"
   base:
     # The type of runner that the job will run on
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -53,40 +53,21 @@ jobs:
       - name: check build size webpack
         run: npm run size:webpack
 
-      - name: check build size browserify
-        run: npm run size:browserify
-
-      - name: check build size rollup
-        run: npm run size:rollup
-
       - name: code format
         run: npm run lint
 
       - name: test typings
         run: npm run test:typings
 
-      # - name: test browser
-      #   uses: GabrielBB/xvfb-action@v1
-      #   with:
-      #     working-directory: ./ #optional
-      #     run: npm run test:browser
-
       - name: test performance
         run: npm run test:performance
 
-      # - name: test e2e
-      #   uses: GabrielBB/xvfb-action@v1
-      #   with:
-      #     working-directory: ./ #optional
-      #     run: npm run test:e2e
-
-
   # run the node test in an own task, so we can use a node-version matrix.
-  test-node:
+  test:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        node: ['15.14.0', '16.13.1', '17.3.0' ]
+        node: ['22.x' ]
     steps:
       - uses: actions/checkout@v3
       - name: Setup Node.js environment
@@ -120,10 +101,8 @@ jobs:
       - name: test node
         run: npm run test:node
 
+      - name: Install playwright webkit
+        run: npx playwright install-deps webkit
 
-# TODO this does not work atm. fix this.
-#      - name: test electron
-#        uses: GabrielBB/xvfb-action@v1
-#        with:
-#          working-directory: ./test-electron
-#          run: npm install --depth 0 --silent && npm run test
+      - name: test browser
+        run: npx playwright install && npm run test:browser

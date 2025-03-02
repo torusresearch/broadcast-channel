@@ -51,7 +51,7 @@ export function getLocalStorage(): Storage | null {
     localStorage = window.localStorage;
     localStorage =
       (window as Window & typeof globalThis & { "ie8-eventlistener/storage"?: Storage })["ie8-eventlistener/storage"] || window.localStorage;
-  } catch (e) {
+  } catch {
     // New versions of Firefox throw a Security exception
     // if cookies are disabled. See
     // https://bugzilla.mozilla.org/show_bug.cgi?id=1028153
@@ -121,7 +121,7 @@ export function canBeUsed(): boolean {
     const key = "__broadcastchannel_check";
     ls.setItem(key, "works");
     ls.removeItem(key);
-  } catch (e) {
+  } catch {
     // Safari 10 in private mode will not allow write access to local
     // storage and fail with a QuotaExceededError. See
     // https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API#Private_Browsing_Incognito_modes
