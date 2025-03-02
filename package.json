@@ -137,7 +137,7 @@
     "sinon": "^19.0.2",
     "testcafe": "3.7.2",
     "ts-node": "10.9.2",
-    "typescript": "^5.7.3",
+    "typescript": "^5.8.2",
     "uglify-js": "3.19.3",
     "vitest": "^3.0.7",
     "watchify": "4.0.0",
