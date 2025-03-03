@@ -18,9 +18,9 @@ describe("typings.test.ts", () => {
         };
     `;
 
-  const transpileCode = async (code) => {
-    const stdout = [];
-    const stderr = [];
+  const transpileCode = async (code: string) => {
+    const stdout: string[] = [];
+    const stderr: string[] = [];
 
     const tsConfig = {
       module: "commonjs",
@@ -33,10 +33,10 @@ describe("typings.test.ts", () => {
     const promise = spawn("ts-node", ["--compiler-options", JSON.stringify(tsConfig), "-e", codeBase + "\n" + code]);
     const childProcess = promise.childProcess;
 
-    childProcess.stdout.on("data", (data) => {
+    childProcess.stdout.on("data", (data: Buffer) => {
       stdout.push(data.toString());
     });
-    childProcess.stderr.on("data", (data) => {
+    childProcess.stderr.on("data", (data: Buffer) => {
       stderr.push(data.toString());
     });
 
