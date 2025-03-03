@@ -1,6 +1,5 @@
 // import Bowser from 'bowser';
 import loglevel from "loglevel";
-
 /**
  * returns true if the given object is a promise
  */
@@ -31,7 +30,7 @@ export function randomInt(min: number, max: number): number {
  * https://stackoverflow.com/a/8084248
  */
 export function randomToken(): string {
-  return Math.random().toString(36).substring(2);
+  return crypto.getRandomValues(new Uint8Array(16)).toString();
 }
 
 let lastMs = 0;
