@@ -29,7 +29,7 @@
   "main": "dist/lib.cjs/index.js",
   "module": "dist/lib.esm/index.js",
   "sideEffects": false,
-  "types": "types/index.d.ts",
+  "types": "dist/lib.cjs/types/index.d.ts",
   "jsdelivr": "dist/broadcastChannel.umd.min.js",
   "unpkg": "dist/broadcastChannel.umd.min.js",
   "scripts": {
