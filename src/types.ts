@@ -54,15 +54,15 @@ export interface Options {
   server?: ServerOptions;
 }
 
-export interface IBroadcastChannel {
+export interface IBroadcastChannel<T> {
   name: string;
   options: Options;
   closed: boolean;
 
-  onmessage: ((data: unknown) => void) | null;
+  onmessage: ((data: T) => void) | null;
 
-  postMessage(message: unknown): Promise<unknown>;
-  addEventListener(type: EventType, listener: (data: unknown) => void): void;
-  removeEventListener(type: EventType, listener: (data: unknown) => void): void;
+  postMessage(message: T): Promise<T>;
+  addEventListener(type: EventType, listener: (data: T) => void): void;
+  removeEventListener(type: EventType, listener: (data: T) => void): void;
   close(): Promise<void>;
 }

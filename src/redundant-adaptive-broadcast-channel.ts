@@ -19,7 +19,7 @@ export type WrappedMessage = {
  * Implementing redundant message delivery by attempting to send messages through multiple channels when the primary channel fails.
  * Ensuring message delivery by using multiple communication methods simultaneously while preventing duplicate message processing.
  */
-export class RedundantAdaptiveBroadcastChannel implements IBroadcastChannel {
+export class RedundantAdaptiveBroadcastChannel<T> implements IBroadcastChannel<T> {
   name: string;
 
   options: BroadcastChannelOptions;
@@ -30,9 +30,9 @@ export class RedundantAdaptiveBroadcastChannel implements IBroadcastChannel {
 
   methodPriority: Method["type"][];
 
-  channels: Map<Method["type"], BroadcastChannel>;
+  channels: Map<Method["type"], BroadcastChannel<T>>;
 
-  listeners: Set<(message: unknown) => void>;
+  listeners: Set<(message: T) => void>;
 
   processedNonces: Set<string>;
 
@@ -75,7 +75,7 @@ export class RedundantAdaptiveBroadcastChannel implements IBroadcastChannel {
           ...this.options,
           type: method,
         });
-        this.channels.set(method, channel);
+        this.channels.set(method, channel as unknown as BroadcastChannel<T>);
         // listening on every method
         channel.onmessage = (event) => this.handleMessage(event as WrappedMessage);
       } catch (error) {
@@ -104,12 +104,12 @@ export class RedundantAdaptiveBroadcastChannel implements IBroadcastChannel {
       }
 
       this.listeners.forEach((listener) => {
-        listener(event.message);
+        listener(event.message as T);
       });
     }
   }
 
-  async postMessage(message: unknown) {
+  async postMessage(message: T): Promise<T> {
     if (this.closed) {
       throw new Error(
         "AdaptiveBroadcastChannel.postMessage(): " +
@@ -128,7 +128,7 @@ export class RedundantAdaptiveBroadcastChannel implements IBroadcastChannel {
     const wrappedMessage: WrappedMessage = { nonce, message };
 
     const postPromises = Array.from(this.channels.entries()).map(([method, channel]) =>
-      channel.postMessage(wrappedMessage).catch((error) => {
+      channel.postMessage(wrappedMessage as unknown as T).catch((error) => {
         console.warn(`Failed to send via ${method}: ${error.message}`);
         throw error;
       })
@@ -141,18 +141,20 @@ export class RedundantAdaptiveBroadcastChannel implements IBroadcastChannel {
     if (!anySuccessful) {
       throw new Error("Failed to send message through any method");
     }
+
+    return message;
   }
 
   generateNonce(): Nonce {
     return `${Date.now()}-${this.nonce++}`;
   }
 
-  addEventListener(_type: EventType, listener: (data: unknown) => void) {
+  addEventListener(_type: EventType, listener: (data: T) => void) {
     // type params is not being used, it's there to keep same interface as BroadcastChannel
     this.listeners.add(listener);
   }
 
-  removeEventListener(_type: EventType, listener: (data: unknown) => void) {
+  removeEventListener(_type: EventType, listener: (data: T) => void) {
     // type params is not being used, it's there to keep same interface as BroadcastChannel
     this.listeners.delete(listener);
   }

@@ -14,10 +14,10 @@ export function enforceOptions(options: BroadcastChannelOptions): void {
  * used in tests to ensure everything is closed.
  */
 
-export const OPEN_BROADCAST_CHANNELS = new Set<BroadcastChannel>();
+export const OPEN_BROADCAST_CHANNELS = new Set<BroadcastChannel<unknown>>();
 let lastId = 0;
 
-export class BroadcastChannel implements IBroadcastChannel {
+export class BroadcastChannel<T> implements IBroadcastChannel<T> {
   static _pubkey = true;
 
   public id: number;
@@ -36,7 +36,7 @@ export class BroadcastChannel implements IBroadcastChannel {
 
   _state: unknown;
 
-  _uMP: Set<Promise<unknown>>; // unsent message promises
+  _uMP: Set<Promise<T>>; // unsent message promises
 
   _iL: boolean; // isListening
 
@@ -46,7 +46,7 @@ export class BroadcastChannel implements IBroadcastChannel {
 
   constructor(name: string, options?: BroadcastChannelOptions) {
     this.id = lastId++;
-    OPEN_BROADCAST_CHANNELS.add(this);
+    OPEN_BROADCAST_CHANNELS.add(this as unknown as BroadcastChannel<unknown>);
     this.name = name;
 
     if (ENFORCED_OPTIONS) {
@@ -65,7 +65,7 @@ export class BroadcastChannel implements IBroadcastChannel {
     this._uMP = new Set();
     this._befC = [];
     this._prepP = null;
-    _prepareChannel(this);
+    _prepareChannel(this as unknown as BroadcastChannel<unknown>);
   }
 
   get type(): string {
@@ -76,51 +76,51 @@ export class BroadcastChannel implements IBroadcastChannel {
     return this.closed;
   }
 
-  set onmessage(fn: ((data: unknown) => void) | null) {
+  set onmessage(fn: ((data: T) => void) | null) {
     const time = this.method.microSeconds();
     const listenObj: ListenerObject = {
       time,
       fn: fn as (data: unknown) => void,
     };
-    _removeListenerObject(this, "message", this._onML);
+    _removeListenerObject(this as unknown as BroadcastChannel<unknown>, "message", this._onML);
     if (fn && typeof fn === "function") {
       this._onML = listenObj;
-      _addListenerObject(this, "message", listenObj);
+      _addListenerObject(this as unknown as BroadcastChannel<unknown>, "message", listenObj);
     } else {
       this._onML = null;
     }
   }
 
-  postMessage(msg: unknown): Promise<unknown> {
+  postMessage(msg: T): Promise<T> {
     if (this.closed) {
       throw new Error(`BroadcastChannel.postMessage(): Cannot post message after channel has closed ${JSON.stringify(msg)}`);
     }
-    return _post(this, "message", msg);
+    return _post(this as unknown as BroadcastChannel<unknown>, "message", msg) as Promise<T>;
   }
 
   postInternal(msg: unknown): Promise<unknown> {
-    return _post(this, "internal", msg);
+    return _post(this as unknown as BroadcastChannel<unknown>, "internal", msg);
   }
 
-  addEventListener(type: EventType, fn: (data: unknown) => void): void {
+  addEventListener(type: EventType, fn: (data: T) => void): void {
     const time = this.method.microSeconds();
     const listenObj: ListenerObject = {
       time,
-      fn,
+      fn: fn as (data: unknown) => void,
     };
-    _addListenerObject(this, type, listenObj);
+    _addListenerObject(this as unknown as BroadcastChannel<unknown>, type, listenObj);
   }
 
-  removeEventListener(type: EventType, fn: (data: unknown) => void): void {
+  removeEventListener(type: EventType, fn: (data: T) => void): void {
     const obj = this._addEL[type].find((o) => o.fn === fn);
-    _removeListenerObject(this, type, obj);
+    _removeListenerObject(this as unknown as BroadcastChannel<unknown>, type, obj);
   }
 
   close(): Promise<void> {
     if (this.closed) {
       return Promise.resolve();
     }
-    OPEN_BROADCAST_CHANNELS.delete(this);
+    OPEN_BROADCAST_CHANNELS.delete(this as unknown as BroadcastChannel<unknown>);
     this.closed = true;
     const awaitPrepare = this._prepP ? this._prepP : PROMISE_RESOLVED_VOID;
 
@@ -134,7 +134,7 @@ export class BroadcastChannel implements IBroadcastChannel {
   }
 }
 
-function _post(broadcastChannel: BroadcastChannel, type: EventType, msg: unknown): Promise<unknown> {
+function _post(broadcastChannel: BroadcastChannel<unknown>, type: EventType, msg: unknown): Promise<unknown> {
   const time = broadcastChannel.method.microSeconds();
   const msgObj: MessageObject = {
     time,
@@ -152,7 +152,7 @@ function _post(broadcastChannel: BroadcastChannel, type: EventType, msg: unknown
   });
 }
 
-function _prepareChannel(channel: BroadcastChannel): void {
+function _prepareChannel(channel: BroadcastChannel<unknown>): void {
   const maybePromise = channel.method.create(channel.name, channel.options);
   if (isPromise(maybePromise)) {
     const promise = maybePromise as Promise<unknown>;
@@ -170,13 +170,13 @@ function _prepareChannel(channel: BroadcastChannel): void {
   }
 }
 
-function _hasMessageListeners(channel: BroadcastChannel): boolean {
+function _hasMessageListeners(channel: BroadcastChannel<unknown>): boolean {
   if (channel._addEL.message.length > 0) return true;
   if (channel._addEL.internal.length > 0) return true;
   return false;
 }
 
-function _startListening(channel: BroadcastChannel): void {
+function _startListening(channel: BroadcastChannel<unknown>): void {
   if (!channel._iL && _hasMessageListeners(channel)) {
     const listenerFn = (msgObj: MessageObject) => {
       channel._addEL[msgObj.type].forEach((listenerObject) => {
@@ -206,7 +206,7 @@ function _startListening(channel: BroadcastChannel): void {
   }
 }
 
-function _stopListening(channel: BroadcastChannel): void {
+function _stopListening(channel: BroadcastChannel<unknown>): void {
   if (channel._iL && !_hasMessageListeners(channel)) {
     channel._iL = false;
     const time = channel.method.microSeconds();
@@ -214,12 +214,12 @@ function _stopListening(channel: BroadcastChannel): void {
   }
 }
 
-function _addListenerObject(channel: BroadcastChannel, type: EventType, obj: ListenerObject): void {
+function _addListenerObject(channel: BroadcastChannel<unknown>, type: EventType, obj: ListenerObject): void {
   channel._addEL[type].push(obj);
   _startListening(channel);
 }
 
-function _removeListenerObject(channel: BroadcastChannel, type: EventType, obj: ListenerObject | null): void {
+function _removeListenerObject(channel: BroadcastChannel<unknown>, type: EventType, obj: ListenerObject | null): void {
   if (obj) {
     channel._addEL[type] = channel._addEL[type].filter((o) => o !== obj);
     _stopListening(channel);
