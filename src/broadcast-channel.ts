@@ -1,6 +1,15 @@
 import { chooseMethod } from "./method-chooser";
 import { fillOptionsWithDefaults } from "./options";
-import { AddEventListeners, EventType, IBroadcastChannel, ListenerObject, MessageObject, Method, Options as BroadcastChannelOptions } from "./types";
+import {
+  AddEventListeners,
+  EventType,
+  IBroadcastChannel,
+  ListenerObject,
+  MessageObject,
+  Method,
+  MethodType,
+  Options as BroadcastChannelOptions,
+} from "./types";
 import { isPromise, PROMISE_RESOLVED_VOID } from "./util";
 
 let ENFORCED_OPTIONS: BroadcastChannelOptions | undefined;
@@ -68,7 +77,7 @@ export class BroadcastChannel<T> implements IBroadcastChannel<T> {
     _prepareChannel(this as unknown as BroadcastChannel<unknown>);
   }
 
-  get type(): string {
+  get type(): MethodType {
     return this.method.type;
   }
 

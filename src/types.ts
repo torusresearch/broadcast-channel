@@ -1,3 +1,5 @@
+export type MethodType = "idb" | "native" | "localstorage" | "simulate" | "server";
+
 export interface ListenerObject {
   time: number;
   fn: (data: unknown) => void;
@@ -18,7 +20,7 @@ export interface MessageObject {
 }
 
 export interface Method {
-  type: string;
+  type: MethodType;
   canBeUsed: (options: Options) => boolean;
   microSeconds: () => number;
   create: (name: string, options: Options) => unknown | Promise<unknown>;
@@ -45,7 +47,7 @@ interface ServerOptions {
 }
 
 export interface Options {
-  type?: string;
+  type?: MethodType;
   methods?: Method;
   prepareDelay?: number;
   webWorkerSupport?: boolean;
