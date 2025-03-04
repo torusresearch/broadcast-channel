@@ -26,7 +26,8 @@ export function enforceOptions(options: BroadcastChannelOptions): void {
 export const OPEN_BROADCAST_CHANNELS = new Set<BroadcastChannel<unknown>>();
 let lastId = 0;
 
-export class BroadcastChannel<T> implements IBroadcastChannel<T> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export class BroadcastChannel<T = any> implements IBroadcastChannel<T> {
   static _pubkey = true;
 
   public id: number;

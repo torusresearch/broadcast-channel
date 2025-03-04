@@ -19,14 +19,15 @@ export type WrappedMessage = {
  * Implementing redundant message delivery by attempting to send messages through multiple channels when the primary channel fails.
  * Ensuring message delivery by using multiple communication methods simultaneously while preventing duplicate message processing.
  */
-export class RedundantAdaptiveBroadcastChannel<T> implements IBroadcastChannel<T> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export class RedundantAdaptiveBroadcastChannel<T = any> implements IBroadcastChannel<T> {
   name: string;
 
   options: BroadcastChannelOptions;
 
   closed: boolean;
 
-  onML: ((event: unknown) => void) | null;
+  onML: ((event: T) => void) | null;
 
   methodPriority: Method["type"][];
 
@@ -52,7 +53,7 @@ export class RedundantAdaptiveBroadcastChannel<T> implements IBroadcastChannel<T
     this.initChannels();
   }
 
-  set onmessage(fn: ((data: unknown) => void) | null) {
+  set onmessage(fn: ((data: T) => void) | null) {
     this.removeEventListener("message", this.onML);
     if (fn && typeof fn === "function") {
       this.onML = fn;
