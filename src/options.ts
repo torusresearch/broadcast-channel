@@ -22,8 +22,8 @@ export function fillOptionsWithDefaults(originalOptions: Options = {}): Options 
 
   // server
   if (!options.server) options.server = {};
-  if (!options.server.api_url) options.server.api_url = SESSION_SERVER_API_URL;
-  if (!options.server.socket_url) options.server.socket_url = SESSION_SERVER_SOCKET_URL;
+  if (!options.server.api_url) options.server.api_url = `${SESSION_SERVER_API_URL}/v2`;
+  if (!options.server.socket_url) options.server.socket_url = `${SESSION_SERVER_SOCKET_URL}/v2`;
   if (!options.server.removeTimeout) options.server.removeTimeout = 1000 * 60 * 5; // 5 minutes
 
   // custom methods

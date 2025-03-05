@@ -46,7 +46,7 @@ interface Message {
 }
 
 interface MessageBody {
-  sameOriginCheck: boolean;
+  allowedOrigin: string;
   sameIpCheck: boolean;
   key: string;
   data: string;
@@ -75,7 +75,7 @@ export function postMessage(channelState: ChannelState, messageJson: MessageObje
           uuid: channelState.uuid,
         });
         const body: MessageBody = {
-          sameOriginCheck: true,
+          allowedOrigin: window.location.origin,
           sameIpCheck: true,
           key: getPublic(channelEncPrivKey).toString("hex"),
           data: encData,
@@ -140,12 +140,12 @@ export function setupSocketConnection(socketUrl: string, channelState: ChannelSt
   const channelEncPrivKey = keccak256(Buffer.from(key, "utf8"));
   const channelPubKey = getPublic(channelEncPrivKey).toString("hex");
   if (socketConn.connected) {
-    socketConn.emit("check_auth_status", channelPubKey, { sameOriginCheck: true, sameIpCheck: true });
+    socketConn.emit("v2:check_auth_status", channelPubKey, { allowedOrigin: window.location.origin, sameIpCheck: true });
   } else {
     socketConn.once("connect", () => {
       log.debug("connected with socket");
-      socketConn.emit("check_auth_status", channelPubKey, {
-        sameOriginCheck: true,
+      socketConn.emit("v2:check_auth_status", channelPubKey, {
+        allowedOrigin: window.location.origin,
         sameIpCheck: true,
       });
     });
@@ -154,8 +154,8 @@ export function setupSocketConnection(socketUrl: string, channelState: ChannelSt
   const reconnect = () => {
     socketConn.once("connect", async () => {
       if (runningChannels.has(channelState.channelName)) {
-        socketConn.emit("check_auth_status", channelPubKey, {
-          sameOriginCheck: true,
+        socketConn.emit("v2:check_auth_status", channelPubKey, {
+          allowedOrigin: window.location.origin,
           sameIpCheck: true,
         });
       }
