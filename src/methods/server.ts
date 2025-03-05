@@ -31,6 +31,7 @@ interface ChannelState {
   server: {
     api_url: string;
     socket_url: string;
+    allowed_origin?: string;
   };
   time: number;
   timeout?: number;
@@ -46,6 +47,7 @@ interface Message {
 }
 
 interface MessageBody {
+  allowedOrigin?: string;
   sameIpCheck: boolean;
   key: string;
   data: string;
@@ -74,6 +76,7 @@ export function postMessage(channelState: ChannelState, messageJson: MessageObje
           uuid: channelState.uuid,
         });
         const body: MessageBody = {
+          allowedOrigin: channelState.server.allowed_origin,
           sameIpCheck: true,
           key: getPublic(channelEncPrivKey).toString("hex"),
           data: encData,
@@ -138,12 +141,13 @@ export function setupSocketConnection(socketUrl: string, channelState: ChannelSt
   const channelEncPrivKey = keccak256(Buffer.from(key, "utf8"));
   const channelPubKey = getPublic(channelEncPrivKey).toString("hex");
   if (socketConn.connected) {
-    socketConn.emit("v2:check_auth_status", channelPubKey, { sameIpCheck: true });
+    socketConn.emit("v2:check_auth_status", channelPubKey, { sameIpCheck: true, allowedOrigin: channelState.server.allowed_origin });
   } else {
     socketConn.once("connect", () => {
       log.debug("connected with socket");
       socketConn.emit("v2:check_auth_status", channelPubKey, {
         sameIpCheck: true,
+        allowedOrigin: channelState.server.allowed_origin,
       });
     });
   }
@@ -153,6 +157,7 @@ export function setupSocketConnection(socketUrl: string, channelState: ChannelSt
       if (runningChannels.has(channelState.channelName)) {
         socketConn.emit("v2:check_auth_status", channelPubKey, {
           sameIpCheck: true,
+          allowedOrigin: channelState.server.allowed_origin,
         });
       }
     });
@@ -226,6 +231,7 @@ export function create(channelName: string, options: Options): ChannelState {
     server: {
       api_url: options.server.api_url,
       socket_url: options.server.socket_url,
+      allowed_origin: options.server.allowed_origin,
     },
     time: micro(),
   };

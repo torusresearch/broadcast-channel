@@ -44,6 +44,7 @@ interface ServerOptions {
   socket_url?: string;
   removeTimeout?: number;
   timeout?: number;
+  allowed_origin?: string;
 }
 
 export interface Options {

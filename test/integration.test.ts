@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable vitest/expect-expect */
 import AsyncTestUtil from "async-test-util";
 import clone from "clone";
@@ -96,7 +97,6 @@ function runTest(channelOptions: Options) {
           const channel = new BroadcastChannel(channelName, channelOptions);
           const otherChannel = new BroadcastChannel(channelName, channelOptions);
 
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const emitted: any[] = [];
           otherChannel.onmessage = (msg) => emitted.push(msg);
           await channel.postMessage({
@@ -113,7 +113,7 @@ function runTest(channelOptions: Options) {
           const channel = new BroadcastChannel(channelName, channelOptions);
           const otherChannel = new BroadcastChannel(channelName, channelOptions);
 
-          const emitted = [];
+          const emitted: any[] = [];
           otherChannel.onmessage = (msg) => emitted.push(msg);
           await channel.postMessage({
             foo: "bar",
@@ -128,7 +128,7 @@ function runTest(channelOptions: Options) {
           const channel1 = new BroadcastChannel(channelName, channelOptions);
           const channel2 = new BroadcastChannel(channelName, channelOptions);
 
-          const emitted = [];
+          const emitted: any[] = [];
           channel2.onmessage = (msg) => emitted.push(msg);
 
           const msgJson = {
@@ -147,7 +147,7 @@ function runTest(channelOptions: Options) {
           const channel1 = new BroadcastChannel(channelName, channelOptions);
           const channel2 = new BroadcastChannel(channelName, channelOptions);
 
-          const emitted = [];
+          const emitted: any[] = [];
           channel2.onmessage = (msg) => emitted.push(msg);
 
           const msgJson = {
@@ -170,7 +170,7 @@ function runTest(channelOptions: Options) {
           const channel1 = new BroadcastChannel(channelName, channelOptions);
           const channel2 = new BroadcastChannel(channelName, slowerOptions);
 
-          const emitted = [];
+          const emitted: any[] = [];
           channel2.onmessage = (msg) => emitted.push(msg);
 
           const msgJson = {
@@ -222,7 +222,7 @@ function runTest(channelOptions: Options) {
 
           await AsyncTestUtil.wait(500);
 
-          const emitted = [];
+          const emitted: any[] = [];
           channel2.onmessage = (msg) => emitted.push(msg);
 
           const msgJson = {
@@ -310,8 +310,8 @@ function runTest(channelOptions: Options) {
           const channel = new BroadcastChannel(channelName, channelOptions);
           const otherChannel = new BroadcastChannel(channelName, channelOptions);
 
-          const emitted1 = [];
-          const emitted2 = [];
+          const emitted1: any[] = [];
+          const emitted2: any[] = [];
 
           otherChannel.addEventListener("message", (msg) => emitted1.push(msg));
           otherChannel.addEventListener("message", (msg) => emitted2.push(msg));
@@ -338,7 +338,7 @@ function runTest(channelOptions: Options) {
           const otherChannel = new BroadcastChannel(channelName, channelOptions);
 
           const emitted = [];
-          const fn = (msg) => emitted.push(msg);
+          const fn = (msg: any) => emitted.push(msg);
           otherChannel.addEventListener("message", fn);
 
           const msg = {
@@ -420,7 +420,7 @@ function runTest(channelOptions: Options) {
           const channel = new BroadcastChannel(channelName, channelOptions);
           const otherChannel = new BroadcastChannel(channelName, channelOptions);
 
-          const emitted = [];
+          const emitted: any[] = [];
           otherChannel.onmessage = (msg) => emitted.push(msg);
 
           const amount = 300;
@@ -543,7 +543,7 @@ describe("RedundantAdaptiveBroadcastChannel", () => {
       const nativeChannel = channel.channels.get("native");
       vi.spyOn(nativeChannel, "postMessage").mockRejectedValue(new Error("test"));
 
-      const emitted = [];
+      const emitted: any[] = [];
       otherChannel.onmessage = (msg) => emitted.push(msg);
       await channel.postMessage({
         foo: "bar",
@@ -571,7 +571,7 @@ describe("RedundantAdaptiveBroadcastChannel", () => {
         }
       }
 
-      const emitted = [];
+      const emitted: any[] = [];
       otherChannel.onmessage = (msg) => emitted.push(msg);
       await channel.postMessage({
         foo: "bar",
@@ -595,7 +595,7 @@ describe("RedundantAdaptiveBroadcastChannel", () => {
       const nativeChannel = channel.channels.get("native");
       vi.spyOn(nativeChannel, "postMessage").mockResolvedValue(null);
 
-      const emitted = [];
+      const emitted: any[] = [];
       otherChannel.onmessage = (msg) => emitted.push(msg);
       await channel.postMessage({
         foo: "bar",
@@ -623,7 +623,7 @@ describe("RedundantAdaptiveBroadcastChannel", () => {
         }
       }
 
-      const emitted = [];
+      const emitted: any[] = [];
       otherChannel.onmessage = (msg) => emitted.push(msg);
       await channel.postMessage({
         foo: "bar",
@@ -667,7 +667,7 @@ describe("RedundantAdaptiveBroadcastChannel", () => {
         type: "simulate",
       });
 
-      const emitted = [];
+      const emitted: any[] = [];
       otherChannel.onmessage = (msg) => emitted.push(msg);
       await channel.postMessage({
         foo: "bar",
@@ -692,7 +692,9 @@ describe("RedundantAdaptiveBroadcastChannel", () => {
 
       await channel.close();
       for (const c in channel.channels.values()) {
+        // @ts-expect-error test
         expect(c.isClosed).toBe(true);
+        // @ts-expect-error test
         expect(c._uMP.size).toBe(0);
       }
     });
@@ -708,8 +710,8 @@ describe("RedundantAdaptiveBroadcastChannel", () => {
         type: "simulate",
       });
 
-      const emitted1 = [];
-      const emitted2 = [];
+      const emitted1: any[] = [];
+      const emitted2: any[] = [];
 
       otherChannel.addEventListener("message", (msg) => emitted1.push(msg));
       otherChannel.addEventListener("message", (msg) => emitted2.push(msg));
@@ -741,7 +743,7 @@ describe("RedundantAdaptiveBroadcastChannel", () => {
       });
 
       const emitted = [];
-      const fn = (msg) => emitted.push(msg);
+      const fn = (msg: any) => emitted.push(msg);
       otherChannel.addEventListener("message", fn);
 
       const msg = {

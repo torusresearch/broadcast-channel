@@ -840,7 +840,7 @@ function postMessage(channelState, messageJson) {
         uuid: channelState.uuid
       });
       const body = {
-        sameOriginCheck: true,
+        allowedOrigin: channelState.server.allowed_origin,
         sameIpCheck: true,
         key: eccrypto.getPublic(channelEncPrivKey).toString("hex"),
         data: encData,
@@ -900,25 +900,25 @@ function setupSocketConnection(socketUrl, channelState, fn) {
   const channelEncPrivKey = metadataHelpers.keccak256(Buffer.from(key, "utf8"));
   const channelPubKey = eccrypto.getPublic(channelEncPrivKey).toString("hex");
   if (socketConn.connected) {
-    socketConn.emit("check_auth_status", channelPubKey, {
-      sameOriginCheck: true,
-      sameIpCheck: true
+    socketConn.emit("v2:check_auth_status", channelPubKey, {
+      sameIpCheck: true,
+      allowedOrigin: channelState.server.allowed_origin
     });
   } else {
     socketConn.once("connect", () => {
       util.log.debug("connected with socket");
-      socketConn.emit("check_auth_status", channelPubKey, {
-        sameOriginCheck: true,
-        sameIpCheck: true
+      socketConn.emit("v2:check_auth_status", channelPubKey, {
+        sameIpCheck: true,
+        allowedOrigin: channelState.server.allowed_origin
       });
     });
   }
   const reconnect = () => {
     socketConn.once("connect", async () => {
       if (runningChannels.has(channelState.channelName)) {
-        socketConn.emit("check_auth_status", channelPubKey, {
-          sameOriginCheck: true,
-          sameIpCheck: true
+        socketConn.emit("v2:check_auth_status", channelPubKey, {
+          sameIpCheck: true,
+          allowedOrigin: channelState.server.allowed_origin
         });
       }
     });
@@ -978,7 +978,8 @@ function create(channelName, options$1) {
     // emittedMessagesIds
     server: {
       api_url: options$1.server.api_url,
-      socket_url: options$1.server.socket_url
+      socket_url: options$1.server.socket_url,
+      allowed_origin: options$1.server.allowed_origin
     },
     time: util.microSeconds()
   };
@@ -1109,8 +1110,8 @@ function fillOptionsWithDefaults(originalOptions = {}) {
   if (!options.localstorage.removeTimeout) options.localstorage.removeTimeout = 1000 * 60;
   // server
   if (!options.server) options.server = {};
-  if (!options.server.api_url) options.server.api_url = constants.SESSION_SERVER_API_URL;
-  if (!options.server.socket_url) options.server.socket_url = constants.SESSION_SERVER_SOCKET_URL;
+  if (!options.server.api_url) options.server.api_url = `${constants.SESSION_SERVER_API_URL}/v2`;
+  if (!options.server.socket_url) options.server.socket_url = `${constants.SESSION_SERVER_SOCKET_URL}`;
   if (!options.server.removeTimeout) options.server.removeTimeout = 1000 * 60 * 5; // 5 minutes
   // custom methods
   if (originalOptions.methods) options.methods = originalOptions.methods;
