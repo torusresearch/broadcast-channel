@@ -2,7 +2,7 @@
   "name": "@toruslabs/broadcast-channel",
   "version": "11.0.0",
   "description": "A BroadcastChannel that works in New Browsers, Old Browsers, WebWorkers",
-  "homepage": "https://github.com/pubkey/broadcast-channel#readme",
+  "homepage": "https://github.com/torusresearch/broadcast-channel#readme",
   "keywords": [
     "broadcast-channel",
     "broadcastchannel",
@@ -19,12 +19,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/pubkey/broadcast-channel.git"
+    "url": "git+https://github.com/torusresearch/broadcast-channel.git"
   },
   "author": "pubkey",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/pubkey/broadcast-channel/issues"
+    "url": "https://github.com/torusresearch/broadcast-channel/issues"
   },
   "main": "dist/lib.cjs/index.js",
   "module": "dist/lib.esm/index.js",
