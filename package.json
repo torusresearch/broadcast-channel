@@ -14,8 +14,7 @@
     "crosstab"
   ],
   "files": [
-    "dist",
-    "types"
+    "dist"
   ],
   "repository": {
     "type": "git",
