@@ -1,5 +1,4 @@
 import { BroadcastChannel } from "./broadcast-channel";
-import * as IndexedDbMethod from "./methods/indexed-db";
 import * as LocalstorageMethod from "./methods/localstorage";
 import * as NativeMethod from "./methods/native";
 import * as ServerMethod from "./methods/server";
