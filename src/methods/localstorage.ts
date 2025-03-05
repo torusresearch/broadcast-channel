@@ -10,7 +10,7 @@ import { ObliviousSet } from "oblivious-set";
 
 import { fillOptionsWithDefaults } from "../options";
 import { MessageObject } from "../types";
-import { microSeconds as micro, randomToken, sleep } from "../util";
+import { generateRandomId, microSeconds as micro, sleep } from "../util";
 
 export const microSeconds = micro;
 
@@ -73,7 +73,7 @@ export function postMessage(channelState: ChannelState, messageJson: MessageObje
       .then(() => {
         const key = storageKey(channelState.channelName);
         const writeObj: StorageMessage = {
-          token: randomToken(),
+          token: generateRandomId(),
           time: Date.now(),
           data: messageJson,
           uuid: channelState.uuid,
@@ -137,7 +137,7 @@ export function create(channelName: string, options: LocalStorageOptions): Chann
     throw new Error("BroadcastChannel: localstorage cannot be used");
   }
 
-  const uuid = randomToken();
+  const uuid = generateRandomId();
 
   /**
    * eMIs

@@ -29,8 +29,8 @@ export function randomInt(min: number, max: number): number {
 /**
  * https://stackoverflow.com/a/8084248
  */
-export function randomToken(): string {
-  return crypto.getRandomValues(new Uint8Array(16)).toString();
+export function generateRandomId(): string {
+  return Math.random().toString(36).substring(2);
 }
 
 let lastMs = 0;

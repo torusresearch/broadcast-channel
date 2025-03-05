@@ -7,7 +7,7 @@
  * @link https://rxdb.info/slow-indexeddb.html
  */
 
-import { microSeconds as micro, PROMISE_RESOLVED_VOID, randomInt, randomToken, sleep } from "../util";
+import { generateRandomId, microSeconds as micro, PROMISE_RESOLVED_VOID, randomInt, sleep } from "../util";
 
 export const microSeconds = micro;
 import { ObliviousSet } from "oblivious-set";
@@ -261,7 +261,7 @@ export function create(channelName: string, options: Options): Promise<ChannelSt
       lastCursorId: 0,
       channelName,
       options,
-      uuid: randomToken(),
+      uuid: generateRandomId(),
       /**
        * emittedMessagesIds
        * contains all messages that have been emitted before

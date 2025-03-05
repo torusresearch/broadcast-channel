@@ -16,6 +16,7 @@ function enforceOptions(options) {
  */
 const OPEN_BROADCAST_CHANNELS = new Set();
 let lastId = 0;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 class BroadcastChannel {
   // beforeClose
   constructor(name, options$1) {
@@ -458,7 +459,7 @@ function create(channelName, options$1) {
       lastCursorId: 0,
       channelName,
       options: options$1,
-      uuid: util.randomToken(),
+      uuid: util.generateRandomId(),
       /**
        * emittedMessagesIds
        * contains all messages that have been emitted before
@@ -626,7 +627,7 @@ function postMessage(channelState, messageJson) {
       var _getLocalStorage;
       const key = storageKey(channelState.channelName);
       const writeObj = {
-        token: util.randomToken(),
+        token: util.generateRandomId(),
         time: Date.now(),
         data: messageJson,
         uuid: channelState.uuid
@@ -679,7 +680,7 @@ function create(channelName, options$1) {
   if (!canBeUsed()) {
     throw new Error("BroadcastChannel: localstorage cannot be used");
   }
-  const uuid = util.randomToken();
+  const uuid = util.generateRandomId();
   /**
    * eMIs
    * contains all messages that have been emitted before
@@ -833,7 +834,7 @@ function postMessage(channelState, messageJson) {
       const key = storageKey(channelState.channelName);
       const channelEncPrivKey = metadataHelpers.keccak256(Buffer.from(key, "utf8"));
       const encData = await metadataHelpers.encryptData(channelEncPrivKey.toString("hex"), {
-        token: util.randomToken(),
+        token: util.generateRandomId(),
         time: Date.now(),
         data: messageJson,
         uuid: channelState.uuid
@@ -963,7 +964,7 @@ function canBeUsed() {
 }
 function create(channelName, options$1) {
   options$1 = options.fillOptionsWithDefaults(options$1);
-  const uuid = util.randomToken();
+  const uuid = util.generateRandomId();
   /**
    * eMIs
    * contains all messages that have been emitted before
@@ -1124,7 +1125,6 @@ exports.fillOptionsWithDefaults = fillOptionsWithDefaults;
 var _objectSpread = require('@babel/runtime/helpers/objectSpread2');
 var _defineProperty = require('@babel/runtime/helpers/defineProperty');
 var broadcastChannel = require('./broadcast-channel.js');
-var indexedDb = require('./methods/indexed-db.js');
 var localstorage = require('./methods/localstorage.js');
 var native = require('./methods/native.js');
 var server = require('./methods/server.js');
@@ -1136,6 +1136,7 @@ var simulate = require('./methods/simulate.js');
  * Implementing redundant message delivery by attempting to send messages through multiple channels when the primary channel fails.
  * Ensuring message delivery by using multiple communication methods simultaneously while preventing duplicate message processing.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 class RedundantAdaptiveBroadcastChannel {
   constructor(name, options = {}) {
     _defineProperty(this, "name", void 0);
@@ -1152,7 +1153,7 @@ class RedundantAdaptiveBroadcastChannel {
     this.closed = false;
     this.onML = null;
     // order from fastest to slowest
-    this.methodPriority = [native.type, indexedDb.type, localstorage.type, server.type];
+    this.methodPriority = [native.type, localstorage.type, server.type];
     this.channels = new Map();
     this.listeners = new Set();
     this.processedNonces = new Set();
@@ -1265,7 +1266,7 @@ class RedundantAdaptiveBroadcastChannel {
 
 exports.RedundantAdaptiveBroadcastChannel = RedundantAdaptiveBroadcastChannel;
 
-},{"./broadcast-channel.js":1,"./methods/indexed-db.js":4,"./methods/localstorage.js":5,"./methods/native.js":6,"./methods/server.js":7,"./methods/simulate.js":8,"@babel/runtime/helpers/defineProperty":14,"@babel/runtime/helpers/objectSpread2":15}],11:[function(require,module,exports){
+},{"./broadcast-channel.js":1,"./methods/localstorage.js":5,"./methods/native.js":6,"./methods/server.js":7,"./methods/simulate.js":8,"@babel/runtime/helpers/defineProperty":14,"@babel/runtime/helpers/objectSpread2":15}],11:[function(require,module,exports){
 'use strict';
 
 var loglevel = require('loglevel');
@@ -1295,8 +1296,8 @@ function randomInt(min, max) {
 /**
  * https://stackoverflow.com/a/8084248
  */
-function randomToken() {
-  return crypto.getRandomValues(new Uint8Array(16)).toString();
+function generateRandomId() {
+  return Math.random().toString(36).substring(2);
 }
 let lastMs = 0;
 /**
@@ -1339,11 +1340,11 @@ const log = loglevel.getLogger("broadcast-channel");
 log.setLevel("error");
 
 exports.PROMISE_RESOLVED_VOID = PROMISE_RESOLVED_VOID;
+exports.generateRandomId = generateRandomId;
 exports.isPromise = isPromise;
 exports.log = log;
 exports.microSeconds = microSeconds;
 exports.randomInt = randomInt;
-exports.randomToken = randomToken;
 exports.sleep = sleep;
 
 },{"loglevel":481}],12:[function(require,module,exports){

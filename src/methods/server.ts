@@ -13,7 +13,7 @@ import { io, Socket } from "socket.io-client";
 
 import { fillOptionsWithDefaults } from "../options";
 import { MessageObject, Options } from "../types";
-import { log, microSeconds as micro, randomToken, sleep } from "../util";
+import { generateRandomId, log, microSeconds as micro, sleep } from "../util";
 
 export const microSeconds = micro;
 
@@ -69,7 +69,7 @@ export function postMessage(channelState: ChannelState, messageJson: MessageObje
         const key = storageKey(channelState.channelName);
         const channelEncPrivKey = keccak256(Buffer.from(key, "utf8"));
         const encData = await encryptData(channelEncPrivKey.toString("hex"), {
-          token: randomToken(),
+          token: generateRandomId(),
           time: Date.now(),
           data: messageJson,
           uuid: channelState.uuid,
@@ -214,7 +214,7 @@ export function create(channelName: string, options: Options): ChannelState {
     throw new Error("BroadcastChannel: server cannot be used");
   }
 
-  const uuid = randomToken();
+  const uuid = generateRandomId();
 
   /**
    * eMIs
