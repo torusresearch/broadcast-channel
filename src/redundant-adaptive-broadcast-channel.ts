@@ -45,7 +45,7 @@ export class RedundantAdaptiveBroadcastChannel<T = any> implements IBroadcastCha
     this.closed = false;
     this.onML = null;
     // order from fastest to slowest
-    this.methodPriority = [NativeMethod.type, IndexedDbMethod.type, LocalstorageMethod.type, ServerMethod.type];
+    this.methodPriority = [NativeMethod.type, LocalstorageMethod.type, ServerMethod.type];
     this.channels = new Map();
     this.listeners = new Set();
     this.processedNonces = new Set();
