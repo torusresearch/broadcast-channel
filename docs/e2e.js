@@ -1130,6 +1130,7 @@ var localstorage = require('./methods/localstorage.js');
 var native = require('./methods/native.js');
 var server = require('./methods/server.js');
 var simulate = require('./methods/simulate.js');
+var util = require('./util.js');
 
 /**
  * The RedundantAdaptiveBroadcastChannel class is designed to add fallback to during channel post message and synchronization issues between senders and receivers in a broadcast communication scenario. It achieves this by:
@@ -1182,20 +1183,27 @@ class RedundantAdaptiveBroadcastChannel {
           type: method
         }));
         this.channels.set(method, channel);
+        util.log.debug(`Succeeded to initialize ${method} method in channel ${this.name}`);
         // listening on every method
         channel.onmessage = event => this.handleMessage(event);
       } catch (error) {
-        console.warn(`Failed to initialize ${method} method: ${error instanceof Error ? error.message : String(error)}`);
+        util.log.warn(`Failed to initialize ${method} method in channel ${this.name}: ${error instanceof Error ? error.message : String(error)}`);
       }
     });
     if (this.channels.size === 0) {
       throw new Error("Failed to initialize any communication method");
     }
   }
+  allChannels() {
+    return Array.from(this.channels.keys());
+  }
+  hasChannel(method) {
+    return this.channels.has(method);
+  }
   handleMessage(event) {
     if (event && event.nonce) {
       if (this.processedNonces.has(event.nonce)) {
-        // console.log(`Duplicate message received via ${method}, nonce: ${event.nonce}`);
+        // log.debug(`Duplicate message received via ${method}, nonce: ${event.nonce}`);
         return;
       }
       this.processedNonces.add(event.nonce);
@@ -1226,7 +1234,7 @@ class RedundantAdaptiveBroadcastChannel {
       message
     };
     const postPromises = Array.from(this.channels.entries()).map(([method, channel]) => channel.postMessage(wrappedMessage).catch(error => {
-      console.warn(`Failed to send via ${method}: ${error.message}`);
+      util.log.warn(`Failed to send via ${method}: ${error.message}`);
       throw error;
     }));
     const result = await Promise.allSettled(postPromises);
@@ -1267,7 +1275,7 @@ class RedundantAdaptiveBroadcastChannel {
 
 exports.RedundantAdaptiveBroadcastChannel = RedundantAdaptiveBroadcastChannel;
 
-},{"./broadcast-channel.js":1,"./methods/localstorage.js":5,"./methods/native.js":6,"./methods/server.js":7,"./methods/simulate.js":8,"@babel/runtime/helpers/defineProperty":15,"@babel/runtime/helpers/objectSpread2":16}],11:[function(require,module,exports){
+},{"./broadcast-channel.js":1,"./methods/localstorage.js":5,"./methods/native.js":6,"./methods/server.js":7,"./methods/simulate.js":8,"./util.js":11,"@babel/runtime/helpers/defineProperty":15,"@babel/runtime/helpers/objectSpread2":16}],11:[function(require,module,exports){
 'use strict';
 
 var loglevel = require('loglevel');
