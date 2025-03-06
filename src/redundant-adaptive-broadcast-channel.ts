@@ -88,6 +88,14 @@ export class RedundantAdaptiveBroadcastChannel<T = any> implements IBroadcastCha
     }
   }
 
+  allChannels(): Method["type"][] {
+    return Array.from(this.channels.keys());
+  }
+
+  includeChannel(method: Method["type"]): boolean {
+    return this.channels.has(method);
+  }
+
   handleMessage(event: WrappedMessage) {
     if (event && event.nonce) {
       if (this.processedNonces.has(event.nonce)) {
