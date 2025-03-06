@@ -1,5 +1,4 @@
 node_modules/
-package-lock.json
 .idea/
 .vscode/
 .transpile_state.json
@@ -9,3 +8,5 @@ test_tmp/
 tmp/
 .eslintcache
 toruslabs-*.tgz
+dist/
+.DS_Store

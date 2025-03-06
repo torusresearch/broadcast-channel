@@ -1,5 +1,5 @@
 exports.umdConfig = {
-    entry: './src/index-umd.js',
+    entry: './src/index-umd.ts',
     output: {
         library: 'TorusBroadcastChannel',
     }

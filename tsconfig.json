@@ -1,7 +1,9 @@
 {
-    "extends": "@toruslabs/config/tsconfig.default.json",
-    "compilerOptions": {
-        "allowJs": true,
-        "declaration": false
-    }
+  "extends": "@toruslabs/config/tsconfig.default.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "allowJs": true,
+    "declaration": false,
+    "outDir": "./dist"
+  }
 }

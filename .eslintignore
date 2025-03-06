@@ -1,7 +1,0 @@
-dist/
-node_modules/
-tmp/
-test/scripts/worker.js
-test/e2e.test.js
-src/index.es5.js
-src/browserify.index.js
