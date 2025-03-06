@@ -4,6 +4,7 @@ import * as NativeMethod from "./methods/native";
 import * as ServerMethod from "./methods/server";
 import * as SimulateMethod from "./methods/simulate";
 import { EventType, IBroadcastChannel, Method, Options as BroadcastChannelOptions } from "./types";
+import { log } from "./util";
 
 type Nonce = `${number}-${number}`;
 
@@ -76,10 +77,11 @@ export class RedundantAdaptiveBroadcastChannel<T = any> implements IBroadcastCha
           type: method,
         });
         this.channels.set(method, channel as unknown as BroadcastChannel<T>);
+        log.debug(`Succeeded to initialize ${method} method in channel ${this.name}`);
         // listening on every method
         channel.onmessage = (event) => this.handleMessage(event as WrappedMessage);
       } catch (error) {
-        console.warn(`Failed to initialize ${method} method: ${error instanceof Error ? error.message : String(error)}`);
+        log.warn(`Failed to initialize ${method} method in channel ${this.name}: ${error instanceof Error ? error.message : String(error)}`);
       }
     });
 
@@ -99,7 +101,7 @@ export class RedundantAdaptiveBroadcastChannel<T = any> implements IBroadcastCha
   handleMessage(event: WrappedMessage) {
     if (event && event.nonce) {
       if (this.processedNonces.has(event.nonce)) {
-        // console.log(`Duplicate message received via ${method}, nonce: ${event.nonce}`);
+        // log.debug(`Duplicate message received via ${method}, nonce: ${event.nonce}`);
         return;
       }
       this.processedNonces.add(event.nonce);
@@ -137,7 +139,7 @@ export class RedundantAdaptiveBroadcastChannel<T = any> implements IBroadcastCha
 
     const postPromises = Array.from(this.channels.entries()).map(([method, channel]) =>
       channel.postMessage(wrappedMessage as unknown as T).catch((error) => {
-        console.warn(`Failed to send via ${method}: ${error.message}`);
+        log.warn(`Failed to send via ${method}: ${error.message}`);
         throw error;
       })
     );
