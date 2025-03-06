@@ -102,7 +102,6 @@ function runTest(channelOptions: Options) {
           await channel.postMessage({
             foo: "bar",
           });
-          console.log("emitted", emitted);
           await AsyncTestUtil.waitUntil(() => emitted.length >= 1);
           expect(emitted[0].foo).toBe("bar");
           channel.close();
