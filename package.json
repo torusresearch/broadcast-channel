@@ -1,6 +1,6 @@
 {
   "name": "@toruslabs/broadcast-channel",
-  "version": "11.0.0",
+  "version": "12.0.0",
   "description": "A BroadcastChannel that works in New Browsers, Old Browsers, WebWorkers",
   "homepage": "https://github.com/torusresearch/broadcast-channel#readme",
   "keywords": [
